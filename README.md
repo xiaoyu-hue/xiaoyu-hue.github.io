@@ -1,6 +1,8 @@
 # xiaoyu-hue.github.io
 
-> 个人主站 · 一个非程序员用 AI Agent 做出的四个项目，以及一份诚实的实验记录
+**[English](./README.en.md) · 中文**
+
+> 个人主站 · 一个非程序员用 AI Agent 做出的四个项目,以及一份诚实的实验记录
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-在线访问-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
