@@ -50,14 +50,12 @@ xiaoyu-hue.github.io/
 │   └── post-*.html     # 文章
 ├── scripts/
 │   └── check_integrity.py   # 完整性检查（死链 / CSP / 第三方资源）
-├── docs/
-│   └── EDGE_SETUP.md   # 边缘层配置说明（可选增强）
 ├── _headers            # 安全响应头配置，仅 Cloudflare Pages 等平台生效
 └── .github/workflows/
     └── security.yml    # CI：每次 push 自动跑完整性检查
 ```
 
-> `_headers` 在 GitHub Pages 上**不生效**（Pages 不支持自定义响应头），它是为将来迁移到 Cloudflare Pages 等支持该文件的平台准备的。详见 `docs/EDGE_SETUP.md`。
+> `_headers` 在 GitHub Pages 上**不生效**（Pages 不支持自定义响应头），它是为将来迁移到 Cloudflare Pages 等支持该文件的平台准备的。
 
 ---
 
@@ -73,20 +71,6 @@ python3 -m http.server 8000
 ```
 
 推荐 Chrome / Edge。
-
----
-
-## 安全
-
-本站是纯静态站点：无后端、无数据库、无登录态、不收集访客数据。已实施的防护：
-
-- **零第三方资源** —— 不加载任何外部 CDN（已移除 Google Fonts）
-- **严格 CSP** —— 以 `<meta http-equiv>` 下发，不含 `unsafe-inline` / `unsafe-eval`
-- **CI 自检** —— 每次 push 自动校验死链、CSP 一致性、第三方资源与内联脚本回归
-
-**已知局限**：GitHub Pages 不支持自定义响应头，因此 `X-Frame-Options`、`nosniff`、`Permissions-Policy` 等**均无法设置**；`frame-ancestors` 在 meta 形式下会被浏览器忽略，防点击劫持能力实际缺失。（HSTS 例外 —— GitHub 对 `*.github.io` 域统一发送，无需配置。）完整清单见 [SECURITY.md](SECURITY.md)，补齐方案见 [docs/EDGE_SETUP.md](docs/EDGE_SETUP.md)。
-
-漏洞报告请走 GitHub 私有漏洞报告（仓库 → Security → Advisories）。
 
 ---
 
