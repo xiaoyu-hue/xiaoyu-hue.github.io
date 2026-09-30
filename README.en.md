@@ -84,7 +84,7 @@ This is a purely static site: no backend, no database, no login state, no visito
 - **Strict CSP** — delivered via `<meta http-equiv>`, with no `unsafe-inline` / `unsafe-eval`
 - **CI self-check** — every push verifies dead links, CSP consistency, third-party resources, and inline-script regressions
 
-**Known limitations:** GitHub Pages does not support custom response headers, so HSTS, `X-Frame-Options`, and `nosniff` **cannot be set**; `frame-ancestors` is ignored by browsers when delivered via meta, so clickjacking protection is effectively absent. Full list in [SECURITY.md](SECURITY.md); how to close the gap in [docs/EDGE_SETUP.md](docs/EDGE_SETUP.md).
+**Known limitations:** GitHub Pages does not support custom response headers, so `X-Frame-Options`, `nosniff`, and `Permissions-Policy` **cannot be set**; `frame-ancestors` is ignored by browsers when delivered via meta, so clickjacking protection is effectively absent. (HSTS is an exception — GitHub sends it for all `*.github.io` domains, no configuration needed.) Full list in [SECURITY.md](SECURITY.md); how to close the gap in [docs/EDGE_SETUP.md](docs/EDGE_SETUP.md).
 
 Report vulnerabilities via GitHub private vulnerability reporting (repo → Security → Advisories).
 

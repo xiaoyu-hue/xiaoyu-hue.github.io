@@ -43,6 +43,7 @@
 | 内容安全策略（CSP） | ✅ | 以 `<meta http-equiv>` 下发，**不含** `unsafe-inline` / `unsafe-eval` |
 | Referrer 策略 | ✅ | `strict-origin-when-cross-origin` |
 | 全站 HTTPS | ✅ | GitHub Pages 提供 |
+| HSTS | ✅ | GitHub 对 `*.github.io` 域统一发送 `max-age=31556952`（约 1 年），无需配置 |
 | 无内联脚本 | ✅ | 全站 0 处内联 `<script>`、0 处 `on*=` 事件属性 |
 | 应用层逻辑最小化 | ✅ | `assets/main.js` 仅 18 行，只做滚动淡入，不接触用户输入 |
 
@@ -70,13 +71,17 @@ form-action 'none'
 
 ### 1. 无法设置 HTTP 安全响应头
 
-GitHub Pages **不支持自定义响应头**，也不读取 `_headers` 文件（那是 Netlify / Cloudflare Pages 的特性）。因此以下响应头在本站**全部缺失**：
+GitHub Pages **不支持自定义响应头**，也不读取 `_headers` 文件（那是 Netlify / Cloudflare Pages 的特性）。实测本站响应头中**确实缺失**的：
 
-- `Strict-Transport-Security`（HSTS）
 - `X-Frame-Options`
 - `X-Content-Type-Options: nosniff`
 - `Permissions-Policy`
 - `Cross-Origin-Opener-Policy`
+- `Content-Security-Policy`（HTTP 头形式 —— 当前以 `<meta>` 降级实现）
+
+**例外：HSTS 是有的。** 实测响应头含 `strict-transport-security: max-age=31556952`（约 1 年），由 GitHub 对 `*.github.io` 域统一发送，本站无需任何配置。
+
+> 该结论对 `github.io` 域实测成立。**若将来改用自定义域名，HSTS 是否仍自动提供尚未实测**，届时需自行验证。
 
 ### 2. 防点击劫持能力实际缺失
 

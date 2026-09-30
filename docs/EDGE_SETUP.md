@@ -12,8 +12,8 @@ GitHub Pages **不支持自定义响应头**，也不读取 `_headers` 文件。
 | 响应头 | GitHub Pages | 边缘层 |
 |--------|--------------|--------|
 | `Content-Security-Policy`（HTTP 头形式） | ❌ | ✅ |
-| `Strict-Transport-Security`（HSTS） | ❌ | ✅ |
 | `X-Frame-Options` / `frame-ancestors` | ❌ | ✅ |
+| 真实 HSTS（可自定义时长 / preload） | ⚠️ 固定值，不可配置 | ✅ |
 | `X-Content-Type-Options: nosniff` | ❌ | ✅ |
 | `Permissions-Policy` | ❌ | ✅ |
 | `Cross-Origin-Opener-Policy` | ❌ | ✅ |
@@ -64,7 +64,7 @@ GitHub Pages **不支持自定义响应头**，也不读取 `_headers` 文件。
 
 两点说明，避免照抄时踩坑：
 
-1. **`Strict-Transport-Security` 未加 `preload`** —— preload 一旦提交很难撤回，且要求 `includeSubDomains`，对 `*.github.io` 这类共享子域不合适。**等你确定长期使用自有域名后，再考虑加 `includeSubDomains; preload`。**
+1. **`Strict-Transport-Security` 未加 `preload`** —— preload 一旦提交很难撤回，且要求 `includeSubDomains`。注意 GitHub Pages 已为 `*.github.io` 统一发送 `max-age=31556952`（约 1 年），此处配置会覆盖它。**等你确定长期使用自有域名后，再考虑加 `includeSubDomains; preload`。**
 2. **边缘层 CSP 与 meta CSP 会同时生效** —— 浏览器取两者的**交集**（更严格者胜）。当前两者策略一致，无冲突。将来若放宽其中一处，记得另一处同步修改。
 
 ---

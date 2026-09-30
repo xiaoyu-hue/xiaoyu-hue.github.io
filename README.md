@@ -84,7 +84,7 @@ python3 -m http.server 8000
 - **严格 CSP** —— 以 `<meta http-equiv>` 下发，不含 `unsafe-inline` / `unsafe-eval`
 - **CI 自检** —— 每次 push 自动校验死链、CSP 一致性、第三方资源与内联脚本回归
 
-**已知局限**：GitHub Pages 不支持自定义响应头，因此 HSTS、`X-Frame-Options`、`nosniff` 等**均无法设置**；`frame-ancestors` 在 meta 形式下会被浏览器忽略，防点击劫持能力实际缺失。完整清单见 [SECURITY.md](SECURITY.md)，补齐方案见 [docs/EDGE_SETUP.md](docs/EDGE_SETUP.md)。
+**已知局限**：GitHub Pages 不支持自定义响应头，因此 `X-Frame-Options`、`nosniff`、`Permissions-Policy` 等**均无法设置**；`frame-ancestors` 在 meta 形式下会被浏览器忽略，防点击劫持能力实际缺失。（HSTS 例外 —— GitHub 对 `*.github.io` 域统一发送，无需配置。）完整清单见 [SECURITY.md](SECURITY.md)，补齐方案见 [docs/EDGE_SETUP.md](docs/EDGE_SETUP.md)。
 
 漏洞报告请走 GitHub 私有漏洞报告（仓库 → Security → Advisories）。
 
