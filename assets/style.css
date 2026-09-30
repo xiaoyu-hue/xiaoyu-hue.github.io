@@ -120,6 +120,25 @@ footer a{color:var(--accent);text-decoration:none}
 .article h2{margin:34px 0 14px;font-size:22px;color:var(--text)}
 .article code{background:var(--glass-bg);padding:2px 7px;border-radius:6px;font-family:ui-monospace,monospace;font-size:14px;color:var(--accent)}
 
+/* 页脚签名 */
+.sign{color:var(--accent);letter-spacing:.06em;font-size:13.5px}
+/* 文章内元素 */
+.article ul,.article ol{margin:0 0 18px 22px;color:#cfe2ec;font-size:16.5px}
+.article li{margin-bottom:9px}
+.article h3{margin:28px 0 12px;font-size:18px;color:var(--accent)}
+.article table{width:100%;border-collapse:collapse;margin:0 0 22px;font-size:14.5px}
+.article th,.article td{border:1px solid rgba(150,210,255,.18);padding:10px 12px;text-align:left;vertical-align:top}
+.article th{background:rgba(255,255,255,.05);color:var(--text);font-weight:600}
+.article td{color:#cfe2ec}
+.article blockquote{margin:0 0 20px;padding:14px 18px;border-left:3px solid var(--accent);background:var(--glass-bg);border-radius:0 12px 12px 0;color:var(--text-dim)}
+.article blockquote strong{color:var(--text)}
+.article .tag{display:inline-block;font-size:12.5px;color:var(--accent);border:1px solid var(--glass-border);border-radius:999px;padding:4px 12px;margin:0 8px 14px 0}
+.article .back{display:inline-block;margin-top:8px;font-size:14px;color:var(--accent);text-decoration:none}
+.article .back:hover{text-decoration:underline}
+.article .links{margin-top:28px;padding-top:20px;border-top:1px solid rgba(150,210,255,.14)}
+.article .links a{font-size:14px;color:var(--accent);text-decoration:none;padding:6px 14px;border:1px solid var(--glass-border);border-radius:999px;margin-right:10px;display:inline-block;margin-bottom:10px}
+.article .links a:hover{background:var(--glass-bg)}
+
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
 

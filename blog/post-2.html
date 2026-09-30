@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sonder520:把一天装进浏览器,代价是什么 · xiaoyu-hue</title>
+<meta name="description" content="12 个模块、776 项测试、零依赖的个人管理工具 Sonder520:为什么坚持数据只存本地,以及这个决定换来的是什么代价。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="ocean-bg"></div><div class="orb a"></div><div class="orb b"></div>
+
+<nav class="nav"><div class="wrap">
+  <a class="brand" href="../index.html">xiaoyu<span>-hue</span></a>
+  <div class="nav-links">
+    <a href="../index.html#about">关于</a>
+    <a href="../index.html#projects">项目</a>
+    <a href="index.html">博客</a>
+    <a href="../index.html#contact">联系</a>
+  </div>
+</div></nav>
+
+<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>Sonder520:把一天装进浏览器,代价是什么</h1>
+    <div class="date">2026-10-01 · 项目故事 · <a href="https://github.com/xiaoyu-hue/sonder520">sonder520</a></div>
+    <div>
+      <span class="tag">本地优先</span><span class="tag">零依赖</span><span class="tag">12 模块</span><span class="tag">776 项测试</span>
+    </div>
+
+    <p>这是四个项目里做得最久的一个,也是我最想解释清楚的一个。因为它身上有一个看起来很美、实则很贵的决定:<strong>数据只存在你的浏览器里,哪儿也不去</strong>。</p>
+
+    <h2>起因:我只是想要一个不联网也能用的工具</h2>
+    <p>我想要的很简单——记录今天要做什么、看了什么书、赚了多少钱、想到了什么。市面上的工具要么要注册账号,要么数据默认上云,要么用着用着开始收费。</p>
+    <p>我不反对这些商业模式,但我确实不想把自己的日程、客户和收入交给一个我读不懂的服务条款。于是需求就变成了:<strong>能不能做一个完全不联网、数据不离开本机的工具?</strong></p>
+
+    <h2>它现在长什么样</h2>
+    <p>12 个模块,从今日计划、番茄钟、快速备忘,到自媒体排期、开发笔记、咨询收入、书单阅读、资讯收藏、灵感收集,再加上数据统计和设置。<strong>外加 6 款迷你游戏</strong>(井字棋、五子棋、扫雷等)——这部分纯属我不想让工具太严肃。</p>
+    <p>技术上它是"过时"的:纯 HTML/CSS/原生 JavaScript,<strong>零运行时依赖、零构建步骤</strong>。下载下来双击 <code>index.html</code> 就能跑,不需要 Node.js,不需要 npm install,不需要等编译。</p>
+
+    <h2>我拍板的三个决定</h2>
+
+    <h3>1. 数据不出本机,代价是放弃同步</h3>
+    <p>主存储是 IndexedDB(浏览器的本地数据库),localStorage 只做副本和跨标签页信号。数据<strong>不会</strong>上传到任何服务器——这不是承诺,是代码里根本没有上传这条路。</p>
+    <p>可选加密也做了:开启后用 PBKDF2 派生密钥 + AES-GCM-256 加密存储,即使有人拿到你的浏览器数据也读不出来。</p>
+    <p>但这个决定的代价很实在:<strong>换设备不会自动同步,清了浏览器数据就没了</strong>。备份只能靠手动导出 JSON。我在文档里把这条写进了"不适合什么场景"的第一条——想要跨设备自动同步的人,请去找别的工具。</p>
+
+    <h3>2. 零依赖,代价是没有框架替我兜底</h3>
+    <p>不用 React、不用 Vue、不用任何 UI 库,意味着布局、响应式、状态管理、动画全得自己写。代价是开发慢、代码量大。换来的是:<strong>十年后这个项目依然能双击打开</strong>,不会因为某个依赖停止维护而烂掉。</p>
+    <p>对一个不会写代码的人来说,这个取舍尤其值得——越少的依赖,越少的地方会因为我读不懂而失控。</p>
+
+    <h3>3. 776 项测试,因为这是我唯一能信任的东西</h3>
+    <p>这一条是我的私心。我读不懂几千行代码,但我能看懂"测试全绿"这四个字。所以我把测试当成了护栏:单元测试 + 契约测试 + 集成测试 + Playwright 三端 E2E(桌面/平板/手机),共 <strong>776 项</strong>。</p>
+    <p>再加上 14 份 ADR(架构决策记录)——每次重大改动为什么这么定,都留一份记录。这不是给外人看的工程仪式感,是给"三个月后忘了当初为什么这么做的我"留的线索。</p>
+
+    <h2>架构是被逼出来的,不是设计出来的</h2>
+    <p>项目现在分了层,从上到下是:页面 → 领域规则(纯函数) → 数据访问边界 → 模块工厂与状态 → 渲染引擎与事件总线 → 安全存储层 → IndexedDB。</p>
+    <p>说实话,这套分层不是我一开始就画出来的。它是被"越改越难改"逼出来的——早期所有逻辑堆在一起,加一个功能就碰坏另一个,后来才逐步拆出规则层和数据边界。<strong>这是这个项目花掉最多时间的地方,也是最不"AI 一键生成"的地方。</strong></p>
+
+    <h2>诚实清单:它做不到什么</h2>
+    <ul>
+      <li><strong>跨设备自动同步</strong> — 数据只在当前浏览器,换设备要手动导入备份</li>
+      <li><strong>团队协作</strong> — 这是个人工具,没有多人共享和权限管理</li>
+      <li><strong>原生 App 体验</strong> — 它是 PWA,后台推送、系统级通知这类能力受限</li>
+      <li><strong>当唯一存储</strong> — 浏览器数据可能被清理,重要数据请定期导出备份</li>
+    </ul>
+
+    <h2>回过头看</h2>
+    <p>Sonder520 证明的不是"AI 能写多少代码",而是一个更朴素的事:<strong>一个不懂技术的人,只要能清楚说出自己要什么、愿意承担什么代价,是可以把一个工具做到能用的。</strong></p>
+    <p>代价清单我写在文档最显眼的位置。因为"看起来很厉害"很容易,但那不是我要的东西。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue.github.io/sonder520/">在线体验</a>
+      <a href="https://github.com/xiaoyu-hue/sonder520">GitHub 仓库</a>
+      <a href="index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="lang"><a href="../index.html">简体中文</a> · <a href="#">English</a></div>
+  <div>© 2026 xiaoyu-hue · <span class="sign">一半烟火以谋生，一半诗意以谋爱</span></div>
+</div></footer>
+
+<script src="../assets/main.js"></script>
+</body>
+</html>

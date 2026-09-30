@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nymir:我给 AI 划下的安全边界 · xiaoyu-hue</title>
+<meta name="description" content="P2P 匿名聊天 Nymir:端到端加密、安全码核对、可验证密钥轮换,以及它为什么仍然不建议用于高风险场景。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="ocean-bg"></div><div class="orb a"></div><div class="orb b"></div>
+
+<nav class="nav"><div class="wrap">
+  <a class="brand" href="../index.html">xiaoyu<span>-hue</span></a>
+  <div class="nav-links">
+    <a href="../index.html#about">关于</a>
+    <a href="../index.html#projects">项目</a>
+    <a href="index.html">博客</a>
+    <a href="../index.html#contact">联系</a>
+  </div>
+</div></nav>
+
+<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>Nymir:我给 AI 划下的安全边界</h1>
+    <div class="date">2026-10-01 · 项目故事 · <a href="https://github.com/xiaoyu-hue/Nymir">Nymir</a></div>
+    <div>
+      <span class="tag">P2P</span><span class="tag">端到端加密</span><span class="tag">阅读即焚</span><span class="tag">293 项测试</span>
+    </div>
+
+    <blockquote>
+      <strong>先说最重要的:</strong>这个项目由 AI 辅助开发,作者为零编程基础的个人开发者,代码<strong>尚未经过专业安全审计</strong>,不建议用于真实敏感场景。
+    </blockquote>
+
+    <p>这句话写在 Nymir 仓库最顶上,也在每一次介绍它的最前面。它不是免责声明的客套话——<strong>它是这个项目的第一功能</strong>。因为一个不会写密码学的人做加密聊天工具,最危险的不是做不出功能,而是做出"看起来安全"的功能。</p>
+
+    <h2>一条消息的旅程</h2>
+    <p>Nymir 是 P2P 匿名聊天工具,消息直接在两台设备之间传输,不经过我搭建的任何服务器。发送时:明文 → AES-256-GCM 加密 → Ed25519 签名 → 通过 P2P 通道发出。接收时:验签 → 解密 → 字段加密后写入本地 IndexedDB。</p>
+    <p>加密和签名都在浏览器里完成,中间节点只能看到密文和签名,看不到明文。密钥协商用 X25519,每消息的密钥由 HKDF 单独派生——<strong>不同消息的密钥不同</strong>。</p>
+    <p>这里有个关键的诚实点:<strong>Nymir 不实现任何密码学原语</strong>。它只调用浏览器内置的 WebCrypto API,那是有专业团队维护、经过审计的实现。这是我给自己划的第一条边界——不自己发明加密算法。</p>
+
+    <h2>三个我主动放弃的东西</h2>
+
+    <h3>1. 放弃"完全去中心化"这个说法</h3>
+    <p>很多隐私工具喜欢说自己"完全去中心化"。Nymir 的存储和传输确实是本地/P2P,但要让两个陌生人找到彼此,仍然需要公共信令(MQTT / Nostr / WebTorrent,三策略冗余)。</p>
+    <p>所以我把它写成了:<strong>无业务服务器 + 本地优先 + P2P 通信</strong>。这个词没那么响亮,但它是真的。我不打算用一个听起来更厉害的说法去换信任。</p>
+
+    <h3>2. 安全码必须是用户自己核对</h3>
+    <p>端到端加密有个绕不开的坑叫 <strong>TOFU(首次见面信任)</strong>:第一次交换公钥时,如果中间人抢先塞给你一个假公钥,协议自己识破不了。</p>
+    <p>Nymir 的应对是聊天页右上角的盾牌——显示双方共同的 15 位数字 + 7 个 emoji,你可以用另一条渠道(打个电话、发个语音)核对。核对后可以钉住,之后对方公钥再变会自动红色警告。</p>
+    <p>这个思路不是我发明的,借鉴了 Signal 的 Safety Number 和 Matrix 的 SAS。但有个细节我改了:Matrix 社区已在提案中建议弃用 emoji 验证(不同系统渲染不一致),所以 Nymir 把<strong>15 位数字作为唯一主验证手段,emoji 只作视觉辅助</strong>。</p>
+    <p>最关键的是这句话我写进了文档:<strong>核对是可选行为,不核对等同于裸奔。</strong>我不想让用户以为"开了加密就安全了"。</p>
+
+    <h3>3. 验签失败要看得见</h3>
+    <p>验签失败的消息,气泡上会明确标示,<strong>不静默展示</strong>。这是一个很小的交互决定,但逻辑很硬:安全问题上的沉默,等于帮攻击者隐瞒。</p>
+
+    <h2>还做了什么</h2>
+    <ul>
+      <li><strong>阅读即焚</strong> — 被查看后可选择自动销毁(但要说明:防不住对方截图或复制)</li>
+      <li><strong>本地存储加密</strong> — AES-256-GCM,PBKDF2 60 万次迭代派生密钥</li>
+      <li><strong>持久化身份</strong> — 刷新页面后加密身份不变,安全码核对长期有效</li>
+      <li><strong>可验证密钥轮换</strong> — 换钥时用旧签名私钥签新公钥,对端验签通过才接受(ADR-007 有完整记录)</li>
+      <li><strong>加密备份</strong> — 换设备可恢复,但必须用同一把锁屏密码</li>
+      <li><strong>二维码离线配对</strong> — v1.6.0 起可以扫码加入房间</li>
+    </ul>
+    <p>293 项测试,React 19 + TypeScript + Vite,AGPL-3.0 协议。CI 里挂着 CodeQL 和 Semgrep 做必检门禁。</p>
+
+    <h2>做不到什么(这部分请认真读)</h2>
+    <ul>
+      <li><strong>高风险通信不要用</strong> — 记者、活动人士、举报人面临国家级对手的场景,请选经过实战检验的专业工具</li>
+      <li><strong>流量混淆强度有限</strong> — 约每 30 秒、固定约 48 字节的噪声,等间隔等长填充在流量分析中可能可识别,对抗不了认真的分析</li>
+      <li><strong>无服务端离线收件箱</strong> — 对方不在线,消息就发不出去</li>
+      <li><strong>心跳消息不加密</strong> — 每 5 秒的 ping/pong 明文走 P2P 通道,不泄露内容但泄露在线状态</li>
+      <li><strong>忘记锁屏密码 = 数据永久丢失</strong> — 包括备份文件也打不开,这不是吓唬人</li>
+      <li><strong>锁屏密码至少 10 位</strong> — 太短会被离线暴力破解</li>
+    </ul>
+
+    <h2>为什么还是做了</h2>
+    <p>因为"一个不懂密码学的人能不能做出像样的加密工具"本身就是值得验证的问题。答案是:<strong>能做出功能,但做不出信任</strong>。</p>
+    <p>信任需要专业审计、需要时间、需要有人真的拿它去对抗对手——这些我都给不了。我能给的,是把做不到的事情一条一条写在最显眼的地方。</p>
+    <p>这大概是这个项目最诚实的部分,也是我最看重它的原因。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue.github.io/Nymir/">在线体验</a>
+      <a href="https://github.com/xiaoyu-hue/Nymir">GitHub 仓库</a>
+      <a href="index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="lang"><a href="../index.html">简体中文</a> · <a href="#">English</a></div>
+  <div>© 2026 xiaoyu-hue · <span class="sign">一半烟火以谋生，一半诗意以谋爱</span></div>
+</div></footer>
+
+<script src="../assets/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>xy-club:改四处文案,就能换一个俱乐部 · xiaoyu-hue</title>
+<meta name="description" content="俱乐部官网模板 xy-club:官网与后台共用一份 JSON,改内容不改代码;以及它在鉴权上做了哪些妥协。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="ocean-bg"></div><div class="orb a"></div><div class="orb b"></div>
+
+<nav class="nav"><div class="wrap">
+  <a class="brand" href="../index.html">xiaoyu<span>-hue</span></a>
+  <div class="nav-links">
+    <a href="../index.html#about">关于</a>
+    <a href="../index.html#projects">项目</a>
+    <a href="index.html">博客</a>
+    <a href="../index.html#contact">联系</a>
+  </div>
+</div></nav>
+
+<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>xy-club:改四处文案,就能换一个俱乐部</h1>
+    <div class="date">2026-10-01 · 项目故事 · <a href="https://github.com/xiaoyu-hue/xy-club">xy-club</a></div>
+    <div>
+      <span class="tag">模板复用</span><span class="tag">零数据库</span><span class="tag">可视化后台</span><span class="tag">123 项测试</span>
+    </div>
+
+    <blockquote>
+      <strong>部署后请第一时间修改默认管理密码。</strong>后台鉴权是单密码机制,未经专业安全审计。
+    </blockquote>
+
+    <p>前两个项目是"我自己要用",这个不一样——它是我做给别人用的第一个东西。</p>
+
+    <h2>起因:一个俱乐部想有官网,通常卡在两件事</h2>
+    <p>要么找人开发,花钱;要么用建站平台,被模板绑死,想改点东西就得加钱。<strong>中间缺一个"够用、免费、能自己改"的选项。</strong></p>
+    <p>所以xy-club 的定位是:<strong>一套代码,改内容就能给任意俱乐部用。</strong>换一个俱乐部,改四处文案、换个主题色就行,不用碰代码。</p>
+
+    <h2>核心设计:官网和后台共用一份数据</h2>
+    <p>所有内容存在一个 <code>db.json</code> 文件里。<strong>后台改什么,前台立刻是什么</strong>——不需要重新构建,不需要部署,不需要懂技术。这在技术上很朴素,但正是"非技术人员能自己维护"的关键。</p>
+    <p>后台是可视化的:板块可以增删改、上下排序、一键显隐,随时新增板块。目前支持多种板块类型——价目列表、卡片网格、客户评价、常见问答、须知列表、图片集、图文段落,以及可引用全局字段的自由文本。</p>
+
+    <h2>我做的取舍</h2>
+
+    <h3>1. 零数据库 —— 代价是不能扛并发</h3>
+    <p>不用 MySQL、不用 PostgreSQL,就是单个 JSON 文件加 Node.js + Express。好处是任何支持 Node 的平台都能跑,不需要配数据库、不需要付数据库钱。<strong>代价是只能跑一个进程,多副本部署会写冲突,也不适合高流量。</strong></p>
+
+    <h3>2. 零前端框架 —— 代价是代码更啰嗦</h3>
+    <p>原生 HTML/CSS/JS,没有 React/Vue,没有打包器。改完刷新就生效。这个底线我写进了贡献指南——<strong>不接受引入前端框架的 PR</strong>,因为一旦引入,这个项目就不再是"下载下来就能跑"了。</p>
+
+    <h3>3. 视觉上舍得花力气</h3>
+    <p>8 套主题配色(4 套暗色:极光紫 / 深海蓝 / 落日金 / 晨雾白;4 套亮色商务:米白·晨雾 / 浅灰·云影 / 燕麦·暖调 / 藏蓝·经典),后台一键切换。8 处微交互:光标高光追踪、卡片 3D 微倾斜、按钮涟漪、数字滚动、滚动进度条、返回顶部、导航高亮、错落渐显。</p>
+    <p>移动端会自动降级——倾斜和高光只在有鼠标的设备生效,触屏不会误触发。这类细节是"看起来专业"和"真的专业"的分界线。</p>
+
+    <h3>4. 导出配置时把图片内联</h3>
+    <p>这是个很小的决定,但解决了一个真实的痛点:早期版本导出配置再导入到新站点,图片全裂了。现在导出的 JSON 会把图片<strong>内联成 data URI</strong>,配置自包含,导入新站点时自动还原成图片文件。<strong>不再丢图。</strong></p>
+
+    <h2>安全上做了什么,以及没做什么</h2>
+    <p>做了的:管理密码用 scrypt 哈希存储(不存明文)、登录失败限流(同 IP 连续 5 次错误锁定 5 分钟)、写操作强制校验 CSRF token、HTTP 安全头(nosniff / X-Frame-Options / CSP)、输入白名单校验防原型链污染、上传限 8MB 且禁用 svg(可内嵌脚本)。</p>
+    <p>没做的,也必须说清楚:</p>
+    <ul>
+      <li><strong>单密码单管理员</strong> — 没有多用户、没有角色权限,无法区分谁改了什么</li>
+      <li><strong>会话存内存</strong> — 服务重启后所有登录态失效</li>
+      <li><strong>上传只校验格式和大小</strong> — 没做图片内容扫描</li>
+      <li><strong>未经专业安全审计</strong></li>
+    </ul>
+
+    <h2>不适合什么场景</h2>
+    <ul>
+      <li><strong>涉及支付的交易站点</strong> — 没有订单、库存、支付与对账,也不满足合规要求</li>
+      <li><strong>需要多管理员协作</strong> — 单密码,分不清谁改了什么</li>
+      <li><strong>高流量 / 高并发</strong> — 单进程 + JSON 全量读写,没有缓存</li>
+      <li><strong>需要 SEO 与服务端渲染</strong> — 内容由前端 JS 异步拉取,爬虫不一定拿得到</li>
+      <li><strong>存储用户敏感信息</strong> — 单密码鉴权 + 无操作审计日志,担不起实名、证件这类数据</li>
+    </ul>
+
+    <h2>一句话</h2>
+    <p>xy-club 追求的是"开箱即用、零依赖",代价是放弃了企业级能力。<strong>这个取舍是我主动选的,但它确实是取舍,不是优点。</strong></p>
+    <p>123 项单元测试是唯一强制门禁,覆盖密码哈希与限流、CSRF、安全头、输入验证、上传白名单、内容容错,以及"文档和代码是否还对齐"——最后这条听着奇怪,但对由 AI 辅助开发的项目来说,文档漂移是真实风险。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue.github.io/xy-club/">在线预览</a>
+      <a href="https://github.com/xiaoyu-hue/xy-club">GitHub 仓库</a>
+      <a href="index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="lang"><a href="../index.html">简体中文</a> · <a href="#">English</a></div>
+  <div>© 2026 xiaoyu-hue · <span class="sign">一半烟火以谋生，一半诗意以谋爱</span></div>
+</div></footer>
+
+<script src="../assets/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>xy-intro-card:一张能发走的名片,和一次"克制"的练习 · xiaoyu-hue</title>
+<meta name="description" content="单文件、零依赖的个人介绍名片生成器 xy-intro-card:为什么导出的是独立 HTML 而不是图片,以及它刻意不做什么。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="ocean-bg"></div><div class="orb a"></div><div class="orb b"></div>
+
+<nav class="nav"><div class="wrap">
+  <a class="brand" href="../index.html">xiaoyu<span>-hue</span></a>
+  <div class="nav-links">
+    <a href="../index.html#about">关于</a>
+    <a href="../index.html#projects">项目</a>
+    <a href="index.html">博客</a>
+    <a href="../index.html#contact">联系</a>
+  </div>
+</div></nav>
+
+<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>xy-intro-card:一张能发走的名片,和一次"克制"的练习</h1>
+    <div class="date">2026-10-01 · 项目故事 · <a href="https://github.com/xiaoyu-hue/xy-intro-card">xy-intro-card</a></div>
+    <div>
+      <span class="tag">单文件</span><span class="tag">零依赖</span><span class="tag">离线可用</span><span class="tag">双击即用</span>
+    </div>
+
+    <p>这是四个项目里最小的一个,也是我最喜欢的一个。因为它回答了一个我一直在想的问题:<strong>工具做到多小,才算够?</strong></p>
+
+    <h2>起因:官网搭好了,成员的名片怎么办</h2>
+    <p>做完 xy-club(俱乐部官网模板)之后,自然的下一步是:俱乐部官网有了,里面的成员自己要不要一张个人介绍卡?</p>
+    <p>需求很具体——填内容就出卡,不用注册、不用联网、<strong>发给别人就能打开</strong>。而且风格要和官网对得上。</p>
+
+    <h2>它有多小</h2>
+    <ul>
+      <li><strong>单个 HTML 文件</strong>,字体、图标、头像全部内嵌</li>
+      <li><strong>零第三方依赖</strong> — 没有 npm 包,没有 CDN 外链,没有在线字体托管</li>
+      <li><strong>不联网、不上传</strong> — 所有计算都在你的浏览器里完成,头像和填写的内容不会离开本机</li>
+      <li><strong>双击就能用</strong> — 不需要服务器,不需要安装任何东西</li>
+    </ul>
+    <p>功能上:两种模式可切换——「人设卡」(名字·年龄·星座·技能·签名)和「通用名片」(姓名·头衔·简介·联系方式);8 套主题色,与 xy-club 同名同色;头像上传后用 Canvas 自动压到 512px,大图不会卡死;左侧填、右侧实时预览,满意了点一下导出。</p>
+
+    <h2>最关键的一个决定:导出的是 HTML,不是图片</h2>
+    <p>大部分名片工具导出 PNG 或 PDF。xy-intro-card 导出的是<strong>一份独立的 HTML 文件</strong>。</p>
+    <p>理由很实际:图片发过去,对方只能看;独立 HTML 发过去,对方双击就能打开,<strong>而且还是能交互、能看清、能缩放的</strong>。又因为所有资源都内嵌了,这份文件断网也能正常显示。</p>
+    <p>代价是:它不是一张能直接发朋友圈的图。这是取舍,不是缺陷——但我会把它明说出来,免得有人下载后才发现不是自己想要的。</p>
+
+    <h2>和 xy-club 是同一家族</h2>
+    <p>两个项目视觉同源:液态玻璃风格一致,四套主题色(落日金 / 深海蓝 / 极光紫 / 晨雾白)同名同色。典型用法是——<strong>用 xy-club 搭好俱乐部官网,再用这个工具为每位成员生成统一风格的名片,挂到官网的「团队成员」板块。</strong></p>
+    <p>顺便说一句:默认演示里的「XY俱乐部」只是示例,并非专属品牌。把演示内容换成任意俱乐部或团队,工具逻辑完全不变。</p>
+
+    <h2>"克制"体现在哪儿</h2>
+    <p>这个项目最有意思的地方,是我<strong>决定不做什么</strong>:</p>
+    <ul>
+      <li><strong>不做后端存储</strong> — 没有账号、没有云端、数据不出本机</li>
+      <li><strong>不做多人协作编辑</strong> — 它是个人工具</li>
+      <li><strong>不做复杂动画和 3D</strong> — 刻意保持轻量优先</li>
+      <li><strong>不做服务端鉴权</strong> — 因为压根没有服务端</li>
+    </ul>
+    <p>每一条"不做"都让工具更小、更稳、更不容易坏。对四个项目做下来,我最大的体会是:<strong>加功能容易,克制难。</strong>尤其当 AI 能在几分钟内给你变出一个新功能的时候,克制就更难了。</p>
+
+    <h2>还有几处小用心</h2>
+    <p>移动端优先的多断点适配;帧率不足时自动降级;尊重系统的「减弱动态」无障碍设置(系统里开了就会自动关掉动画);手机端精简毛玻璃层数以保证流畅。这些都是很小的事,但加起来决定了"拿出去给别人用"时别人的第一印象。</p>
+
+    <h2>做不到什么</h2>
+    <ul>
+      <li>需要后端存储 / 多人在线协作编辑 — 不做</li>
+      <li>需要复杂动画 / 3D — 刻意保持轻量</li>
+      <li>需要服务端鉴权 — 没有后端</li>
+    </ul>
+
+    <h2>写在最后</h2>
+    <p>四个项目写完,回头看,最小的一个反而最贴近我一开始想证明的事:<strong>不会写代码的人,也可以做出一个别人真的能用的东西。</strong></p>
+    <p>当然,这四个项目没有一个是"我手写代码"做出来的。但它们每一个,都是我做的决定。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue.github.io/xy-intro-card/">在线体验</a>
+      <a href="https://github.com/xiaoyu-hue/xy-intro-card">GitHub 仓库</a>
+      <a href="index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="lang"><a href="../index.html">简体中文</a> · <a href="#">English</a></div>
+  <div>© 2026 xiaoyu-hue · <span class="sign">一半烟火以谋生，一半诗意以谋爱</span></div>
+</div></footer>
+
+<script src="../assets/main.js"></script>
+</body>
+</html>
