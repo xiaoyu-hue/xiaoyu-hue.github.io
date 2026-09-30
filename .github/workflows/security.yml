@@ -1,0 +1,21 @@
+name: Security & Integrity Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    name: 链接 / CSP / 第三方资源
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 仓库零依赖,直接用 runner 自带的 python3,无需安装步骤
+      - name: 运行完整性检查
+        run: python3 scripts/check_integrity.py

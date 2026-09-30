@@ -45,10 +45,19 @@ xiaoyu-hue.github.io/
 ├── assets/
 │   ├── style.css       # Liquid glass × ocean theme
 │   └── main.js         # Scroll reveal (respects prefers-reduced-motion)
-└── blog/
-    ├── index.html      # Blog index
-    └── post-*.html     # Articles
+├── blog/
+│   ├── index.html      # Blog index
+│   └── post-*.html     # Articles
+├── scripts/
+│   └── check_integrity.py   # Integrity check (links / CSP / third-party)
+├── docs/
+│   └── EDGE_SETUP.md   # Edge layer setup (optional hardening)
+├── _headers            # Security headers; applies on Cloudflare Pages-style hosts
+└── .github/workflows/
+    └── security.yml    # CI: runs the integrity check on every push
 ```
+
+> `_headers` has **no effect on GitHub Pages** (Pages does not support custom response headers). It is included for a future move to a host that supports it, such as Cloudflare Pages. See `docs/EDGE_SETUP.md`.
 
 ---
 
@@ -64,6 +73,20 @@ python3 -m http.server 8000
 ```
 
 Chrome or Edge recommended.
+
+---
+
+## Security
+
+This is a purely static site: no backend, no database, no login state, no visitor data collected. Measures in place:
+
+- **Zero third-party resources** — nothing is loaded from an external CDN (Google Fonts has been removed)
+- **Strict CSP** — delivered via `<meta http-equiv>`, with no `unsafe-inline` / `unsafe-eval`
+- **CI self-check** — every push verifies dead links, CSP consistency, third-party resources, and inline-script regressions
+
+**Known limitations:** GitHub Pages does not support custom response headers, so HSTS, `X-Frame-Options`, and `nosniff` **cannot be set**; `frame-ancestors` is ignored by browsers when delivered via meta, so clickjacking protection is effectively absent. Full list in [SECURITY.md](SECURITY.md); how to close the gap in [docs/EDGE_SETUP.md](docs/EDGE_SETUP.md).
+
+Report vulnerabilities via GitHub private vulnerability reporting (repo → Security → Advisories).
 
 ---
 

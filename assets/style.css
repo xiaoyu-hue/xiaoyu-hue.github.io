@@ -21,7 +21,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
-  font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Hiragino Sans GB",sans-serif;
   color:var(--text);
   background:var(--abyss);
   line-height:1.7;
@@ -121,6 +121,7 @@ footer a{color:var(--accent);text-decoration:none}
 .article code{background:var(--glass-bg);padding:2px 7px;border-radius:6px;font-family:ui-monospace,monospace;font-size:14px;color:var(--accent)}
 
 /* 页脚签名 */
+.footer-sign{margin-top:8px}
 .sign{color:var(--accent);letter-spacing:.06em;font-size:13.5px}
 /* 文章内元素 */
 .article ul,.article ol{margin:0 0 18px 22px;color:#cfe2ec;font-size:16.5px}
