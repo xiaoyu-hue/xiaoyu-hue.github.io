@@ -171,6 +171,22 @@ xiaoyu-hue.github.io/
 - **组件规则不许用 `transition` 简写**：简写会把 `transition-delay` 一并重置为 `0s`，卡片同时带 `.card` 与 `.reveal` 时就会把错落延迟冲掉，表现为"动效齐刷刷一起出现"。这里全部改用 `transition-property` / `-duration` / `-timing-function` 长写。
 - **`data-motion` 必须无条件写入 `on`/`off`**：只写 `off` 会导致用户从关切回开时，残留的 `off` 属性永远清不掉。
 
+### 原生 CSS 动效增强（v6 大升级）
+
+v6 把视觉 / 微动效体系做了一次大升级，但**仍然零第三方库、零运行时依赖、不改 CSP**——全部用浏览器原生 CSS 能力实现，并接入上面这套降级网络。五块新增能力：
+
+| 能力 | 原生技术 | 解决什么 | 降级 |
+|------|----------|----------|------|
+| 页面切换丝滑 | View Transitions（`@view-transition`） | 同域页面跳转有原生 App 般的过渡，而不是硬切 | `prefers-reduced-motion` / `data-motion=off` 下关掉；不支持的浏览器正常跳转 |
+| 滚动入场零 JS | 滚动驱动动画（`animation-timeline: view()`） | `.reveal` 由纯 CSS 驱动，跑在合成器线程，主线程零负担 | 无 `@supports` 时自动回退 `main.js` 的 `IntersectionObserver`，两套并存 |
+| 精准响应式 | 容器查询（`@container`）+ `:has()` | 卡片按"自己容器宽度"适配，键盘聚焦整卡高亮 | 不支持直接忽略，退回媒体查询布局 |
+| 审美精准 | `color-mix()` 派生色 + `text-wrap: balance` | 主题色改一处、派生色全跟着变；标题换行更均衡 | 不支持退回原样 |
+| 入场 / 展开动画 | `transition-behavior: allow-discrete` | 设置面板收起时先播完淡出再消失，不"啪"地断 | 不支持退回现有 visibility 过渡 |
+
+**为什么不加动画库**：第三方库（如 cssanimation / Hover.css）会引入大量通用 CSS，稀释本站"令牌驱动、精准可控"的体系，也违背运行时零依赖的定位。这次升级证明，现代浏览器原生能力已足够撑起"系统级流畅 + 审美精准 + 移动桌面兼顾"。
+
+> 参考实践：Andy Bell 的 [piccalil.li](https://piccalil.li) / "Build Excellent Websites" 方法论——用原生 CSS + View Transitions 做顶级静态站，与本站理念一致（CSS 优先、reduced-motion 优先、只用 `transform`/`opacity` 防布局抖动）。
+
 ---
 
 ## 离线与安装（PWA）
@@ -203,12 +219,12 @@ xiaoyu-hue.github.io/
 `sw.js` 顶部有一个版本号：
 
 ```js
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 ```
 
 **发布新内容后，把这个数字加一**（`v5` → `v6`），用户下次访问时 Service Worker 会丢掉旧缓存、重新抓取，并弹出「有新版本可用」的提示条。
 
-不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。本站历经模板化、机器可读层、微动效系统等多次大改，缓存版本已累计升到 `v5`，每次大改都靠升版本号让老用户尽快拿到新样式与脚本。
+不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。本站历经模板化、机器可读层、微动效系统、原生 CSS 动效大升级等多次大改，缓存版本已累计升到 `v6`，每次大改都靠升版本号让老用户尽快拿到新样式与脚本。
 
 ### 为什么 Service Worker 必须在根目录
 
@@ -421,7 +437,7 @@ node scripts/build-icons.mjs
 
 ## 开源致敬
 
-这个站点能长期保持"看起来简单、改起来放心"，靠的是下面这些项目。先说清一个事实：线上站点**不含任何第三方代码**，所以真正值得致谢的只有开发期工具与托管平台——下面这些。
+这个站点能长期保持"看起来简单、改起来放心"，靠的是下面这些项目。先说清一个事实：线上站点**不含任何第三方代码**，所以真正值得致谢的只有开发期工具、Web 标准与托管平台——下面这些。
 
 **[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft（当前 ^1.63.0）
 
@@ -434,6 +450,10 @@ node scripts/build-icons.mjs
 **托管平台**
 
 [Cloudflare Pages](https://pages.cloudflare.com/)（主站）与 [GitHub Pages](https://pages.github.com/)（备用站）都提供免费的静态托管与自动构建，两者故障域不同，互为兜底。它们不是本项目的依赖，但没有它们就没有这个站点。
+
+**现代 CSS 能力与规范**
+
+本站 v6 的动效升级（View Transitions、滚动驱动动画、容器查询、`:has()`、`color-mix()`、`@starting-style` 等）全部来自 W3C CSS 工作组的标准，由浏览器原生实现 —— 无需任何库。值得单独致谢的还有 Andy Bell 的 [piccalil.li](https://piccalil.li) / "Build Excellent Websites" 方法论：它把"原生 CSS 优先、reduced-motion 优先、只用 `transform`/`opacity` 防布局抖动"做成可复制的实践，本站动效系统的理念与之高度一致。
 
 **刻意的"不引入"**
 

@@ -602,6 +602,27 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
   --stagger-step:40ms;
 }
 
+/* ---------- 跨页过渡（View Transitions，渐进增强） ---------- */
+/*
+   浏览器原生能力：在样式表里声明 @view-transition{navigation:auto}，
+   同域页面间跳转（含浏览器前进/后退）自动获得丝滑过渡，不写一行 JS，
+   也不引入任何依赖。这是给「系统级流畅」补的最直接一块。
+
+   给跨页都存在的元素（导航、品牌字、主内容、页脚）各自命名，
+   浏览器会在切换时把它们从旧位置/尺寸 morph（形变）到新位置/尺寸，
+   而不是整页硬切 —— 原生 App 般的连贯感。命名必须页面内唯一，
+   这些元素来自共享基类 base.html，所有页都存在且唯一，所以安全。
+
+   降级：下方 prefers-reduced-motion / data-motion=off 两块分别把它们
+   的 view-transition-name 置 none，关掉页面过渡（见第 2 / 4 层）。
+   不支持 View Transitions 的浏览器（部分 Firefox / Safari）直接跳过、
+   正常跳转，内容完全正常 —— 安全降级，不是故障。 */
+@view-transition { navigation: auto; }
+.nav          { view-transition-name: nav; }
+.brand        { view-transition-name: brand; }
+#main         { view-transition-name: main; }
+.footer .wrap { view-transition-name: footer; }
+
 /* ---------- 第 1 层：编排层 ---------- */
 /*
    分组错落（stagger）只靠 CSS 变量传递：
@@ -715,6 +736,27 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 .reveal-slide{transform:translateY(var(--shift-md))}
 .reveal-fade{transform:none}
 
+/* ---------- 滚动驱动入场（Scroll-driven，渐进增强，与 JS 兜底共存） ---------- */
+/*
+   把「滚动淡入」从 JS 触发改由纯 CSS 滚动时间线驱动：元素滚入视口时
+   浏览器自动播放，跑在合成器线程，主线程零负担，低端机也顺。
+   仅在不支持 animation-timeline 的浏览器（无 @supports）下跳过，
+   自动回退到 main.js 的 IntersectionObserver 路径 —— 两套并存，不删任何现有代码。
+   错落：scroll 路径按元素各自进入视口的先后自然呈现；JS 兜底路径
+   保留现有逐元素 --i 封顶 320ms 错落。 */
+@supports (animation-timeline: view()) {
+  .reveal {
+    transition: none;
+    animation: reveal-in linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 35%;
+  }
+  @keyframes reveal-in {
+    from { opacity: 0; transform: translateY(var(--shift-lg)); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
 /* 设置面板：从右上角轻微下拉展开。
    位移只用 --shift-sm，避免面板"飞"出来挡住导航。
    display:none 不能做过渡，所以关闭态用 visibility + opacity + transform，
@@ -754,11 +796,12 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
     --shift-lg:0px;
   }
   .ocean-bg,.orb,.hero-card{animation:none!important}
-  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s}
+  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s;animation:none}
   .card:hover,.post-card:hover{transform:none}
   .btn:active,.prefs-toggle:active,.prefs-seg button:active,
   .prefs-actions button:active{transform:none}
   html{scroll-behavior:auto}
+  .nav,.brand,#main,.footer .wrap{view-transition-name:none}
 }
 
 /* 路径 2：用户开了系统级「增强对比度」
@@ -776,7 +819,7 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 /* 路径 6：脚本完全不可用。
    由 @media(scripting:none) 兜底，不依赖任何 JS。 */
 @media(scripting:none){
-  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s}
+  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s;animation:none}
   .prefs-panel{visibility:visible;opacity:1;transform:none}
   .nav{box-shadow:none}
 }
@@ -834,10 +877,59 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 :root[data-motion="off"] .orb.a,
 :root[data-motion="off"] .orb.b{animation:none}
 :root[data-motion="off"] .hero-card{animation:none}
-:root[data-motion="off"] .reveal{transition-delay:0s}
+:root[data-motion="off"] .reveal{transition-delay:0s;animation:none}
 :root[data-motion="off"] .btn:active,
 :root[data-motion="off"] .prefs-toggle:active,
 :root[data-motion="off"] .prefs-seg button:active,
 :root[data-motion="off"] .prefs-actions button:active{transform:none}
 :root[data-motion="off"] .card:hover,
 :root[data-motion="off"] .post-card:hover{transform:none}
+:root[data-motion="off"] .nav,
+:root[data-motion="off"] .brand,
+:root[data-motion="off"] #main,
+:root[data-motion="off"] .footer .wrap{view-transition-name:none}
+
+/* ---------- 精准响应式（容器查询 + :has，渐进增强） ---------- */
+/*
+   这不是「动效」，但和动效体系同属「系统级流畅 + 审美精准」的底座，
+   放这里统一管理。
+
+   容器查询 container queries：让卡片按「自己容器的宽度」响应，而非
+   按屏幕宽度。同一张卡片在侧栏（窄）和主内容区（宽）表现不同，
+   移动/桌面真正按需适配，而不是粗暴按屏宽切一刀。
+   :has()：父选择器。让卡片内任意可交互元素获得键盘焦点时，整卡
+   高亮 —— 比只亮子元素更清楚的聚焦反馈，利好键盘/无障碍用户。
+
+   两者都不支持的浏览器直接忽略这些规则，退回到上面的媒体查询布局，
+   安全降级（不影响内容）。 */
+.card, .post-card { container-type: inline-size; }
+/* 卡片容器自身很窄时（移动端单列、或塞进侧栏），内边距与标题收紧，
+   避免内容贴边、行高拥挤 —— 这是媒体查询按屏宽无法精细表达的。 */
+@container (max-width: 340px) {
+  .card, .post-card { padding: 20px; }
+  .card h3, .post-card h3 { font-size: 1.15rem; }
+}
+/* 键盘聚焦反馈：卡片内任意链接/按钮获得焦点时，整卡边框点亮。
+   用 :focus-visible 只在键盘导航时触发，鼠标点击不闪。
+   边框/光晕都从主题色 --accent 用 color-mix 派生，减少写死色值。 */
+.card:has(:focus-visible),
+.post-card:has(:focus-visible) {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* ---------- 审美精准 + 入场动画（color-mix / text-wrap / allow-discrete） ---------- */
+/*
+   方向 4：color-mix() 从主题色 --accent 原生派生 hover 边框色，取代写死的
+   rgba(72,202,228,.4) —— 以后改主题色，所有派生色自动跟着变，不再脱节。
+   text-wrap: balance 让标题换行更均衡（避免末行孤字），低成本高收益。
+   两者都是纯 CSS、零依赖，不支持的浏览器退回原样。
+   方向 5：transition-behavior: allow-discrete 让设置面板的 visibility
+   这类「离散属性」完整过渡 —— 收起时先播完淡出，再真正不可见/不可点，
+   避免「啪」地消失打断阅读。这是 @starting-style / allow-discrete 体系
+   对现有 visibility 方案的直接应用，比改用 display:none 更稳。 */
+.card:hover, .post-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+h1, h2, h3 { text-wrap: balance; }
+.prefs-panel { transition-behavior: allow-discrete; }
