@@ -416,6 +416,69 @@ class TestMotionStylesheet(unittest.TestCase):
                       "缺少脚本不可用时的兜底：没有它 .reveal 会永久白屏")
 
 
+class TestThemeTokens(unittest.TestCase):
+    """主题令牌的结构契约。
+
+    浅色主题的令牌在 style.css 里抄了两遍：一处给显式选择
+    （html[data-theme="light"]），一处给「跟随系统且系统是浅色」
+    （@media(prefers-color-scheme:light) 里的
+    html[data-theme-pref="system"]）。两块必须逐字一致。
+
+    这不是洁癖。只改一处会造成「手动切浅色正常、跟随系统却不达标」
+    这种只在部分路径复现的问题，而这类问题最难查 —— 它取决于访问者
+    机器的系统设置，开发者本地往往复现不出来。
+
+    本次浏览器实测抓到的 --text-faint 对比度不达标就是这条风险的变现：
+    那个值确实在两块里各写了一遍，改色时漏一处就会留下半条修复。
+    """
+
+    # 令牌声明形如 `--dur-base:240ms;   /* 注释 */`。
+    # 值只取到分号为止，行尾注释不会被算进来。
+    TOKEN_RE = re.compile(r"--([a-z0-9-]+)\s*:\s*([^;]+);")
+
+    EXPLICIT_LIGHT = r'html\[data-theme="light"\]\s*\{(.*?)\}'
+    SYSTEM_LIGHT = (
+        r'@media\(prefers-color-scheme:light\)\s*\{\s*'
+        r'html\[data-theme-pref="system"\]\s*\{(.*?)\}'
+    )
+
+    def css(self):
+        return read("assets/style.css")
+
+    def _tokens(self, pattern):
+        """从一个选择器块里抽出令牌字典。
+
+        块内只有单行声明，没有嵌套，所以非贪婪到第一个 } 就够了。
+        """
+        m = re.search(pattern, self.css(), re.S)
+        self.assertIsNotNone(m, f"style.css 里找不到块：{pattern}")
+        return {k: v.strip() for k, v in self.TOKEN_RE.findall(m.group(1))}
+
+    def test_light_tokens_are_identical_in_both_blocks(self):
+        explicit = self._tokens(self.EXPLICIT_LIGHT)
+        system = self._tokens(self.SYSTEM_LIGHT)
+
+        if explicit != system:
+            keys = sorted(set(explicit) | set(system))
+            diffs = [
+                f"  {k}: 显式={explicit.get(k)!r} 跟随系统={system.get(k)!r}"
+                for k in keys
+                if explicit.get(k) != system.get(k)
+            ]
+            self.fail("两块浅色令牌不一致，改色时容易只改一处：\n"
+                      + "\n".join(diffs))
+
+    def test_token_blocks_are_not_empty(self):
+        """防止正则失效后拿两个空字典互相比对，还自认为通过。"""
+        for name, pattern in (("显式浅色", self.EXPLICIT_LIGHT),
+                              ("跟随系统浅色", self.SYSTEM_LIGHT)):
+            tokens = self._tokens(pattern)
+            self.assertGreater(
+                len(tokens), 10,
+                f"{name}块里应当抽出完整的一组令牌，实际只有 {len(tokens)} 个",
+            )
+
+
 class TestPwaContract(unittest.TestCase):
     """PWA 相关的跨页契约。
 
