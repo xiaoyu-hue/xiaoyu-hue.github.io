@@ -1,16 +1,21 @@
-// 站点偏好设置:主题(深色/浅色/跟随系统) + 博客阅读进度
+// 站点偏好设置:主题(深色/浅色/跟随系统) + 动效开关 + 博客阅读进度
 //
-// 两条硬约束(改动前请先读):
+// 三条硬约束(改动前请先读):
 // 1. CSP 为 style-src 'self',没有 unsafe-inline —— 任何 el.style.xxx 或
 //    setAttribute('style',...) 都会触发违规并被拦截。所以主题切换一律用
-//    class 切换(html[data-theme])实现,不碰内联样式。
-// 2. CSP 为 connect-src 'none' —— 不做任何联网同步,数据只留在本机 localStorage。
+//    class/属性切换(html[data-theme]、html[data-motion])实现。
+//    唯一的例外是 setProperty('--i', ...),它写的是自定义属性、
+//    作用在 CSSOM 而非 style 特性上,不触发 CSP(见 assets/main.js)。
+// 2. CSP 为 connect-src 'self' —— 不做任何联网同步,数据只留在本机。
+// 3. theme-boot.js 已在首屏应用过一次主题与动效。本文件是"运行时"的
+//    唯一真相来源,两者必须对同一个 KEY、同一个 schema 保持兼容。
 (function () {
   'use strict';
 
   var KEY = 'xiaoyu-hue:prefs:v1';
   var SCHEMA = 1;
   var THEMES = ['system', 'dark', 'light'];
+  var MOTIONS = ['on', 'off'];
 
   // ---------- 存储层 ----------
   function read() {
@@ -40,17 +45,21 @@
     return {
       schema: SCHEMA,
       theme: 'system',
+      motion: 'on',      // 'on' | 'off'，见 applyMotion()
       reading: {},       // { "post-1": { at: "ISO 时间" } }
       updatedAt: new Date().toISOString(),
     };
   }
 
   var state = (function () {
-    var saved = read();
-    if (!saved) return defaults();
     var d = defaults();
+    var saved = read();
+    if (!saved) return d;
     // 逐字段做白名单校验,避免把损坏数据带进运行时
     if (THEMES.indexOf(saved.theme) >= 0) d.theme = saved.theme;
+    // 老数据没有 motion 字段（PWA 版本升级上来的用户），
+    // 缺省保持 'on' —— 不能因为字段缺失就静默关掉他们的动效
+    if (MOTIONS.indexOf(saved.motion) >= 0) d.motion = saved.motion;
     if (saved.reading && typeof saved.reading === 'object') d.reading = saved.reading;
     if (typeof saved.updatedAt === 'string') d.updatedAt = saved.updatedAt;
     return d;
@@ -92,6 +101,32 @@
     return true;
   }
 
+  // ---------- 动效总开关 ----------
+  // 第 4 层开关的落点：把偏好写到 html[data-motion]，
+  // CSS 那边的 :root[data-motion="off"] 会把全部时长/位移令牌归零。
+  //
+  // 为什么开关必须落在 CSS 变量上，而不是让 JS 去逐个关动画：
+  // 逐个关意味着每加一个动效组件都要记得回来改这里，一定会漏。
+  // 归零令牌则是一次性的全局作用 —— 新加的任何动效只要用了令牌，
+  // 自动受开关管辖，不需要额外维护。
+  //
+  // 注意：本开关不影响系统级 prefers-reduced-motion。
+  // 系统偏好由 CSS 的 @media 独立生效，二者是"或"的关系 ——
+  // 系统说不要动效，用户在本站也开不回来（这是正确的：
+  // 系统级设置表达的是无障碍需求，不该被站点覆盖）。
+  function applyMotion() {
+    document.documentElement.setAttribute('data-motion', state.motion);
+  }
+
+  function setMotion(motion) {
+    if (MOTIONS.indexOf(motion) < 0) return false;
+    state.motion = motion;
+    applyMotion();
+    save();
+    syncPanel();
+    return true;
+  }
+
   // ---------- 博客阅读进度 ----------
   function currentPostId() {
     var m = window.location.pathname.match(/post-(\d+)\.html$/);
@@ -118,6 +153,14 @@
     var current = state.theme;
     Array.prototype.forEach.call(panel.querySelectorAll('[data-theme-option]'), function (btn) {
       var on = btn.getAttribute('data-theme-option') === current;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    // 动效开关：同一套"选中态 + aria-pressed"约定，
+    // 屏幕阅读器读到的状态与实际生效状态保持一致
+    var motion = state.motion;
+    Array.prototype.forEach.call(panel.querySelectorAll('[data-motion-option]'), function (btn) {
+      var on = btn.getAttribute('data-motion-option') === motion;
       btn.classList.toggle('is-active', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
@@ -181,7 +224,7 @@
       schema: SCHEMA,
       exportedAt: new Date().toISOString(),
       source: 'xiaoyu-hue.github.io',
-      data: { theme: state.theme, reading: state.reading },
+      data: { theme: state.theme, motion: state.motion, reading: state.reading },
     };
     var text = JSON.stringify(payload, null, 2);
     var blob = new Blob([text], { type: 'application/json' });
@@ -224,9 +267,17 @@
     if (THEMES.indexOf(d.theme) < 0) {
       return { ok: false, msg: '主题值不合法。' };
     }
+    // motion 是后加的字段。老备份文件里没有它，
+    // 此时保持当前设置而不是判定为非法 —— 拒绝整个文件会让用户
+    // 无法用旧备份恢复主题和阅读记录，代价远大于收益。
+    if (d.motion !== undefined && MOTIONS.indexOf(d.motion) < 0) {
+      return { ok: false, msg: '动效设置值不合法。' };
+    }
     state.theme = d.theme;
+    if (MOTIONS.indexOf(d.motion) >= 0) state.motion = d.motion;
     state.reading = (d.reading && typeof d.reading === 'object') ? d.reading : {};
     applyTheme();
+    applyMotion();
     save();
     syncPanel();
     renderReading();
@@ -236,6 +287,7 @@
   function resetAll() {
     state = defaults();
     applyTheme();
+    applyMotion();
     save();
     syncPanel();
     renderReading();
@@ -292,6 +344,13 @@
     Array.prototype.forEach.call(panel.querySelectorAll('[data-theme-option]'), function (btn) {
       btn.addEventListener('click', function () {
         setTheme(btn.getAttribute('data-theme-option'));
+      });
+    });
+
+    // 动效开关
+    Array.prototype.forEach.call(panel.querySelectorAll('[data-motion-option]'), function (btn) {
+      btn.addEventListener('click', function () {
+        setMotion(btn.getAttribute('data-motion-option'));
       });
     });
 
@@ -362,8 +421,12 @@
   }
 
   // ---------- 启动 ----------
-  // 主题必须在最早时机应用,避免刷新时先闪一下默认色
+  // 主题与动效必须在最早时机应用,避免刷新时先闪一下默认状态。
+  // theme-boot.js 已经在 <head> 里应用过一次;这里再应用一次不是冗余 ——
+  // 它是为了让"页面被 bfcache 还原"和"运行中被别的脚本改过属性"
+  // 这两种情况下,运行时的真相来源仍然收敛到本文件。
   applyTheme();
+  applyMotion();
 
   // 系统主题变化时,只有「跟随系统」模式下才需要跟着变
   try {
