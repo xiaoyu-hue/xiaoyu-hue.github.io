@@ -188,13 +188,8 @@ footer a{color:var(--accent);text-decoration:none}
 .article .links a{font-size:14px;color:var(--accent);text-decoration:none;padding:6px 14px;border:1px solid var(--glass-border);border-radius:999px;margin-right:10px;display:inline-block;margin-bottom:10px}
 .article .links a:hover{background:var(--glass-bg)}
 
-.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease-out),transform .7s var(--ease-out)}
-.reveal.in{opacity:1;transform:none}
-/* 同容器内的元素错落浮现,避免齐刷刷出现 */
-.grid .reveal:nth-child(2),.contact-grid .reveal:nth-child(2){transition-delay:.07s}
-.grid .reveal:nth-child(3),.contact-grid .reveal:nth-child(3){transition-delay:.14s}
-.grid .reveal:nth-child(4),.contact-grid .reveal:nth-child(4){transition-delay:.21s}
-.grid .reveal:nth-child(5){transition-delay:.28s}
+/* .reveal 的初始态、过渡与错落延迟统一由文件末尾的「微动效系统」定义，
+   那里是全站时长与位移的唯一来源。此处不留副本，避免两套规则打架。 */
 
 @media(max-width:980px){
   section{padding:68px 0}
@@ -410,14 +405,14 @@ html[data-theme="light"] .post-card:focus-visible{outline-color:#0b7fa8}
   position:absolute;top:calc(100% + 10px);right:0;z-index:60;
   width:min(320px,calc(100vw - 32px));
   padding:20px;
-  display:none;
   /* 面板浮在正文之上，必须比普通玻璃卡更实，否则背后文字会透上来干扰阅读 */
   background:rgba(6,26,42,.94);
   backdrop-filter:blur(20px) saturate(140%);
   -webkit-backdrop-filter:blur(20px) saturate(140%);
   box-shadow:0 18px 48px rgba(0,0,0,.5);
 }
-.prefs-panel.is-open{display:block}
+/* 开关态的显示/隐藏与展开动画统一交给文件末尾的「微动效系统」，
+   那里用 visibility + opacity + transform 实现可过渡的进出场。 */
 .prefs-panel h3{font-size:15px;margin-bottom:4px;color:var(--text)}
 .prefs-panel h4{font-size:13px;color:var(--text-faint);font-weight:600;letter-spacing:.06em;margin:18px 0 8px;text-transform:uppercase}
 .prefs-panel p{font-size:13.5px;color:var(--text-dim);line-height:1.6}
@@ -544,3 +539,265 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
   .pwa-update{flex-wrap:wrap;justify-content:center;bottom:14px}
   .pwa-ios-hint{flex-wrap:wrap;justify-content:center;bottom:auto;top:14px}
 }
+
+/* ============================================================
+   微动效系统（本块必须在文件最末尾，理由见下方「源顺序」说明）
+   ------------------------------------------------------------
+   设计目标只有一句：动效是「状态变化的说明书」，不是装饰。
+   每一次位移、渐显、延迟，都要能让用户看清"什么东西变了、
+   从哪里来、到哪里去"。任何只为好看的动效都应当被删掉。
+
+   四层结构，自上而下：
+
+     第 0 层 令牌层 —— 所有时长/缓动/位移的唯一取值来源
+     第 1 层 编排层 —— 谁先动、谁后动、最多等多久
+     第 2 层 降级层 —— 七条兜底路径，任何一条命中都不能白屏
+     第 3 层 空间层 —— 按"有没有指针悬停能力"分流，不按屏幕宽度
+     第 4 层 总开关 —— html[data-motion="off"] 一把归零
+
+   为什么必须放在文件最末尾：
+   本块用 html[data-motion=...] 和 .reveal 的选择器去覆盖前面
+   的同权重规则。CSS 同权重时靠源顺序取胜，一旦上移，
+   前面的 .reveal{transition:...} 会反过来盖住这里，动效开关直接失效。
+   （浅色主题块当初踩过同一个坑，见上方主题系统的注释。）
+   ============================================================ */
+
+/* ---------- 第 0 层：令牌层 ---------- */
+  /* 三档时长，覆盖"极小反馈 / 常规过渡 / 氛围运动"三类节奏。
+     为什么是三档而不是到处写具体毫秒：
+     散落的 0.2s / 0.25s / .35s 无法统一调优，改一处忘一处；
+     全部收敛到变量后，调慢或调快整个站点只改这里。 */
+:root{
+  --dur-fast:140ms;   /* 按下、悬停这类瞬时反馈 */
+  --dur-base:240ms;   /* 进场、位移等可感知的过渡 */
+  --dur-slow:1600ms;  /* 背景呼吸这类氛围运动 */
+
+  /* 缓动：出场用 --ease-out（先快后慢，收得干脆）
+     入场用 --ease-in（先慢后快）
+     --ease-both 用于需要来回往复的循环运动 */
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --ease-in:cubic-bezier(.4,0,.9,.35);
+  --ease-both:cubic-bezier(.65,0,.35,1);
+
+  /* 三档位移距离：小=反馈，中=进场，大=强调 */
+  --shift-sm:2px;
+  --shift-md:6px;
+  --shift-lg:14px;
+
+  /* 编排参数：同组元素依次启动的间隔，以及整组等待的上限。
+     上限存在的意义见第 1 层说明。 */
+  --stagger-step:40ms;
+}
+
+/* ---------- 第 1 层：编排层 ---------- */
+/*
+   分组错落（stagger）只靠 CSS 变量传递：
+   动态列表靠 JS 写 --i（见 assets/main.js），静态列表靠 nth-child。
+   为什么不用 transition-delay 写死 nth-child 到第 8 个：
+   博客列表的文章数会变，写死意味着每加一篇都要改 CSS。
+   用 var(--i) 之后新增条目自动获得正确延迟，零维护。
+
+   --stagger-cap 的封顶：一组 30 个元素按每项 40ms 排下去，
+   最后一个要等 1.2 秒才出现，用户会以为页面卡了。
+   封顶 320ms 后，超出部分一律按 320ms 算 ——
+   错落感保留在前几个元素上（人眼只能分辨前几下），
+   同时保证任何长度的列表都在 1/3 秒内全部启动。
+*/
+.reveal{
+  opacity:0;
+  transform:translateY(var(--shift-lg));
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+  /* 同组内按序号错开启动；--i 由 main.js 注入，缺省 0 */
+  transition-delay:
+    min(calc(var(--stagger-step) * var(--i,0)), 320ms);
+}
+.reveal.in{opacity:1;transform:none}
+
+/* 静态列表（项目卡、联系卡）用 nth-child 给 --i，
+   这样即便没有 JS 注入，它们也有错落效果。
+   注意这里只赋值 --i，不直接写 transition-delay ——
+   延迟的计算规则只保留在上面一处，避免两套机制打架。 */
+.grid .reveal:nth-child(2){--i:1}
+.grid .reveal:nth-child(3){--i:2}
+.grid .reveal:nth-child(4){--i:3}
+.grid .reveal:nth-child(5){--i:4}
+.contact-grid .reveal:nth-child(2){--i:1}
+.contact-grid .reveal:nth-child(3){--i:2}
+
+/* 进场方向：默认从下方来。
+   为什么统一改"自下方"而不是"自左/自右"：
+   横向位移在窄屏上会制造横向溢出风险（浏览器会因此出滚动条），
+   纵向位移没有这个问题，也更符合"页面是往下读的"直觉。 */
+.reveal-slide{transform:translateY(var(--shift-md))}
+.reveal-fade{transform:none}
+
+/* 卡片悬停：只抬 --shift-sm 这一档，控制在"感觉到"而不是"跳起来"。
+   同时过渡时长收紧到 --dur-fast，让指针划过时跟手。 */
+.card,.post-card{
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.card:hover,.post-card:hover{transform:translateY(calc(-1 * var(--shift-sm)))}
+
+/* 按钮：按下时缩一点，给"点击已被接收"的即时反馈。
+   这是唯一允许在 :active 上做缩放的组件 ——
+   它必须是即时的，所以用最快的 --dur-fast，且在总开关下同样归零。 */
+.btn,.prefs-toggle,.prefs-seg button,.prefs-actions button,
+.pwa-update button,.pwa-ios-close{
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.btn:active,.prefs-toggle:active,.prefs-seg button:active,
+.prefs-actions button:active{
+  transform:translateY(0) scale(.97);
+}
+
+/* 导航项：下划线不必，靠背景色淡入即可，聚焦点应当留在内容上 */
+.nav-links a{
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+/* 设置面板：从右上角轻微下拉展开。
+   位移只用 --shift-md，避免面板"飞"出来挡住导航。 */
+.prefs-panel{
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+/* display:none 不能做过渡，所以关闭态用 visibility + opacity + transform，
+   is-open 时再切回来。visibility 的过渡延迟等于时长，
+   保证淡出动画播完才真正不可见、不可点击。 */
+.prefs-panel{
+  visibility:hidden;
+  opacity:0;
+  transform:translateY(calc(-1 * var(--shift-sm)));
+}
+.prefs-panel.is-open{
+  display:block;
+  visibility:visible;
+  opacity:1;
+  transform:none;
+}
+
+/* 导航滚动加深：给背景与阴影一个短过渡，避免"啪"的一下变实 */
+.nav{
+  transition:
+    background var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+/* ---------- 第 2 层：降级层 ---------- */
+/*
+   七条路径，任何一条命中都必须保证内容可见。
+   共同铁律：降级只允许"关掉动效"，绝不允许"关掉内容"。
+
+   路径 1：系统级「减少动画」
+   这是用户在操作系统里声明的可访问性偏好，优先级最高，
+   连氛围背景的呼吸都要停 —— 前庭功能障碍用户对缓慢移动的背景
+   反应比快速动画更强烈。 */
+@media(prefers-reduced-motion:reduce){
+  :root{
+    --dur-fast:1ms;
+    --dur-base:1ms;
+    --dur-slow:1ms;
+    --shift-sm:0px;
+    --shift-md:0px;
+    --shift-lg:0px;
+  }
+  .ocean-bg,.orb,.hero-card{animation:none!important}
+  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s}
+  .card:hover,.post-card:hover{transform:none}
+  .btn:active,.prefs-toggle:active,.prefs-seg button:active,
+  .prefs-actions button:active{transform:none}
+  html{scroll-behavior:auto}
+}
+
+/* 路径 2：用户开了系统级「增强对比度」
+   这类用户往往同时失去对低透明度元素的辨识力。
+   所以这里额外关掉 .reveal 的 opacity 过渡，只保留位移 ——
+   位移不会让内容"暂时看不见"，透明度会。 */
+@media(prefers-contrast:more){
+  .reveal{opacity:1;transition:transform var(--dur-base) var(--ease-out);transition-delay:0s}
+  .pwa-update,.pwa-ios-hint{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+
+/* 路径 3~5 在 main.js 里：无 IntersectionObserver、动效脚本抛异常、
+   后台标签页暂停。这三条依赖运行时判断，CSS 无法表达。 */
+
+/* 路径 6：脚本完全不可用。
+   由 @media(scripting:none) 兜底，不依赖任何 JS。 */
+@media(scripting:none){
+  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s}
+  .prefs-panel{visibility:visible;opacity:1;transform:none}
+  .nav{box-shadow:none}
+}
+
+/* 路径 7：浏览器不支持 min() 与自定义属性组合（如 Safari 14 及更早）。
+   此时上面那条 transition-delay 会被整体丢弃 —— 没关系，
+   丢的是启动延迟，只影响节奏，不影响内容显现，
+   属于安全的退化方向（宁可没有错落，也不能不出现）。 */
+
+/* ---------- 第 3 层：空间层 ---------- */
+/*
+   用「指针能不能悬停」分流，而不是用屏幕宽度。
+   理由：翻盖笔记本、平板外接鼠标、带触控屏的桌面机都存在，
+   宽度判断会把它们分错组。hover:hover 直接问的是能力本身。
+
+   触屏设备没有悬停态，悬停位移永远不会触发，
+   所以这里干脆不注册（省掉一次无用的样式计算）；
+   同时把氛围运动降速，减少持续动画对电池与注意力的消耗。 */
+@media(hover:hover){
+  .card:hover,.post-card:hover{transform:translateY(calc(-1 * var(--shift-sm)))}
+}
+@media(hover:none){
+  .card:hover,.post-card:hover{transform:none}
+  :root{--dur-slow:2600ms}
+}
+
+/* 小屏位移减半：同样的 14px，在 375px 宽的屏幕上相对跨度大得多，
+   看起来像"跳"。用媒体查询减半，比给每个组件写一套小屏样式简单得多。 */
+@media(max-width:720px){
+  :root{--shift-md:3px;--shift-lg:7px}
+}
+
+/* ---------- 第 4 层：总开关 ---------- */
+/*
+   用户在设置面板里关掉动效时，prefs.js 会写 html[data-motion="off"]。
+   把三档时长与三档位移全部归零，等于一键摘除本块的所有效果 ——
+   不需要给每个组件再写一遍覆盖规则。
+
+   注意这里用 :root[data-motion="off"] 而不是 html[data-motion="off"]：
+   变量定义在 :root 上，用同级选择器 + 更靠后的源顺序来覆盖，
+   这样第 3 层媒体查询里的 --dur-slow 也会被一并压掉。
+
+   总开关不隐藏任何内容：归零的是"变化过程"，不是"最终状态"。
+   .reveal 在归零时长下会在同一帧内直接跳到 opacity:1，
+   用户看到的是"内容本来就在那儿"，这正是期望的行为。 */
+:root[data-motion="off"]{
+  --dur-fast:1ms;
+  --dur-base:1ms;
+  --dur-slow:1ms;
+  --shift-sm:0px;
+  --shift-md:0px;
+  --shift-lg:0px;
+}
+:root[data-motion="off"] .ocean-bg,
+:root[data-motion="off"] .orb.a,
+:root[data-motion="off"] .orb.b{animation:none}
+:root[data-motion="off"] .hero-card{animation:none}
+:root[data-motion="off"] .reveal{transition-delay:0s}
+:root[data-motion="off"] .btn:active,
+:root[data-motion="off"] .prefs-toggle:active,
+:root[data-motion="off"] .prefs-seg button:active,
+:root[data-motion="off"] .prefs-actions button:active{transform:none}
+:root[data-motion="off"] .card:hover,
+:root[data-motion="off"] .post-card:hover{transform:none}
