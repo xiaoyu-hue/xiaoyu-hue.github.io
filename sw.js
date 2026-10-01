@@ -18,12 +18,16 @@
 
 const CACHE_PREFIX = 'xiaoyu-hue';
 // 发布新内容后改这个版本号,activate 时会清掉旧缓存,用户即可看到更新。
+// v6:视觉/微动效体系大升级 —— View Transitions 跨页过渡、滚动驱动入场
+// (Scroll-driven Animations)、容器查询 + :has 精准响应式、color-mix 派生色、
+// text-wrap:balance、allow-discrete 入场过渡。全部纯原生 CSS、零依赖、不改 CSP,
+// 且都接入现有的 prefers-reduced-motion / data-motion=off 降级网络。
 // v5:每个页面都新增了 JSON-LD 结构化数据与 RSS 自动发现链接,
 // 另外新增 sitemap.xml / robots.txt / feed.xml / 404.html 四个文件。
 // 不改版本号的话,已安装 PWA 的用户会继续从旧缓存里拿到没有结构化数据的页面。
 // v4:修掉「导航请求把 404 也缓存进去」的问题。仅改代码不够 ——
 // 已经被写进缓存的错误响应,只有靠换缓存名才能在 activate 时被清掉。
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const OFFLINE_URL = '/offline.html';

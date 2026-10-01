@@ -123,6 +123,10 @@ A few trade-offs, also documented in the code comments:
 - **Resetting takes two clicks.** The first asks "are you sure"; if you don't confirm within 4 seconds it cancels itself. Destructive actions deserve a second door.
 - **A disabled localStorage does not throw** (private mode, some corporate policies). The feature degrades; the site keeps working.
 
+### Motion (v6 upgrade)
+
+v6 reworked the motion system using **native CSS only** — no animation library, no new runtime dependency, CSP unchanged. It adds View Transitions for smooth same-origin page transitions, scroll-driven reveal animations (pure CSS, with automatic fallback to the existing IntersectionObserver path), container queries + `:has()` for container-aware cards, `color-mix()`-derived colors, and `text-wrap: balance`. Everything plugs into the existing `prefers-reduced-motion` / `data-motion=off` degradation network.
+
 ---
 
 ## Offline & install (PWA)
@@ -155,7 +159,7 @@ Visiting a page that was **never cached** shows an offline notice listing the ar
 `sw.js` starts with a version constant:
 
 ```js
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 ```
 
 **After publishing new content, bump this number** (`v5` → `v6`). On the user's next visit the Service Worker drops the old cache, re-fetches, and shows a "new version available" bar.
@@ -374,7 +378,7 @@ No programming background; all code was produced with AI agent assistance. The c
 
 ## Credits
 
-This site stays simple to look at and safe to change largely because of these projects. One fact up front: the live site contains **no third-party code at all**, so what is genuinely worth crediting is only build-time tooling and hosting — listed below.
+This site stays simple to look at and safe to change largely because of these projects. One fact up front: the live site contains **no third-party code at all**, so what is genuinely worth crediting is only build-time tooling, web standards and hosting — listed below.
 
 **[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft (currently ^1.63.0)
 
@@ -387,6 +391,10 @@ Rules engine behind the accessibility baseline. It caught two things I could nev
 **Hosting**
 
 [Cloudflare Pages](https://pages.cloudflare.com/) (primary) and [GitHub Pages](https://pages.github.com/) (mirror) both provide free static hosting with automatic builds. Their failure domains differ, so they cover for each other. Not dependencies of this project, but without them there would be no site.
+
+**Modern CSS capabilities & specs**
+
+The v6 motion upgrade (View Transitions, scroll-driven animations, container queries, `:has()`, `color-mix()`, `@starting-style`) all come from W3C CSS Working Group specs, implemented natively by browsers — no library needed. Special credit also goes to Andy Bell's [piccalil.li](https://piccalil.li) / "Build Excellent Websites" methodology, which turned "native CSS first, reduced-motion first, only `transform`/`opacity` to avoid layout jank" into a repeatable practice; this site's motion philosophy aligns with it closely.
 
 **Deliberately not used**
 
