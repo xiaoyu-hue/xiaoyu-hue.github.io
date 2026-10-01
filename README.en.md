@@ -4,11 +4,14 @@
 
 **English · [中文](./README.md)**
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
+[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-Primary-F38020?style=flat-square)](https://xiaoyu-hue-github-io.pages.dev/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Mirror-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
 [![Build](https://img.shields.io/badge/build-none-6B728C?style=flat-square)](https://github.com/xiaoyu-hue/xiaoyu-hue.github.io)
 
-**Live site: <https://xiaoyu-hue.github.io/>**
+**Primary site: <https://xiaoyu-hue-github-io.pages.dev/>**
+
+**Mirror: <https://xiaoyu-hue.github.io/>** — same content, see [Deployment: primary site and mirror](#deployment-primary-site-and-mirror)
 
 ---
 
@@ -69,9 +72,11 @@ xiaoyu-hue.github.io/
     └── test.yml        # CI: runs the three test layers on every push
 ```
 
-> `_headers` has **no effect on GitHub Pages** (Pages does not support custom response headers). It is included for a future move to a host that supports it, such as Cloudflare Pages.
+> `_headers` only takes effect on the **primary site (Cloudflare Pages)**: CSP, X-Frame-Options, COOP, Permissions-Policy and the rest are all delivered from it.
 >
-> 🔴 **`sw.js` is not affected by that limitation.** A Service Worker is registered from JavaScript (`assets/pwa.js`), not from response headers, so it works fine on GitHub Pages.
+> 🔴 **The mirror (GitHub Pages) cannot serve custom response headers** — a platform limit, not a config mistake. The mirror ships HSTS only, and `_headers` is publicly downloadable there as a static file. Treat the primary site's headers as authoritative.
+>
+> 🔴 **`sw.js` is not affected by that limitation.** A Service Worker is registered from JavaScript (`assets/pwa.js`), not from response headers, so it works on both sites.
 
 ---
 
@@ -171,6 +176,45 @@ Chrome or Edge recommended.
 
 ---
 
+## Deployment: primary site and mirror
+
+One repository, two automatic deployments, always in sync:
+
+| Role | URL | Platform |
+|------|-----|----------|
+| **Primary** | <https://xiaoyu-hue-github-io.pages.dev/> | Cloudflare Pages |
+| **Mirror** | <https://xiaoyu-hue.github.io/> | GitHub Pages |
+
+**Both are wired to the same GitHub repository.** One push to `main` builds each of them. Nothing to sync by hand, no version drift — the two home pages hash identically.
+
+### Why keep the mirror
+
+Not for the comfort of the word "backup", but because the two have **different failure domains**: if Cloudflare has a bad day, GitHub Pages is still up; if GitHub goes down, the already-deployed static copies keep serving from Cloudflare's edge — only new builds are blocked. The redundancy is real, and it costs nothing to maintain.
+
+### What actually differs
+
+| | Primary | Mirror |
+|---|---------|--------|
+| Security headers | All applied (from `_headers`) | HSTS only — platform limit |
+| HTTP/3 | Yes | No |
+| Edge | Global Anycast | Single region |
+| Custom domain | Supported | Supported, still no custom headers |
+| PWA / offline | Works | Works |
+
+### Two things that bite
+
+- **Canonical URLs point at the primary site.** Every page's `<link rel="canonical">` and `og:url` uses the primary domain, so search engines do not treat the two sites as duplicate content. Links to the sub-projects (`/sonder520/`, `/Nymir/`, `/xy-club/`, `/xy-intro-card/`) **stay on `github.io`** — those are separate GitHub Pages projects and do not exist under `pages.dev`.
+- **To check whether both are in sync**, compare home page hashes:
+
+  ```bash
+  curl -s https://xiaoyu-hue-github-io.pages.dev/ | md5sum
+  curl -s https://xiaoyu-hue.github.io/ | md5sum
+  ```
+
+  Identical output means the mirror has not fallen behind.
+
+---
+
 ## Tests
 
 The site itself stays **dependency-free** — the tools below are only for verifying changes. You do not need any of them to visit or deploy the site.
@@ -197,7 +241,7 @@ Every push to `main` runs all three layers in CI.
 - To add an article: copy `blog/post-1.html`, change the content, then add a `.post-card` to `blog/index.html`
 - After adding an article, **add the new file to `sw.js`'s `PRECACHE` list**, otherwise it will not open offline (the integrity check catches dead links in the list, but it cannot tell you something is *missing*)
 - **Bump `CACHE_VERSION` in `sw.js` whenever you publish**
-- Pushing to `main` triggers an automatic GitHub Pages deploy
+- Pushing to `main` triggers an automatic deploy on **both the primary site and the mirror** (see [Deployment](#deployment-primary-site-and-mirror))
 
 After editing the icon source `assets/icons/icon.svg`, regenerate the PNGs:
 

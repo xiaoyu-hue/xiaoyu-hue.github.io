@@ -4,11 +4,14 @@
 
 > 个人主站 · 一个非程序员用 AI Agent 做出的四个项目,以及一份诚实的实验记录
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-在线访问-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
+[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-主站-F38020?style=flat-square)](https://xiaoyu-hue-github-io.pages.dev/)
+[![备用站](https://img.shields.io/badge/GitHub%20Pages-备用站-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
 [![零构建](https://img.shields.io/badge/构建-无-6B728C?style=flat-square)](https://github.com/xiaoyu-hue/xiaoyu-hue.github.io)
 
-**在线访问：<https://xiaoyu-hue.github.io/>**
+**主站：<https://xiaoyu-hue-github-io.pages.dev/>**
+
+**备用站：<https://xiaoyu-hue.github.io/>** —— 内容与主站一致，见「[部署：主站与备用站](#部署主站与备用站)」
 
 ---
 
@@ -75,9 +78,11 @@ xiaoyu-hue.github.io/
     └── test.yml            # CI：每次 push 自动跑三层测试
 ```
 
-> `_headers` 在 GitHub Pages 上**不生效**（Pages 不支持自定义响应头），它是为将来迁移到 Cloudflare Pages 等支持该文件的平台准备的。
+> `_headers` 只在**主站（Cloudflare Pages）**上生效：CSP、X-Frame-Options、COOP、Permissions-Policy 等全部响应头都由它下发。
 >
-> 🔴 **但 `sw.js` 不受此限制**：Service Worker 由页面里的 JS 注册（`assets/pwa.js`），不依赖响应头，在 GitHub Pages 上可以正常工作。
+> 🔴 **备用站（GitHub Pages）不支持自定义响应头**，这是平台限制、改不了——备站实际只带一个 HSTS，其余安全头全都没有，而且 `_headers` 会被当成静态文件公开提供。安全头以主站为准。
+>
+> 🔴 **但 `sw.js` 不受此限制**：Service Worker 由页面里的 JS 注册（`assets/pwa.js`），不依赖响应头，两个站点都能正常工作。
 
 ---
 
@@ -219,6 +224,45 @@ python3 -m http.server 8000
 
 ---
 
+## 部署：主站与备用站
+
+同一个仓库有两份自动部署，内容始终同步：
+
+| 角色 | 地址 | 平台 |
+|------|------|------|
+| **主站** | <https://xiaoyu-hue-github-io.pages.dev/> | Cloudflare Pages |
+| **备用站** | <https://xiaoyu-hue.github.io/> | GitHub Pages |
+
+**两边都直连同一个 GitHub 仓库**，推一次 `main`，两处各自自动构建。不需要手动同步，也不存在版本漂移——实测两边首页的内容哈希完全一致。
+
+### 为什么留着备用站
+
+不是为了"备份"这个概念，是因为两者的**故障域不同**：Cloudflare 出问题时 GitHub Pages 仍然在线；反过来 GitHub 挂了，Cloudflare 边缘上已经部署好的静态副本也照样能服务，只是暂时无法触发新构建。互为兜底是有实际意义的，而维护成本是零。
+
+### 两者的实际差异
+
+| 项目 | 主站 | 备用站 |
+|------|------|--------|
+| 安全响应头 | 全部生效（`_headers`） | 仅 HSTS，平台限制无法补 |
+| HTTP/3 | 支持 | 不支持 |
+| 边缘节点 | 全球 Anycast | 单区域 |
+| 自定义域名 | 支持 | 支持，但仍加不了响应头 |
+| PWA / 离线 | 正常 | 正常 |
+
+### 两个容易踩的点
+
+- **规范链接统一指向主站**：所有页面的 `<link rel="canonical">` 和 `og:url` 都写主站地址，避免搜索引擎把两个站点判成重复内容、分散权重。文章里指向子项目（`/sonder520/`、`/Nymir/`、`/xy-club/`、`/xy-intro-card/`）的链接**保留在 `github.io`**——那些是独立的 GitHub Pages 项目，`pages.dev` 上没有这些路径。
+- **想自查两边是否同步**，对比首页内容哈希即可：
+
+  ```bash
+  curl -s https://xiaoyu-hue-github-io.pages.dev/ | md5sum
+  curl -s https://xiaoyu-hue.github.io/ | md5sum
+  ```
+
+  两个值一致就说明备站没落后。
+
+---
+
 ## 测试
 
 站点本身依然**零依赖** —— 下面的工具只在你要改代码时用来验证，访问和部署站点都不需要。
@@ -245,7 +289,7 @@ npx playwright test                          # 真浏览器层：需要 Node，�
 - 新增文章：复制 `blog/post-1.html` 改内容，再往 `blog/index.html` 加一张 `.post-card`
 - 新增文章后，**记得把新文件加进 `sw.js` 的 `PRECACHE` 清单**，否则该文章离线时打不开（完整性检查会抓到清单里的死链，但不会告诉你"少了一篇"）
 - **发版时把 `sw.js` 的 `CACHE_VERSION` 加一**
-- 推到 `main` 分支后，GitHub Pages 会自动部署
+- 推到 `main` 分支后，**主站与备用站会各自自动部署**（见「[部署：主站与备用站](#部署主站与备用站)」）
 
 改了图标源文件 `assets/icons/icon.svg` 后，重新导出各尺寸：
 
