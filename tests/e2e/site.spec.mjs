@@ -241,3 +241,155 @@ test.describe('设置面板', () => {
     expect(obj.reading['post-2']).toBeTruthy();
   });
 });
+
+test.describe('PWA：可安装与离线', () => {
+  // Service Worker 在测试间不共享状态：每个 test 都是全新的 context，
+  // 必须重新等它就绪，不能依赖上一个用例的注册结果。
+  async function waitForSW(page) {
+    await page.evaluate(async () => {
+      await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, rej) => setTimeout(() => rej(new Error('SW 就绪超时')), 15000)),
+      ]);
+    });
+  }
+
+  test('Service Worker 注册成功且作用域覆盖全站', async ({ page }) => {
+    await page.goto('/index.html');
+    await waitForSW(page);
+
+    const info = await page.evaluate(async () => {
+      const reg = await navigator.serviceWorker.ready;
+      return { scope: reg.scope, scriptURL: reg.active?.scriptURL ?? null };
+    });
+
+    expect(info.scriptURL).toContain('/sw.js');
+    // 作用域必须是站点根，否则 blog/ 下的页面不会走缓存
+    expect(new URL(info.scope).pathname).toBe('/');
+  });
+
+  test('manifest 能被浏览器取到且是合法 JSON', async ({ page, request }) => {
+    const res = await request.get('/manifest.webmanifest');
+    expect(res.status()).toBe(200);
+    const m = await res.json();
+    expect(m.name).toBeTruthy();
+    expect(m.scope).toBe('/');
+    expect(m.display).toBe('standalone');
+
+    // 页面里真的声明了它（否则浏览器不知道有这个清单）
+    await page.goto('/index.html');
+    const href = await page.getAttribute('link[rel="manifest"]', 'href');
+    expect(href).toBeTruthy();
+  });
+
+  test('所有 PWA 图标可访问', async ({ request }) => {
+    const icons = [
+      '/assets/icons/icon-192.png',
+      '/assets/icons/icon-512.png',
+      '/assets/icons/icon-maskable-512.png',
+      '/assets/icons/apple-touch-icon-180.png',
+    ];
+    for (const src of icons) {
+      const res = await request.get(src);
+      expect(res.status(), `${src} 应当可访问`).toBe(200);
+      expect(res.headers()['content-type']).toContain('image/png');
+    }
+  });
+
+  test('断网后仍能打开首页（核心能力）', async ({ page, context }) => {
+    await page.goto('/index.html');
+    await waitForSW(page);
+    // 等预缓存装完再断网，否则测的是「还没缓存好」而不是「离线可用」
+    await page.waitForFunction(async () => {
+      const names = await caches.keys();
+      if (!names.length) return false;
+      const c = await caches.open(names[0]);
+      return (await c.keys()).length > 5;
+    }, null, { timeout: 15000 });
+
+    await context.setOffline(true);
+    const res = await page.goto('/index.html');
+
+    expect(res.status()).toBe(200);
+    await expect(page).toHaveTitle(/xiaoyu-hue/);
+  });
+
+  test('断网后仍能打开已缓存的文章', async ({ page, context }) => {
+    await page.goto('/index.html');
+    await waitForSW(page);
+    await page.waitForFunction(async () => {
+      const names = await caches.keys();
+      if (!names.length) return false;
+      const c = await caches.open(names[0]);
+      return (await c.keys()).length > 5;
+    }, null, { timeout: 15000 });
+
+    await context.setOffline(true);
+    const res = await page.goto('/blog/post-3.html');
+
+    expect(res.status()).toBe(200);
+    await expect(page).toHaveTitle(/Nymir/);
+  });
+
+  test('断网后访问未缓存页面会回退到离线页', async ({ page, context }) => {
+    await page.goto('/index.html');
+    await waitForSW(page);
+    await page.waitForFunction(async () => {
+      const names = await caches.keys();
+      if (!names.length) return false;
+      const c = await caches.open(names[0]);
+      return (await c.keys()).length > 5;
+    }, null, { timeout: 15000 });
+
+    await context.setOffline(true);
+    await page.goto('/this-page-was-never-cached.html');
+
+    // 不校验状态码：不同浏览器回退时给的状态码不一致，
+    // 真正的契约是「用户看到的是离线页」。
+    await expect(page.locator('body')).toContainText('你现在离线了');
+  });
+
+  test('离线页自身不注册 Service Worker', async ({ page }) => {
+    await page.goto('/offline.html');
+    const hasPwa = await page.evaluate(
+      () => document.querySelector('script[src*="pwa.js"]') !== null,
+    );
+    expect(hasPwa).toBe(false);
+  });
+
+  test('PWA 相关代码不产生 CSP 违规', async ({ page }) => {
+    const violations = [];
+    page.on('console', (msg) => {
+      const t = msg.text();
+      if (/Content Security Policy|CSP/i.test(t)) violations.push(t);
+    });
+
+    await page.goto('/index.html');
+    await waitForSW(page);
+    await page.waitForTimeout(1500);
+
+    expect(violations, 'CSP 违规：\n' + violations.join('\n')).toEqual([]);
+  });
+
+  test('提示条默认隐藏，不占据首屏', async ({ page }) => {
+    await page.goto('/index.html');
+    // 更新提示与 iOS 引导都必须默认不可见，
+    // 否则会莫名其妙地盖在内容上。
+    await expect(page.locator('.pwa-update')).toBeHidden();
+    await expect(page.locator('.pwa-ios-hint')).toBeHidden();
+  });
+
+  test('theme-color 跟随站内主题切换', async ({ page }) => {
+    await page.goto('/index.html');
+    await page.locator('.prefs-toggle').click();
+    await page.locator('[data-theme-option="light"]').click();
+
+    const colors = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('meta[name="theme-color"]'))
+        .map((m) => m.getAttribute('content')),
+    );
+    // 手动选定后两个 meta 应当统一成浅色，避免状态栏和页面对不上
+    expect(colors.length).toBe(2);
+    for (const c of colors) expect(c).toBe('#eaf4fb');
+  });
+});

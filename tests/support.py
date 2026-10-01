@@ -4,6 +4,7 @@
 """
 
 import os
+import struct
 from html.parser import HTMLParser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -95,6 +96,30 @@ def parse(rel_path):
 def read(rel_path):
     with open(os.path.join(ROOT, rel_path), encoding="utf-8") as fh:
         return fh.read()
+
+
+def read_bytes(rel_path):
+    """读二进制文件（校验 PNG 图标时需要）。"""
+    with open(os.path.join(ROOT, rel_path), "rb") as fh:
+        return fh.read()
+
+
+def png_size(data):
+    """从 PNG 文件头读出真实宽高，不依赖任何图像库。
+
+    PNG 的 IHDR 块固定在偏移 16..24：8 字节魔数 + 4 字节块长 + 4 字节类型
+    = 16，其后 4 字节宽、4 字节高，均为大端无符号整数。
+
+    为什么要读真实尺寸而不是相信 manifest 里写的 sizes：
+    图标尺寸写错时，浏览器会把图标拉伸变形，而 manifest 本身仍然"合法"，
+    只有比对文件头才抓得到。
+    """
+    if len(data) < 24:
+        raise ValueError("文件太小，不是合法 PNG")
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError("不是 PNG（魔数不符）")
+    width, height = struct.unpack(">II", data[16:24])
+    return width, height
 
 
 def exists(rel_path):

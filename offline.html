@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>当前离线 · xiaoyu-hue</title>
+<meta name="description" content="网络暂时不可用。这里列出已经缓存、可以离线阅读的文章。">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- 离线页不注册 Service Worker：这里已经处于离线状态，再注册一次没有意义。
+     它自己必须被预缓存（见 sw.js 的 PRECACHE）。 -->
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#04111d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eaf4fb" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon-180.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="ocean-bg"></div><div class="orb a"></div><div class="orb b"></div>
+
+<nav class="nav" aria-label="主导航"><div class="wrap">
+  <a class="brand" href="index.html">xiaoyu<span>-hue</span></a>
+  <div class="nav-links">
+    <a href="index.html#about">关于</a>
+    <a href="index.html#projects">项目</a>
+    <a href="blog/index.html">博客</a>
+    <a href="index.html#contact">联系</a>
+  </div>
+</div></nav>
+
+<main id="main" tabindex="-1">
+<section class="wrap">
+  <h1 class="section-title">你现在离线了</h1>
+
+  <div class="glass card offline-card">
+    <h3>这些页面已经缓存在你的设备上</h3>
+    <ul class="offline-list">
+      <li><a href="blog/post-1.html">我和 AI 的协作方式:先把边界写清楚</a></li>
+      <li><a href="blog/post-2.html">Sonder520:把一天装进浏览器,代价是什么</a></li>
+      <li><a href="blog/post-3.html">Nymir:我给 AI 划下的安全边界</a></li>
+      <li><a href="blog/post-4.html">xy-club:改四处文案,就能换一个俱乐部</a></li>
+      <li><a href="blog/post-5.html">xy-intro-card:一张能发走的名片,和一次"克制"的练习</a></li>
+    </ul>
+
+    <div class="card-actions">
+      <button class="btn btn-primary offline-retry" type="button">重试</button>
+      <a class="btn btn-ghost" href="blog/index.html">博客列表</a>
+      <a class="btn btn-ghost" href="index.html">回到首页</a>
+    </div>
+  </div>
+
+  <p class="card-note offline-note">
+    网络恢复后，本站会自动更新到最新内容，不需要做任何操作。
+  </p>
+</section>
+</main>
+
+<footer><div class="wrap">
+  <div>AI 时代的个体赋能,祝我们共同见证未来的 AGI。</div>
+  <div class="footer-sign">© 2026 xiaoyu-hue · <span class="sign">一半烟火以谋生，一半诗意以谋爱</span></div>
+</div></footer>
+
+<script src="assets/offline.js"></script>
+</body>
+</html>

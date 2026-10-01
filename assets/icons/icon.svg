@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="xiaoyu-hue">
+  <!-- PWA 应用图标源文件（矢量）。
+       导出：icon-192.png / icon-512.png（any 用途，带圆角）
+             icon-maskable-512.png（maskable 用途，满铺 + 内容缩进安全区）
+
+       any 与 maskable 的关键差别：
+       - any：图形自带圆角，系统不再裁剪，直接按原样显示。
+       - maskable：系统会按自己的形状（圆/方/水滴）裁剪，
+         所以必须满铺背景、把有效内容压进中心 80% 的「安全区」，
+         否则四角或边缘的元素会被切掉。
+
+       配色取自站点 :root 变量，与 og-cover.svg / favicon.svg 同一套。 -->
+  <defs>
+    <linearGradient id="sea" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#48cae4"/>
+      <stop offset="0.55" stop-color="#0a6e7a"/>
+      <stop offset="1" stop-color="#04111d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.72" cy="0.2" r="0.55">
+      <stop offset="0" stop-color="#c9f2fb" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#c9f2fb" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#sea)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+
+  <!-- 图形原本按 64×64 坐标系绘制（见 favicon.svg），这里放大 8 倍映射到 512。
+       外层再套 0.8 缩放 + 居中位移，把内容压进中心安全区，
+       保证被系统裁成圆形/水滴形时波浪和月亮都还在。 -->
+  <g transform="translate(51.2 51.2) scale(0.8)">
+    <g transform="scale(8)">
+      <path d="M8 40c6 0 6-6 12-6s6 6 12 6 6-6 12-6 6 6 12 6"
+            fill="none" stroke="#c9f2fb" stroke-width="3.5"
+            stroke-linecap="round" opacity="0.95"/>
+      <path d="M8 51c6 0 6-5 12-5s6 5 12 5 6-5 12-5 6 5 12 5"
+            fill="none" stroke="#c9f2fb" stroke-width="3"
+            stroke-linecap="round" opacity="0.55"/>
+      <circle cx="44" cy="19" r="7" fill="#c9f2fb" opacity="0.9"/>
+    </g>
+  </g>
+</svg>

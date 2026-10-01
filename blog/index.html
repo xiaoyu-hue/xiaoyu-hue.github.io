@@ -5,8 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>博客 · xiaoyu-hue</title>
 <meta name="description" content="一个非程序员和 AI Agent 协作的实验记录。">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- PWA：可安装 + 离线可用。theme-color 给两个 media 变体,浏览器按系统偏好自动选;
+     用户在站内手动切主题时由 assets/pwa.js 改写这两个 meta。manifest 的路径跟着目录层级走,
+     但清单内部的图标路径必须是绝对路径(/assets/...),否则 blog/ 下会解析错。 -->
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#04111d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eaf4fb" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="dark light">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon-180.png">
 <link rel="canonical" href="https://xiaoyu-hue.github.io/blog/index.html">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="xiaoyu-hue">
@@ -108,6 +116,21 @@
   <div>© 2026 xiaoyu-hue · <span class="sign">一半烟火以谋生，一半诗意以谋爱</span></div>
 </div></footer>
 
+<!-- PWA 运行时提示。默认隐藏,由 assets/pwa.js 按条件加 .is-visible。
+     放在 footer 之后而不是 body 开头,是为了不打断首屏阅读顺序。 -->
+<div class="pwa-update glass" role="status" aria-live="polite">
+  <span class="pwa-update-text">有新版本可用</span>
+  <button class="pwa-update-go" type="button">立即更新</button>
+  <button class="pwa-update-later" type="button">稍后</button>
+</div>
+
+<div class="pwa-ios-hint glass" role="status" aria-live="polite">
+  <span>在 Safari 里点「分享」→「添加到主屏幕」，可离线阅读本站</span>
+  <button class="pwa-ios-close" type="button" aria-label="关闭提示">×</button>
+</div>
+
+
+<script src="../assets/pwa.js"></script>
 <script src="../assets/prefs.js"></script>
 <script src="../assets/main.js"></script>
 </body>

@@ -1,0 +1,43 @@
+{
+  "name": "xiaoyu-hue · 不会写代码的人，和 AI 一起造东西",
+  "short_name": "xiaoyu-hue",
+  "description": "一个非程序员用 AI Agent 做出的四个开源项目，全部如实标注自己做不到什么。",
+  "start_url": "/index.html",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#04111d",
+  "theme_color": "#04111d",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["blog", "education", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "博客",
+      "short_name": "博客",
+      "description": "直接打开博客列表",
+      "url": "/blog/index.html"
+    }
+  ]
+}

@@ -3,7 +3,10 @@
 改页面时最容易悄悄破坏的就是这些「每页都一样」的东西,靠人眼是看不住的。
 """
 
+import json
 import os
+import re
+import struct
 import unittest
 
 from tests.support import (
@@ -12,8 +15,17 @@ from tests.support import (
     exists,
     headers_csp,
     parse,
+    png_size,
     read,
+    read_bytes,
 )
+
+# 离线页不参与 PAGES 的常规契约（它没有 prefs 面板、没有 4 个导航链接），
+# 但它同样必须带 CSP 且被完整性检查覆盖。单独的契约见 TestOfflinePage。
+OFFLINE_PAGE = "offline.html"
+
+# 站点全部页面 = 常规页 + 离线页
+ALL_PAGES = PAGES + [OFFLINE_PAGE]
 
 EXPECTED_CSS = {"index.html": "assets/style.css"}
 DEFAULT_CSS = "../assets/style.css"
@@ -138,6 +150,7 @@ class TestHeadContract(unittest.TestCase):
                 prefix = "" if os.path.dirname(page) == "" else "../"
                 expected_scripts = [
                     f"{prefix}assets/theme-boot.js",   # <head> 内,防首屏闪烁
+                    f"{prefix}assets/pwa.js",          # Service Worker 注册与安装引导
                     f"{prefix}assets/prefs.js",        # 主题与设置面板
                     f"{prefix}assets/main.js",         # 滚动动效
                 ]
@@ -228,6 +241,236 @@ class TestBodyContract(unittest.TestCase):
                     for attr in node.attrs:
                         self.assertFalse(attr.startswith("on"),
                                          f"{page} 的元素含内联事件属性 {attr}")
+
+
+class TestPwaContract(unittest.TestCase):
+    """PWA 相关的跨页契约。
+
+    这些断言防的是「装得上但离线打不开」这类沉默故障 ——
+    它们在浏览器里表现为「有时候能用」，最难排查。
+    """
+
+    MANIFEST = "manifest.webmanifest"
+
+    def manifest(self):
+        return json.loads(read(self.MANIFEST))
+
+    def test_manifest_link_present(self):
+        """每个页面都要声明 manifest，且路径跟着目录层级走。"""
+        for page in ALL_PAGES:
+            with self.subTest(page=page):
+                link = next(
+                    (l for l in parse(page).find_all("link")
+                     if l.attrs.get("rel") == "manifest"),
+                    None,
+                )
+                self.assertIsNotNone(link, f"{page} 缺少 manifest 声明")
+                href = link.attrs.get("href", "")
+                target = os.path.normpath(os.path.join(os.path.dirname(page), href))
+                self.assertTrue(exists(target),
+                                f"{page} 的 manifest 指向了不存在的 {href}")
+
+    def test_manifest_is_valid_json_with_required_fields(self):
+        m = self.manifest()
+        for field in ("name", "short_name", "start_url", "scope", "display", "icons"):
+            with self.subTest(field=field):
+                self.assertIn(field, m, f"manifest 缺少 {field}")
+        self.assertEqual(m["scope"], "/", "scope 必须是 /，否则装到子路径会失效")
+        self.assertIn(m["display"], ("standalone", "fullscreen", "minimal-ui"),
+                      "display 值不合法，无法安装")
+        self.assertTrue(m["icons"], "manifest 的 icons 不能为空")
+
+    def test_manifest_icons_exist_and_size_matches(self):
+        """图标的 sizes 字段必须与文件真实尺寸一致。
+
+        写错时 manifest 本身仍然「合法」，浏览器也照装，
+        但图标会被拉伸变形 —— 只有读 PNG 文件头才抓得到。
+        """
+        for icon in self.manifest()["icons"]:
+            with self.subTest(src=icon["src"]):
+                rel = icon["src"].lstrip("/")
+                self.assertTrue(exists(rel), f"图标不存在：{icon['src']}")
+                width, height = png_size(read_bytes(rel))
+                self.assertEqual(f"{width}x{height}", icon["sizes"],
+                                 f"{icon['src']} 的真实尺寸 {width}x{height} "
+                                 f"与声明的 {icon['sizes']} 不符")
+
+    def test_manifest_has_maskable_icon(self):
+        """没有 maskable 图标时，Android 会把图标塞进白底方块里裁，很难看。"""
+        purposes = " ".join(i.get("purpose", "") for i in self.manifest()["icons"])
+        self.assertIn("maskable", purposes, "缺少 purpose=maskable 的图标")
+
+    def test_manifest_icon_paths_are_absolute(self):
+        """图标路径必须是绝对的。
+
+        用相对路径时 blog/ 下的页面会把清单解释成 /blog/assets/...，
+        图标 404 且没有任何提示 —— 这正是本测试存在的理由。
+        """
+        for icon in self.manifest()["icons"]:
+            with self.subTest(src=icon["src"]):
+                self.assertTrue(icon["src"].startswith("/"),
+                                f"图标路径必须是绝对路径：{icon['src']}")
+
+    def test_theme_color_meta(self):
+        """每个页面两个 theme-color，各带 media，覆盖深/浅两套系统偏好。"""
+        for page in ALL_PAGES:
+            with self.subTest(page=page):
+                metas = [m for m in parse(page).find_all("meta")
+                         if m.attrs.get("name") == "theme-color"]
+                self.assertEqual(len(metas), 2,
+                                 f"{page} 应有 2 个 theme-color（深/浅各一），实际 {len(metas)}")
+                medias = [m.attrs.get("media", "") for m in metas]
+                self.assertTrue(any("dark" in x for x in medias),
+                                f"{page} 缺少 prefers-color-scheme: dark 的 theme-color")
+                self.assertTrue(any("light" in x for x in medias),
+                                f"{page} 缺少 prefers-color-scheme: light 的 theme-color")
+                for m in metas:
+                    self.assertRegex(m.attrs.get("content", ""), r"^#[0-9a-fA-F]{6}$",
+                                     f"{page} 的 theme-color 不是合法的十六进制颜色")
+
+    def test_apple_touch_icon(self):
+        for page in ALL_PAGES:
+            with self.subTest(page=page):
+                link = next(
+                    (l for l in parse(page).find_all("link")
+                     if l.attrs.get("rel") == "apple-touch-icon"),
+                    None,
+                )
+                self.assertIsNotNone(link, f"{page} 缺少 apple-touch-icon")
+                href = link.attrs.get("href", "")
+                target = os.path.normpath(os.path.join(os.path.dirname(page), href))
+                self.assertTrue(exists(target),
+                                f"{page} 的 apple-touch-icon 指向了不存在的 {href}")
+
+    def test_service_worker_at_root(self):
+        """SW 必须在站点根目录。
+
+        放进 assets/ 时作用域会被限制在 /assets/，
+        拦不到页面导航 —— 站点看起来「注册成功了」但完全不能离线。
+        """
+        self.assertTrue(exists("sw.js"), "sw.js 必须放在仓库根目录（不在 assets/）")
+        self.assertFalse(exists("assets/sw.js"), "sw.js 不该放在 assets/ 下")
+
+    def test_precache_list_files_exist(self):
+        """预缓存清单里的每个路径都必须真实存在。
+
+        写错时安装阶段会被 allSettled 悄悄吞掉（这是有意的容错），
+        表现为「装是装上了，某个页面就是离线打不开」。
+        """
+        src = read("sw.js")
+        m = re.search(r"const PRECACHE = \[(.*?)\];", src, re.S)
+        self.assertIsNotNone(m, "在 sw.js 里找不到 PRECACHE 清单")
+        urls = re.findall(r"'([^']+)'", m.group(1))
+        self.assertTrue(urls, "PRECACHE 是空的")
+        for u in urls:
+            with self.subTest(url=u):
+                # '/' 在文件系统上映射到 index.html
+                path = "index.html" if u == "/" else u.lstrip("/")
+                self.assertTrue(exists(path), f"预缓存清单里的 {u} 不存在")
+
+    def test_precache_has_no_duplicates(self):
+        src = read("sw.js")
+        m = re.search(r"const PRECACHE = \[(.*?)\];", src, re.S)
+        urls = re.findall(r"'([^']+)'", m.group(1))
+        self.assertEqual(len(urls), len(set(urls)), "预缓存清单里有重复项")
+
+    def test_offline_assets_are_precached(self):
+        """离线页和它的脚本必须进预缓存，否则离线时回退到一个打不开的页面。"""
+        src = read("sw.js")
+        m = re.search(r"const PRECACHE = \[(.*?)\];", src, re.S)
+        urls = set(re.findall(r"'([^']+)'", m.group(1)))
+        self.assertIn("/offline.html", urls, "offline.html 必须在预缓存清单里")
+        self.assertIn("/assets/offline.js", urls, "offline.js 必须在预缓存清单里")
+
+    def test_sw_cache_version_is_declared(self):
+        """缓存版本号存在且格式正确 —— 发布新内容时靠改它来让用户看到更新。"""
+        src = read("sw.js")
+        m = re.search(r"const CACHE_VERSION = '([^']+)'", src)
+        self.assertIsNotNone(m, "sw.js 必须有 CACHE_VERSION 常量")
+        self.assertRegex(m.group(1), r"^v\d+$", "CACHE_VERSION 格式应为 v1、v2 …")
+
+    def test_sw_uses_absolute_registration_path(self):
+        """注册路径必须是 /sw.js。
+
+        写相对路径 'sw.js' 时，blog/ 下的页面会去找 /blog/sw.js → 404。
+        """
+        src = read("assets/pwa.js")
+        self.assertIn("register('/sw.js'", src,
+                      "pwa.js 必须以绝对路径 '/sw.js' 注册 Service Worker")
+
+    def test_sw_does_not_skip_waiting_unconditionally(self):
+        """skipWaiting 只能由 message 事件触发。
+
+        在 install 里无条件调用会让用户正在阅读的页面被突然替换。
+        """
+        src = read("sw.js")
+        # 去掉注释再判断，避免注释里的文字造成误报
+        code = re.sub(r"//.*?$|/\*.*?\*/", "", src, flags=re.S | re.M)
+        install_block = code[code.find("addEventListener('install'"):code.find("addEventListener('activate'")]
+        self.assertNotIn("skipWaiting", install_block,
+                         "install 阶段不应调用 skipWaiting（应由用户确认更新后触发）")
+        self.assertIn("SKIP_WAITING", code, "sw.js 应当处理 SKIP_WAITING 消息")
+
+
+class TestOfflinePage(unittest.TestCase):
+    """离线页的专属契约。它不在 PAGES 里，页脚/导航结构与常规页不同。"""
+
+    def test_csp_matches_base(self):
+        csp = next(
+            (m for m in parse(OFFLINE_PAGE).find_all("meta")
+             if (m.attrs.get("http-equiv") or "").lower() == "content-security-policy"),
+            None,
+        )
+        self.assertIsNotNone(csp, "offline.html 缺少 meta CSP")
+        expected = headers_csp()
+        self.assertEqual(csp.attrs.get("content"),
+                         expected[: -len("; frame-ancestors 'none'")])
+
+    def test_does_not_register_service_worker(self):
+        """离线页不该注册 SW：已经离线了，再注册只会制造噪音。"""
+        srcs = [s.attrs.get("src") for s in parse(OFFLINE_PAGE).find_all("script")]
+        self.assertNotIn("assets/pwa.js", srcs,
+                         "offline.html 不应加载 pwa.js（离线时注册没有意义）")
+
+    def test_has_link_back_to_cached_articles(self):
+        """离线页必须给出可点的文章链接，否则用户被卡在死路上。"""
+        links = [a.attrs.get("href", "") for a in parse(OFFLINE_PAGE).find_all("a")]
+        posts = [h for h in links if re.search(r"post-\d+\.html$", h)]
+        expected = len([p for p in PAGES if re.search(r"post-\d+\.html$", p)])
+        self.assertEqual(len(posts), expected,
+                         f"离线页应链接全部 {expected} 篇文章，实际 {len(posts)}")
+
+    def test_listed_post_titles_match_real_pages(self):
+        """离线页列的文章标题必须与真实页面一致。
+
+        手抄标题极易出错（写错的时候页面仍然「正常」，
+        只是挂着一个不存在的文章名），所以这里比对真值。
+        """
+        doc = parse(OFFLINE_PAGE)
+        listed = {}
+        for a in doc.find_all("a"):
+            href = a.attrs.get("href", "")
+            m = re.search(r"(post-\d+\.html)$", href)
+            if m:
+                listed[m.group(1)] = a.text.strip()
+
+        for name, shown in listed.items():
+            with self.subTest(post=name):
+                real = parse(f"blog/{name}").find("title").text
+                # 真实 title 形如「标题 · xiaoyu-hue」，取「 · 」前的部分
+                real_title = real.split("·")[0].strip()
+                self.assertEqual(shown, real_title,
+                                 f"离线页里的标题与 {name} 不符")
+
+    def test_has_retry_control(self):
+        """离线页要给一个重试入口，否则用户只能自己想别的办法。"""
+        self.assertIn("offline-retry", read(OFFLINE_PAGE),
+                      "offline.html 缺少重试按钮")
+
+    def test_footer_signature_identical(self):
+        sign = parse(OFFLINE_PAGE).find(cls="sign")
+        self.assertIsNotNone(sign, "offline.html 没有签名")
+        self.assertEqual(sign.text, SIGNATURE)
 
 
 if __name__ == "__main__":

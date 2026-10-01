@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   integrity:
-    name: 链接 / CSP / 第三方资源
+    name: 链接 / CSP / PWA 资产
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

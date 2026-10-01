@@ -8,14 +8,15 @@
 """
 
 import glob
+import json
 import os
 import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXPECTED_CSP = (
-    "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; "
-    "img-src 'self' data:; connect-src 'none'; object-src 'none'; "
+    "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; "
+    "font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; "
     "base-uri 'self'; form-action 'none'"
 )
 # 已知会被浏览器忽略的指令：禁止加回来（会制造虚假安全感）
@@ -98,6 +99,81 @@ for f in html_files:
     if re.search(r'\sstyle\s*=\s*"', text):
         problems.append(f"[内联样式] {rel(f)} 含 style= 内联属性，会被 CSP 拦截（请改用 class）")
 
+# ---------- 5. PWA 资产完整性 ----------
+# 这几项的故障表现都很隐蔽：manifest 写错时浏览器仍然"装得上"，
+# 只是图标 404 或列表里显示成默认图标，控制台不报错。
+MANIFEST = os.path.join(ROOT, "manifest.webmanifest")
+SW = os.path.join(ROOT, "sw.js")
+OFFLINE = os.path.join(ROOT, "offline.html")
+
+if not os.path.exists(MANIFEST):
+    problems.append("[缺 PWA] 没有 manifest.webmanifest")
+else:
+    try:
+        with open(MANIFEST, encoding="utf-8") as fh:
+            manifest = json.load(fh)
+    except json.JSONDecodeError as e:
+        problems.append(f"[manifest 非法] 不是合法 JSON: {e}")
+        manifest = None
+
+    if manifest:
+        for field in ("name", "short_name", "start_url", "scope", "display", "icons"):
+            if field not in manifest:
+                problems.append(f"[manifest 缺字段] 缺少 {field}")
+        if manifest.get("scope") != "/":
+            problems.append(f"[manifest scope] 应当是 /，实际 {manifest.get('scope')!r}")
+
+        for icon in manifest.get("icons", []):
+            src = icon.get("src", "")
+            # 图标必须是绝对路径：用相对路径时 blog/ 下的页面会解析成
+            # /blog/assets/...，404 且没有任何提示
+            if not src.startswith("/"):
+                problems.append(f"[图标路径] {src} 必须是绝对路径（以 / 开头）")
+                continue
+            target = os.path.join(ROOT, src.lstrip("/"))
+            if not os.path.exists(target):
+                problems.append(f"[图标缺失] manifest 里的 {src} 不存在")
+
+if not os.path.exists(SW):
+    # 最常见的错法就是把 sw.js 放进 assets/。先点破这一点,
+    # 否则用户只看得到「没有 sw.js」,不知道该去哪找。
+    if os.path.exists(os.path.join(ROOT, "assets", "sw.js")):
+        problems.append(
+            "[SW 位置错误] sw.js 出现在 assets/ 下，必须移到站点根目录 —— "
+            "放在子目录会把作用域限制在 /assets/，页面导航将完全不走缓存"
+        )
+    else:
+        problems.append("[缺 PWA] 没有 sw.js（Service Worker 必须在站点根目录）")
+else:
+    # 两处都有时会有一份是旧的，行为取决于浏览器先加载哪个，必须避免
+    if os.path.exists(os.path.join(ROOT, "assets", "sw.js")):
+        problems.append("[SW 位置错误] sw.js 同时存在于根目录和 assets/ 下，删掉 assets/ 里的那份")
+    sw_src = open(SW, encoding="utf-8").read()
+    m = re.search(r"const PRECACHE = \[(.*?)\];", sw_src, re.S)
+    if not m:
+        problems.append("[SW 缺清单] sw.js 里找不到 PRECACHE")
+    else:
+        for url in re.findall(r"'([^']+)'", m.group(1)):
+            path = "index.html" if url == "/" else url.lstrip("/")
+            if not os.path.exists(os.path.join(ROOT, path)):
+                problems.append(f"[预缓存死链] sw.js 的 PRECACHE 里的 {url} 不存在")
+    if not re.search(r"const CACHE_VERSION = 'v\d+'", sw_src):
+        problems.append("[SW 缺版本] sw.js 里找不到形如 v1 的 CACHE_VERSION")
+
+if not os.path.exists(OFFLINE):
+    problems.append("[缺 PWA] 没有 offline.html（离线回退页）")
+
+# 每个页面都要声明 manifest，否则浏览器不知道有这个应用清单
+for f in html_files:
+    text = open(f, encoding="utf-8").read()
+    if 'rel="manifest"' not in text:
+        problems.append(f"[缺 manifest 声明] {rel(f)} 没有 <link rel=\"manifest\">")
+    tc = len(re.findall(r'<meta name="theme-color"', text))
+    if tc != 2:
+        problems.append(
+            f"[theme-color] {rel(f)} 应有 2 个 theme-color（深/浅各一），实际 {tc}"
+        )
+
 # ---------- 报告 ----------
 print(f"检查范围: {len(html_files)} 个 HTML + {len(md_files)} 个 Markdown\n")
 if problems:
@@ -110,4 +186,6 @@ print("  ✓ 内部链接全部可达")
 print("  ✓ 所有页面均带 CSP 且策略一致（无 unsafe-inline / unsafe-eval）")
 print("  ✓ 无第三方外部资源")
 print("  ✓ 无内联脚本 / 事件属性 / 内联样式")
+print("  ✓ PWA：manifest 合法、图标齐全、Service Worker 在站点根目录")
+print("  ✓ PWA：预缓存清单无死链，各页面均声明 manifest 与 theme-color")
 print("\n全部通过 ✓")

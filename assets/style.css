@@ -492,3 +492,55 @@ html[data-theme="light"] .prefs-seg button.is-active{color:#fff}
   .prefs-toggle{width:32px;height:32px;margin-left:4px}
   .prefs-panel{width:min(300px,calc(100vw - 24px));padding:16px}
 }
+
+/* ---------- 离线页(offline.html) ---------- */
+/* 只用已有的类组合,这里只补离线页特有的部分 */
+.offline-card{max-width:620px;margin:0 auto}
+.offline-list{
+  list-style:none;padding:0;margin:18px 0 0;
+}
+.offline-list li{
+  padding:10px 0;border-bottom:1px solid var(--glass-border);
+}
+.offline-list li:last-child{border-bottom:0}
+.offline-list a{color:var(--accent);text-decoration:none}
+.offline-list a:hover{text-decoration:underline}
+.offline-note{text-align:center;max-width:620px;margin:20px auto 0}
+/* <button> 默认不继承 .btn 的字体与指针样式,补上 */
+button.btn{font-family:inherit;cursor:pointer}
+button.btn:disabled{opacity:.6;cursor:default;transform:none}
+
+/* ---------- PWA 提示条(更新 / iOS 安装引导) ---------- */
+/* 默认隐藏,由 pwa.js 按条件加 .is-visible。用 fixed 悬浮在底部,
+   不占据文档流,避免插入后把页面高度顶掉导致布局跳动。 */
+.pwa-update,.pwa-ios-hint{
+  position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+  z-index:60;
+  display:none;align-items:center;gap:12px;
+  padding:12px 16px;border-radius:14px;
+  max-width:calc(100vw - 32px);
+  font-size:14px;line-height:1.5;
+}
+.pwa-update.is-visible,.pwa-ios-hint.is-visible{display:flex}
+.pwa-update{bottom:20px}
+.pwa-ios-hint{bottom:74px}
+
+.pwa-update button,.pwa-ios-close{
+  font-family:inherit;font-size:13.5px;cursor:pointer;
+  border-radius:999px;border:1px solid var(--glass-border);
+  padding:7px 14px;background:var(--glass-bg);color:var(--text);
+  transition:.2s;white-space:nowrap;
+}
+.pwa-update-go{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#04161f;border-color:transparent;font-weight:600;
+}
+.pwa-ios-close{
+  padding:4px 10px;font-size:16px;line-height:1;
+}
+.pwa-update button:hover,.pwa-ios-close:hover{transform:translateY(-1px)}
+
+@media(max-width:520px){
+  .pwa-update{flex-wrap:wrap;justify-content:center;bottom:14px}
+  .pwa-ios-hint{flex-wrap:wrap;justify-content:center;bottom:auto;top:14px}
+}

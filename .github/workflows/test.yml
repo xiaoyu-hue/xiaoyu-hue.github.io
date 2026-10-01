@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: 滚动动效逻辑
+      - name: 滚动动效 / Service Worker 分流逻辑
         # 用 find 列出测试文件，兼容 Node 20（其 node --test 不支持 glob 参数）
         run: node --test $(find tests/js -name '*.test.mjs')
 

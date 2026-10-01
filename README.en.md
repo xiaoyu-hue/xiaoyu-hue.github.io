@@ -41,25 +41,37 @@ All four are live; links are in each repository.
 
 ```
 xiaoyu-hue.github.io/
-├── index.html          # Home (about / projects / contact)
+├── index.html              # Home (about / projects / contact)
+├── offline.html            # Offline fallback page
+├── manifest.webmanifest    # PWA app manifest (name, icons, launch mode)
+├── sw.js                   # Service Worker (must live at the root, see below)
 ├── assets/
-│   ├── style.css       # Liquid glass × ocean theme
-│   ├── main.js         # Scroll reveal (respects prefers-reduced-motion)
-│   └── favicon.svg     # Site icon
+│   ├── style.css           # Liquid glass × ocean theme (dark + light variables)
+│   ├── theme-boot.js       # Applies theme inside <head> to avoid a flash
+│   ├── pwa.js              # Service Worker registration, update prompt, install hint
+│   ├── prefs.js            # Theme, reading log, import/export
+│   ├── offline.js          # Retry button on the offline page
+│   ├── main.js             # Scroll reveal (respects prefers-reduced-motion)
+│   ├── icons/              # App icons (svg source + generated PNGs)
+│   ├── og-cover.png        # Social share cover (1200×630)
+│   └── favicon.svg         # Site icon
 ├── blog/
-│   ├── index.html      # Blog index
-│   └── post-*.html     # Articles
+│   ├── index.html          # Blog index
+│   └── post-*.html         # Articles
 ├── scripts/
-│   └── check_integrity.py   # Integrity check (links / CSP / third-party)
-├── tests/              # Contract, logic, and real-browser tests
+│   ├── check_integrity.py  # Integrity check (links / CSP / PWA assets)
+│   └── build-icons.mjs     # Exports PNG icons from icon.svg
+├── tests/                  # Contract, logic, and real-browser tests
 ├── playwright.config.mjs
-├── _headers            # Security headers; applies on Cloudflare Pages-style hosts
+├── _headers                # Security headers; applies on Cloudflare Pages-style hosts
 └── .github/workflows/
     ├── security.yml    # CI: runs the integrity check on every push
     └── test.yml        # CI: runs the three test layers on every push
 ```
 
 > `_headers` has **no effect on GitHub Pages** (Pages does not support custom response headers). It is included for a future move to a host that supports it, such as Cloudflare Pages.
+>
+> 🔴 **`sw.js` is not affected by that limitation.** A Service Worker is registered from JavaScript (`assets/pwa.js`), not from response headers, so it works fine on GitHub Pages.
 
 ---
 
@@ -73,7 +85,7 @@ The gear icon at the right of the nav bar opens a settings panel with three thin
 | **Reading log** | Articles you open are recorded automatically; the panel links back to them |
 | **Data** | Export / import JSON (to move between devices), and a reset button (requires a second click) |
 
-**Your data stays in your own browser's localStorage** and is never uploaded anywhere — that is not a promise, it is a physical constraint: the site's CSP includes `connect-src 'none'`, so the browser blocks every network request. Uploading is not possible.
+**Your data stays in your own browser's localStorage** and is never uploaded anywhere. The site's CSP restricts `connect-src` to `'self'`, meaning requests may only go to the site's own origin — there is no backend that could receive your data.
 
 A few trade-offs, also documented in the code comments:
 
@@ -81,6 +93,63 @@ A few trade-offs, also documented in the code comments:
 - **Export downloads a real JSON file** rather than copying to the clipboard — the clipboard may be unavailable without HTTPS; a download is more reliable.
 - **Resetting takes two clicks.** The first asks "are you sure"; if you don't confirm within 4 seconds it cancels itself. Destructive actions deserve a second door.
 - **A disabled localStorage does not throw** (private mode, some corporate policies). The feature degrades; the site keeps working.
+
+---
+
+## Offline & install (PWA)
+
+This site is a **PWA** (Progressive Web App): it can be installed to your desktop or phone home screen, then works offline for cached pages and opens almost instantly on repeat visits.
+
+### Install it as an app
+
+| Platform | How |
+|----------|-----|
+| Desktop Chrome / Edge | An install icon appears in the address bar; or menu → "Install xiaoyu-hue" |
+| Android Chrome | Menu → "Add to Home screen" |
+| iOS Safari | **No automatic prompt.** Tap Share → "Add to Home Screen". The site shows a hint bar for this |
+
+Once installed, it opens without a browser address bar, like a native app.
+
+### What works offline
+
+The following is pre-cached on your **first visit** and opens without a network:
+
+- Home, blog index, all 5 articles
+- All styles, scripts, and icons
+
+Visiting a page that was **never cached** shows an offline notice listing the articles you can read offline.
+
+> Note what "pre-cached on first visit" implies: if your very first visit happens while offline, nothing will load. Offline support comes from the cache left by a previous successful visit.
+
+### Cache version and updates
+
+`sw.js` starts with a version constant:
+
+```js
+const CACHE_VERSION = 'v1';
+```
+
+**After publishing new content, bump this number** (`v1` → `v2`). On the user's next visit the Service Worker drops the old cache, re-fetches, and shows a "new version available" bar.
+
+If you don't bump it, the HTML itself still updates (it is network-first), but styles and scripts may stay on the old version — so change it whenever you publish.
+
+### Why the Service Worker must be at the root
+
+A Service Worker's **scope is limited by its path**. At `assets/sw.js` its scope would be confined to `/assets/`, so it would **never see page navigations** — registration appears to succeed, yet nothing works offline, and the console stays silent.
+
+So `sw.js` must live at the repository root. The integrity checker fails loudly if it is moved.
+
+### Clearing the cache completely
+
+- DevTools → Application → Service Workers → Unregister
+- Same panel → Storage → clear local storage
+- Or just uninstall the installed app
+
+### Three implementation trade-offs
+
+- **HTML is network-first, never cache-first.** Cache-first would hide new articles forever, and it is very hard to self-diagnose.
+- **`skipWaiting()` is never called unconditionally.** Doing so would swap the page out from under someone mid-read. It only switches after the user clicks "Update now".
+- **`og-cover.png` is excluded from the precache.** It is 500KB, aimed at social crawlers, and never loaded during normal browsing — precaching it would make every visitor download half a megabyte for nothing.
 
 ---
 
@@ -94,6 +163,9 @@ cd xiaoyu-hue.github.io
 # Just double-click index.html, or serve it:
 python3 -m http.server 8000
 ```
+
+> **Testing PWA features requires `http://localhost:8000`, not a LAN IP.**
+> Service Workers only run in a secure context: HTTPS, or localhost. Over a LAN IP (e.g. `192.168.x.x`) registration fails silently and offline mode is unavailable — that is a browser security rule, not a site bug.
 
 Chrome or Edge recommended.
 
@@ -111,9 +183,9 @@ npx playwright test                          # real browser: needs Node, run `np
 
 | Layer | What it covers |
 |-------|----------------|
-| Contract | `<head>` of all 7 pages, footer signature, nav, whether the CSP still matches `_headers`; whether post cards and articles stay in sync; whether the integrity checker itself still catches problems |
-| Logic | The four branches of the scroll reveal: normal observation / user prefers reduced motion / browser lacks IntersectionObserver / browser lacks matchMedia |
-| Real browser | Does the page actually render? Did CSP block CSS or JS? Does the reveal really fire? Does anything overflow at 375px? |
+| Contract | `<head>` of all 8 pages, footer signature, nav, whether the CSP still matches `_headers`; whether post cards and articles stay in sync; PWA manifest validity and real icon dimensions; whether `sw.js` sits at the root and whether the precache list has dead links; whether the integrity checker itself still catches problems |
+| Logic | The four branches of the scroll reveal (normal / reduced motion / no IntersectionObserver / no matchMedia); Service Worker request routing (navigation vs asset vs other) and its bypass rules for cross-origin and non-GET |
+| Real browser | Does the page actually render? Did CSP block CSS or JS? Does the reveal really fire? Does anything overflow at 375px? Also: Service Worker registration, **whether the home page and articles open while offline**, and whether uncached pages fall back to the offline page |
 
 Every push to `main` runs all three layers in CI.
 
@@ -123,7 +195,15 @@ Every push to `main` runs all three layers in CI.
 
 - Edit `index.html` to update project cards, the about section, and contact info
 - To add an article: copy `blog/post-1.html`, change the content, then add a `.post-card` to `blog/index.html`
+- After adding an article, **add the new file to `sw.js`'s `PRECACHE` list**, otherwise it will not open offline (the integrity check catches dead links in the list, but it cannot tell you something is *missing*)
+- **Bump `CACHE_VERSION` in `sw.js` whenever you publish**
 - Pushing to `main` triggers an automatic GitHub Pages deploy
+
+After editing the icon source `assets/icons/icon.svg`, regenerate the PNGs:
+
+```bash
+node scripts/build-icons.mjs
+```
 
 ---
 
