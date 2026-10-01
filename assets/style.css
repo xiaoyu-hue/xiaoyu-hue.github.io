@@ -607,21 +607,90 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
    博客列表的文章数会变，写死意味着每加一篇都要改 CSS。
    用 var(--i) 之后新增条目自动获得正确延迟，零维护。
 
-   --stagger-cap 的封顶：一组 30 个元素按每项 40ms 排下去，
+   封顶 320ms：一组 30 个元素按每项 40ms 排下去，
    最后一个要等 1.2 秒才出现，用户会以为页面卡了。
-   封顶 320ms 后，超出部分一律按 320ms 算 ——
-   错落感保留在前几个元素上（人眼只能分辨前几下），
+   封顶后错落感保留在前几个元素上（人眼只能分辨前几下），
    同时保证任何长度的列表都在 1/3 秒内全部启动。
+
+   ⚠️ 本块必须排在所有「组件级过渡规则」之后，原因见第 2 小节的注释。
 */
+
+/* --- 2.1 组件自身的过渡（不含编排） ---
+   这里全部使用 transition-property / -duration / -timing-function
+   三个长写属性，刻意不用 transition 简写。
+
+   为什么：transition 是简写属性，写它等于把 transition-delay 一起
+   重置为 0s。卡片（.card/.post-card）同时又是 .reveal，
+   组件规则一旦用简写，就会把编排层设好的错落延迟冲掉 ——
+   表现为「延迟全是 0，动效齐刷刷一起出现」。
+
+   这个坑很隐蔽：CSS 本身不报错，JS 测试全绿（逻辑是对的），
+   只有真浏览器里量 computed style 才看得出 duration 变成了
+   --dur-fast 而不是 --dur-base。
+
+   注意卡片只列 border-color / box-shadow 两条轴，不列 transform ——
+   transform 交给 .reveal（见 2.2），避免两条规则争同一属性轴。
+   代价是悬停抬升跟着 240ms 而不是 140ms，慢约 100ms，
+   换来的是「一套过渡规则只由一个选择器负责」，不再有覆盖关系。 */
+.card,.post-card{
+  transition-property:border-color,box-shadow;
+  transition-duration:var(--dur-fast);
+  transition-timing-function:var(--ease-out);
+}
+.card:hover,.post-card:hover{transform:translateY(calc(-1 * var(--shift-sm)))}
+
+/* 按钮：按下时缩一点，给"点击已被接收"的即时反馈。
+   这是唯一允许在 :active 上做缩放的组件 ——
+   它必须是即时的，所以用最快的 --dur-fast，且在总开关下同样归零。 */
+.btn,.prefs-toggle,.prefs-seg button,.prefs-actions button,
+.pwa-update button,.pwa-ios-close{
+  transition-property:transform,background,color,border-color;
+  transition-duration:var(--dur-fast);
+  transition-timing-function:var(--ease-out);
+}
+.btn:active,.prefs-toggle:active,.prefs-seg button:active,
+.prefs-actions button:active{
+  transform:translateY(0) scale(.97);
+}
+
+/* 导航项：下划线不必，靠背景色淡入即可，聚焦点应当留在内容上 */
+.nav-links a{
+  transition-property:color,background;
+  transition-duration:var(--dur-fast);
+  transition-timing-function:var(--ease-out);
+}
+
+/* 导航滚动加深：给背景与阴影一个短过渡，避免"啪"的一下变实 */
+.nav{
+  transition-property:background,box-shadow;
+  transition-duration:var(--dur-base);
+  transition-timing-function:var(--ease-out);
+}
+
+/* --- 2.2 编排规则（必须最后写） ---
+   .reveal 的基础转录放在组件规则之后，是为了让它的
+   transition / transition-delay 拥有最终的源顺序优势 ——
+   同权重下后来者胜，这样卡片规则就再也冲不掉错落延迟了。
+
+   代价：.card 的 duration 是 --dur-fast(140ms)，.reveal 是
+   --dur-base(240ms)，同一个元素上两者都要用。
+   解法是把它们放在两条不同的属性轴上 ——
+   .reveal 管 opacity 与自身位移，.card 只管 border-color / box-shadow。
+   transform 两边都在用，这里让 .reveal 赢（它是入场动画的主角），
+   卡片悬停的微抬只在「已经入场完成」后才有视觉意义，不冲突。 */
 .reveal{
   opacity:0;
   transform:translateY(var(--shift-lg));
-  transition:
-    opacity var(--dur-base) var(--ease-out),
-    transform var(--dur-base) var(--ease-out);
-  /* 同组内按序号错开启动；--i 由 main.js 注入，缺省 0 */
-  transition-delay:
-    min(calc(var(--stagger-step) * var(--i,0)), 320ms);
+  /* 入场过渡：覆盖 opacity 与 transform 两条轴 */
+  transition-property:opacity,transform;
+  transition-duration:var(--dur-base);
+  transition-timing-function:var(--ease-out);
+  /* 同组内按序号错开启动；--i 由 main.js 注入，缺省 0。
+     单写 transition-delay 长写，不受上方任何简写影响。 */
+  transition-delay:min(calc(var(--stagger-step) * var(--i,0)), 320ms);
+  /* 卡片同时带 .card 时，悬停用的 border-color/box-shadow 过渡
+     仍然生效（那两条走的是 .card 的 transition-property），
+     而 transform 的过渡由本规则接管，两者互不覆盖。 */
 }
 .reveal.in{opacity:1;transform:none}
 
@@ -643,50 +712,15 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 .reveal-slide{transform:translateY(var(--shift-md))}
 .reveal-fade{transform:none}
 
-/* 卡片悬停：只抬 --shift-sm 这一档，控制在"感觉到"而不是"跳起来"。
-   同时过渡时长收紧到 --dur-fast，让指针划过时跟手。 */
-.card,.post-card{
-  transition:
-    transform var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out);
-}
-.card:hover,.post-card:hover{transform:translateY(calc(-1 * var(--shift-sm)))}
-
-/* 按钮：按下时缩一点，给"点击已被接收"的即时反馈。
-   这是唯一允许在 :active 上做缩放的组件 ——
-   它必须是即时的，所以用最快的 --dur-fast，且在总开关下同样归零。 */
-.btn,.prefs-toggle,.prefs-seg button,.prefs-actions button,
-.pwa-update button,.pwa-ios-close{
-  transition:
-    transform var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
-}
-.btn:active,.prefs-toggle:active,.prefs-seg button:active,
-.prefs-actions button:active{
-  transform:translateY(0) scale(.97);
-}
-
-/* 导航项：下划线不必，靠背景色淡入即可，聚焦点应当留在内容上 */
-.nav-links a{
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
-}
-
 /* 设置面板：从右上角轻微下拉展开。
-   位移只用 --shift-md，避免面板"飞"出来挡住导航。 */
-.prefs-panel{
-  transition:
-    opacity var(--dur-base) var(--ease-out),
-    transform var(--dur-base) var(--ease-out);
-}
-/* display:none 不能做过渡，所以关闭态用 visibility + opacity + transform，
+   位移只用 --shift-sm，避免面板"飞"出来挡住导航。
+   display:none 不能做过渡，所以关闭态用 visibility + opacity + transform，
    is-open 时再切回来。visibility 的过渡延迟等于时长，
    保证淡出动画播完才真正不可见、不可点击。 */
 .prefs-panel{
+  transition-property:opacity,transform,visibility;
+  transition-duration:var(--dur-base);
+  transition-timing-function:var(--ease-out);
   visibility:hidden;
   opacity:0;
   transform:translateY(calc(-1 * var(--shift-sm)));
@@ -696,13 +730,6 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
   visibility:visible;
   opacity:1;
   transform:none;
-}
-
-/* 导航滚动加深：给背景与阴影一个短过渡，避免"啪"的一下变实 */
-.nav{
-  transition:
-    background var(--dur-base) var(--ease-out),
-    box-shadow var(--dur-base) var(--ease-out);
 }
 
 /* ---------- 第 2 层：降级层 ---------- */

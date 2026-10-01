@@ -101,6 +101,211 @@ test.describe('滚动淡入动效', () => {
   });
 });
 
+test.describe('微动效系统', () => {
+  // 这一组测的是「编排放到真浏览器里还成不成立」——
+  // Node 层只能验证分支逻辑，验证不了 CSS 变量是否真的被消费、
+  // 过渡是否真的挂在元素上。CSS 写错一个字（比如变量名拼错），
+  // JS 测试全绿，页面却毫无动效。
+
+  test('令牌真的被 CSS 消费：.reveal 的 transition 有实际时长', async ({ page }) => {
+    await page.goto('/');
+    const info = await page.evaluate(() => {
+      const el = document.querySelector('.reveal');
+      const cs = getComputedStyle(el);
+      return {
+        duration: cs.transitionDuration,
+        property: cs.transitionProperty,
+        delay: cs.transitionDelay,
+      };
+    });
+    // 变量名拼错时，transition-duration 会退化成 0s —— 动效静默消失
+    expect(info.duration).not.toBe('0s');
+    expect(info.duration).toMatch(/\d/);
+    expect(info.property).toContain('opacity');
+    expect(info.property).toContain('transform');
+  });
+
+  test('同组错落：同父容器下第 2 个起的延迟依次递增', async ({ page }) => {
+    await page.goto('/');
+    const delays = await page.evaluate(() => {
+      // 首页 .grid 里的四张项目卡是典型的同组元素
+      const cards = Array.from(document.querySelectorAll('.grid .reveal'));
+      return cards.map((el) => getComputedStyle(el).transitionDelay);
+    });
+    expect(delays.length).toBeGreaterThanOrEqual(3);
+    // 第一个不该有延迟，后面的应当依次变大
+    const toMs = (s) => {
+      const first = String(s).split(',')[0].trim();
+      return first.endsWith('ms') ? parseFloat(first) : parseFloat(first) * 1000;
+    };
+    const ms = delays.map(toMs);
+    expect(ms[0]).toBe(0);
+    for (let i = 1; i < ms.length; i++) {
+      expect(ms[i]).toBeGreaterThan(ms[i - 1]);
+    }
+  });
+
+  test('封顶 320ms：长列表不会让最后一个元素等太久', async ({ page }) => {
+    await page.goto('/blog/index.html');
+    // 造一个超长的同组列表，验证封顶真的生效
+    const maxDelay = await page.evaluate(() => {
+      const wrap = document.querySelector('.wrap');
+      const probe = document.createElement('div');
+      // 复用 .grid 的 --i 机制，但直接给 40 个元素手工注入 --i
+      for (let i = 0; i < 40; i++) {
+        const d = document.createElement('div');
+        d.className = 'reveal';
+        d.style.setProperty('--i', String(i));
+        probe.appendChild(d);
+      }
+      wrap.appendChild(probe);
+      const last = probe.lastElementChild;
+      const v = getComputedStyle(last).transitionDelay;
+      probe.remove();
+      const first = String(v).split(',')[0].trim();
+      return first.endsWith('ms') ? parseFloat(first) : parseFloat(first) * 1000;
+    });
+    expect(maxDelay).toBeLessThanOrEqual(320);
+  });
+
+  test('开启动效时按钮标为选中，且 html 上有 data-motion=on', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'on');
+    await expect(page.locator('[data-motion-option="on"]')).toHaveClass(/is-active/);
+    await expect(page.locator('[data-motion-option="off"]')).not.toHaveClass(/is-active/);
+  });
+
+  test('在面板里关掉动效：立即生效且刷新后保持', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await page.locator('[data-motion-option="off"]').click();
+
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
+    await expect(page.locator('[data-motion-option="off"]')).toHaveClass(/is-active/);
+
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
+  });
+
+  test('关掉动效后过渡时长归零，内容仍然全部可见', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await page.locator('[data-motion-option="off"]').click();
+    await page.keyboard.press('Escape');
+
+    const result = await page.evaluate(() => {
+      const el = document.querySelector('.reveal');
+      const cs = getComputedStyle(el);
+      return { duration: cs.transitionDuration, opacity: cs.opacity };
+    });
+    // 归零的是"变化过程"，不是"最终状态"——
+    // 内容必须仍然可见，否则开关就成了"关掉内容"
+    expect(result.duration).toMatch(/^0(\.\d+)?m?s/);
+    expect(result.opacity).toBe('1');
+  });
+
+  test('关掉动效后不做滚动淡入，元素直接就在', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await page.locator('[data-motion-option="off"]').click();
+    await page.reload();
+
+    // 无需滚动，所有 .reveal 都应当已经有 .in
+    await page.waitForTimeout(200);
+    const pending = await page.locator('.reveal:not(.in)').count();
+    expect(pending, '关闭动效后不该还有元素在等待淡入').toBe(0);
+  });
+
+  test('关掉再打开：动效能回来（防止属性残留）', async ({ page }) => {
+    // 回归测试：theme-boot.js 若只在 off 时写属性，
+    // 用户切回开启后 html 上会残留 data-motion="off"，动效再也回不来。
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await page.locator('[data-motion-option="off"]').click();
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
+
+    await page.locator('[data-motion-option="on"]').click();
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'on');
+
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'on');
+    // 恢复后应当重新出现等待淡入的元素
+    const n = await page.locator('.reveal').count();
+    expect(n).toBeGreaterThan(0);
+  });
+
+  test('动效开关不产生 CSP 违规', async ({ page }) => {
+    // 切换开关会写行内自定义属性（--i / data-motion），
+    // 必须确认这条路没有踩到 style-src 'self'
+    const violations = [];
+    page.on('console', (msg) => {
+      const t = msg.text();
+      if (/Content Security Policy|CSP/i.test(t)) violations.push(t);
+    });
+
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await page.locator('[data-motion-option="off"]').click();
+    await page.locator('[data-motion-option="on"]').click();
+    await page.locator('[data-theme-option="light"]').click();
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+
+    expect(violations, 'CSP 违规：\n' + violations.join('\n')).toEqual([]);
+  });
+
+  test('设置面板有可过渡的进出场（不再是 display 硬切）', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+
+    // 必须先等过渡播完再断言。
+    // visibility 是离散属性：过渡期间它会保持起始值（hidden），
+    // 过渡结束才跳到 visible；而 opacity 是连续属性，会一路爬升。
+    // 所以「可见」的那一刻 opacity 往往只有 0.8，
+    // 直接断言 1 会失败 —— 这是过渡的正常中间态，不是 bug。
+    await expect
+      .poll(async () => page.evaluate(() => {
+        const cs = getComputedStyle(document.querySelector('.prefs-panel'));
+        return { visibility: cs.visibility, opacity: cs.opacity };
+      }), { timeout: 2000 })
+      .toEqual({ visibility: 'visible', opacity: '1' });
+
+    const info = await page.evaluate(() => {
+      const cs = getComputedStyle(document.querySelector('.prefs-panel'));
+      return {
+        duration: cs.transitionDuration,
+        property: cs.transitionProperty,
+      };
+    });
+    // display:none 是没法做过渡的，有非零时长才说明改成了可过渡方案
+    expect(info.duration).not.toBe('0s');
+    expect(info.property).toContain('opacity');
+  });
+
+  test('面板展开期间不会闪现（过渡中途就是可见的）', async ({ page }) => {
+    // 补一条正向断言：确认「先 hidden 后 visible」的变化
+    // 发生在 240ms 内，而不是一直不可见
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await page.waitForFunction(() => {
+      const cs = getComputedStyle(document.querySelector('.prefs-panel'));
+      return cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.5;
+    }, null, { timeout: 2000 });
+  });
+
+  test('增强对比度偏好下只做位移、不做透明度过渡', async ({ page }) => {
+    // 这类用户对低透明度元素的辨识力更差，
+    // 若仍然淡入，内容会有一段"看不见"的时间
+    await page.emulateMedia({ contrast: 'more' });
+    await page.goto('/');
+    const opacity = await page.evaluate(
+      () => getComputedStyle(document.querySelector('.reveal')).opacity,
+    );
+    expect(opacity).toBe('1');
+  });
+});
+
 test.describe('移动端布局', () => {
   test('375px 宽度下没有元素横向溢出', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });

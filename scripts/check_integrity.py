@@ -174,6 +174,81 @@ for f in html_files:
             f"[theme-color] {rel(f)} 应有 2 个 theme-color（深/浅各一），实际 {tc}"
         )
 
+# ---------- 6. 微动效系统完整性 ----------
+# 这几项的故障表现都是「沉默失效」：CSS 不报错、JS 测试全绿，
+# 只是浏览器里量 computed style 才发现动效没生效。
+STYLE = os.path.join(ROOT, "assets", "style.css")
+if not os.path.exists(STYLE):
+    problems.append("[缺样式] 没有 assets/style.css")
+else:
+    css = open(STYLE, encoding="utf-8").read()
+
+    # 令牌齐备：缺任何一个都会让对应动效静默失灵
+    needed_tokens = [
+        "--dur-fast", "--dur-base", "--dur-slow",
+        "--shift-sm", "--shift-md", "--shift-lg",
+        "--stagger-step",
+    ]
+    for token in needed_tokens:
+        if token + ":" not in css:
+            problems.append(f"[微动效] style.css 缺少令牌 {token}")
+
+    # 总开关：全站唯一能把所有动效归零的地方
+    if '[data-motion="off"]' not in css:
+        problems.append("[微动效] style.css 缺少 html[data-motion=off] 总开关")
+
+    # .reveal 的基础规则只能有一处。
+    # 两处定义时靠源顺序决定谁生效，改了 A 坏了 B，极难排查。
+    # 必须行首锚定：`.grid .reveal:nth-child(2){` 这类后代选择器
+    # 也含 `.reveal`，用子串计数会误判。
+    if len(re.findall(r"^\.reveal\{", css, re.M)) != 1:
+        problems.append("[微动效] .reveal 的基础规则应当只有一处（行首匹配）")
+
+    # 组件规则不许用 transition 简写去抢 .reveal 的属性轴。
+    # transition 简写会把 transition-delay 一并重置为 0，
+    # 卡片同时带 .card 与 .reveal 时就会把错落延迟冲掉 ——
+    # 表现为「延迟全是 0，动效齐刷刷一起出现」。这条曾真实发生过。
+    for selector in (".card,.post-card{",):
+        idx = css.find(selector)
+        if idx < 0:
+            continue
+        block = css[idx:css.find("}", idx)]
+        if re.search(r"transition\s*:", block):
+            problems.append(
+                f"[微动效] {selector[:-1]} 用了 transition 简写，会重置 "
+                f"transition-delay 并冲掉 .reveal 的错落延迟；"
+                f"请改用 transition-property/-duration/-timing-function 长写"
+            )
+
+    # 三条纯 CSS 降级路径必须在场
+    for path, label in (
+        ("prefers-reduced-motion:reduce", "系统级「减少动画」"),
+        ("prefers-contrast:more", "增强对比度"),
+        ("scripting:none", "脚本不可用"),
+    ):
+        if path not in css:
+            problems.append(f"[微动效] style.css 缺少降级路径：{label}")
+
+    # 微动效系统块必须在文件末尾（同权重靠源顺序取胜，
+    # 上移会被前面的基础规则反覆盖）
+    pos = css.find("微动效系统")
+    if pos < 0:
+        problems.append("[微动效] style.css 里找不到「微动效系统」块")
+    elif css.find(".prefs-panel.is-open", pos) < 0:
+        problems.append("[微动效] 编排规则没有落在微动效系统块内（可能被上移了）")
+
+# 每个页面都要有动效开关按钮，且 on / off 成对
+for f in html_files:
+    text = open(f, encoding="utf-8").read()
+    if f.endswith("offline.html"):
+        continue   # 离线页没有设置面板，属预期
+    on = len(re.findall(r'data-motion-option="on"', text))
+    off = len(re.findall(r'data-motion-option="off"', text))
+    if (on, off) != (1, 1):
+        problems.append(
+            f"[微动效] {rel(f)} 的动效开关应有 on/off 各 1 个，实际 on={on} off={off}"
+        )
+
 # ---------- 报告 ----------
 print(f"检查范围: {len(html_files)} 个 HTML + {len(md_files)} 个 Markdown\n")
 if problems:
@@ -188,4 +263,5 @@ print("  ✓ 无第三方外部资源")
 print("  ✓ 无内联脚本 / 事件属性 / 内联样式")
 print("  ✓ PWA：manifest 合法、图标齐全、Service Worker 在站点根目录")
 print("  ✓ PWA：预缓存清单无死链，各页面均声明 manifest 与 theme-color")
+print("  ✓ 微动效：令牌齐备、总开关在场、三条降级路径完整、无简写覆盖")
 print("\n全部通过 ✓")

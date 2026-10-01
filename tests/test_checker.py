@@ -49,12 +49,18 @@ CLEAN_PAGE = f"""<!DOCTYPE html>
 </head>
 <body>
 <a href="other.html">ok</a>
+{'''<button type="button" data-motion-option="on" aria-pressed="false">开启</button>
+<button type="button" data-motion-option="off" aria-pressed="false">关闭</button>'''}
 <script src="assets/main.js"></script>
 </body>
 </html>
 """
 
 OTHER_PAGE = CLEAN_PAGE.replace('<a href="other.html">ok</a>', "")
+
+# 动效开关的「关闭」按钮，抽成常量方便在用例里精确删除
+# （测试「只加了一半开关」这种漏写场景）。
+MOTION_OFF = '<button type="button" data-motion-option="off" aria-pressed="false">关闭</button>'
 
 # 检查器现在还会校验 PWA 资产，样本站点必须自带一份最小的，
 # 否则「干净站点」会因为缺 manifest / sw.js / offline.html 而报错。
@@ -81,16 +87,46 @@ MINI_PNG = bytes.fromhex(
     "57bfab6d0000000049454e44ae426082"
 )
 
+# 带完整微动效令牌的最小样式表。检查器现在会校验这些令牌与降级路径，
+# 所以样本站点的 style.css 不能是空占位 —— 否则旧测试（比如「干净站点应通过」）
+# 会被新检查无差别拦下。这份样式表满足检查器对微动效的全部要求，
+# 各测试类再用 mutate() 故意改坏它来触发对应检查。
+MINI_STYLE = """\
+:root{
+  --dur-fast:140ms;--dur-base:240ms;--dur-slow:1600ms;
+  --shift-sm:2px;--shift-md:6px;--shift-lg:14px;--stagger-step:40ms;
+}
+/* 微动效系统 */
+.card,.post-card{transition-property:border-color;transition-duration:var(--dur-fast)}
+.reveal{opacity:0;transition-property:opacity;transition-delay:40ms}
+.prefs-panel{visibility:hidden;opacity:0}
+.prefs-panel.is-open{visibility:visible;opacity:1}
+:root[data-motion="off"]{--dur-fast:1ms;--dur-base:1ms;--dur-slow:1ms;
+  --shift-sm:0px;--shift-md:0px;--shift-lg:0px}
+@media(prefers-reduced-motion:reduce){.reveal{transition:none}}
+@media(prefers-contrast:more){.reveal{opacity:1}}
+@media(scripting:none){.reveal{opacity:1}}
+"""
 
-def build_site(tmp, pages):
-    """在临时目录里搭一个最小站点,并把真实的检查器复制进去。"""
+# 不带微动效的占位样式表，供「故意制造缺令牌」类测试使用
+BARE_STYLE = "/* placeholder */\n"
+
+
+def build_site(tmp, pages, style=None):
+    """在临时目录里搭一个最小站点,并把真实的检查器复制进去。
+
+    style 默认用 MINI_STYLE（带完整微动效令牌），这样所有
+    不关心微动效的测试（死链、CSP、PWA…）不会被新检查无差别拦下。
+    需要测试「缺令牌」的用例可传 BARE_STYLE 再 mutate。
+    """
     os.makedirs(os.path.join(tmp, "scripts"), exist_ok=True)
     shutil.copyfile(os.path.join(ROOT, CHECKER), os.path.join(tmp, CHECKER))
     # 样本会引用这两个资源,补上占位文件,否则死链检查会因为样本自身不完整而误报
     os.makedirs(os.path.join(tmp, "assets"), exist_ok=True)
-    for name in ("style.css", "main.js"):
-        with open(os.path.join(tmp, "assets", name), "w", encoding="utf-8") as fh:
-            fh.write("/* placeholder */\n")
+    with open(os.path.join(tmp, "assets", "style.css"), "w", encoding="utf-8") as fh:
+        fh.write(style if style is not None else MINI_STYLE)
+    with open(os.path.join(tmp, "assets", "main.js"), "w", encoding="utf-8") as fh:
+        fh.write("/* placeholder */\n")
     # PWA 资产
     with open(os.path.join(tmp, "manifest.webmanifest"), "w", encoding="utf-8") as fh:
         fh.write(MINI_MANIFEST)
@@ -278,6 +314,142 @@ class TestCheckerCatchesPwaProblems(unittest.TestCase):
         proc = self.run_case(mutate)
         self.assertEqual(proc.returncode, 1)
         self.assertIn("[manifest 非法]", proc.stdout)
+
+
+class TestCheckerCatchesMotionProblems(unittest.TestCase):
+    """微动效检查项的自检。
+
+    这些检查针对的都是「沉默失效」：CSS 不报错、JS 测试全绿，
+    只有真浏览器里量 computed style 才看得出动效没生效。
+    正因如此，检查器自己必须被证明「真的会红」。
+    """
+
+    # 页面要带动效开关，否则会被 [微动效] on/off 检查拦下。
+    # 动效按钮已内联进 CLEAN_PAGE（见文件顶部），所以这里直接复用，
+    # 不要再 replace 一次 —— 否则会变成 on=2/off=2。
+    MOTION_PAGE = CLEAN_PAGE
+
+    def run_case(self, mutate, page=None):
+        with tempfile.TemporaryDirectory() as tmp:
+            # build_site 默认会写入带完整微动效令牌的样式表（见 MINI_STYLE），
+            # 因此干净样本应当直接通过；mutate 再故意改坏它来触发对应检查。
+            build_site(tmp, {
+                "index.html": page or self.MOTION_PAGE,
+                "other.html": self.MOTION_PAGE,
+            })
+            mutate(tmp)
+            proc = run_checker(tmp)
+        self.assertNotIn("Traceback", proc.stderr,
+                         "检查器抛异常了,不是发现了问题:\n" + proc.stderr)
+        return proc
+
+    def test_clean_motion_setup_passes(self):
+        """干净样本必须通过，否则后面每条断言都无从判断。"""
+        proc = self.run_case(lambda tmp: None)
+        self.assertEqual(proc.returncode, 0,
+                         "带完整微动效的最小站点应当通过:\n" + proc.stdout)
+
+    def test_detects_missing_token(self):
+        def mutate(tmp):
+            p = os.path.join(tmp, "assets", "style.css")
+            s = open(p, encoding="utf-8").read()
+            open(p, "w", encoding="utf-8").write(s.replace("--stagger-step:40ms", ""))
+
+        proc = self.run_case(mutate)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("[微动效] style.css 缺少令牌 --stagger-step", proc.stdout)
+
+    def test_detects_missing_master_switch(self):
+        def mutate(tmp):
+            p = os.path.join(tmp, "assets", "style.css")
+            s = open(p, encoding="utf-8").read()
+            # 总开关选择器是 :root[data-motion="off"]，删掉这一行
+            # 即可让检查器找不到开关。注意只删选择器前缀，
+            # 不要连带删后面的令牌（那会变成另一类问题）。
+            open(p, "w", encoding="utf-8").write(
+                s.replace(':root[data-motion="off"]', ""))
+
+        proc = self.run_case(mutate)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("缺少 html[data-motion=off] 总开关", proc.stdout)
+
+    def test_detects_duplicate_reveal_rule(self):
+        """两处 .reveal 定义会靠源顺序决定谁生效，改了 A 坏了 B。"""
+        def mutate(tmp):
+            p = os.path.join(tmp, "assets", "style.css")
+            s = open(p, encoding="utf-8").read()
+            open(p, "w", encoding="utf-8").write(
+                s + "\n.reveal{opacity:0;transition-delay:99ms}\n")
+
+        proc = self.run_case(mutate)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn(".reveal 的基础规则应当只有一处", proc.stdout)
+
+    def test_detects_transition_shorthand_on_card(self):
+        """这条是真实踩过的坑：.card 用 transition 简写会重置
+        transition-delay，把 .reveal 的错落延迟冲成 0。"""
+        def mutate(tmp):
+            p = os.path.join(tmp, "assets", "style.css")
+            s = open(p, encoding="utf-8").read()
+            open(p, "w", encoding="utf-8").write(
+                s.replace(
+                    ".card,.post-card{transition-property:border-color;"
+                    "transition-duration:var(--dur-fast)}",
+                    ".card,.post-card{transition:border-color 140ms ease}",
+                ))
+
+        proc = self.run_case(mutate)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("transition 简写", proc.stdout)
+
+    def test_detects_missing_reduced_motion_path(self):
+        def mutate(tmp):
+            p = os.path.join(tmp, "assets", "style.css")
+            s = open(p, encoding="utf-8").read()
+            open(p, "w", encoding="utf-8").write(
+                s.replace("@media(prefers-reduced-motion:reduce){.reveal{transition:none}}", ""))
+
+        proc = self.run_case(mutate)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("系统级「减少动画」", proc.stdout)
+
+    def test_detects_missing_contrast_path(self):
+        def mutate(tmp):
+            p = os.path.join(tmp, "assets", "style.css")
+            s = open(p, encoding="utf-8").read()
+            open(p, "w", encoding="utf-8").write(
+                s.replace("@media(prefers-contrast:more){.reveal{opacity:1}}", ""))
+
+        proc = self.run_case(mutate)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("增强对比度", proc.stdout)
+
+    def test_detects_missing_scripting_none_path(self):
+        def mutate(tmp):
+            p = os.path.join(tmp, "assets", "style.css")
+            s = open(p, encoding="utf-8").read()
+            open(p, "w", encoding="utf-8").write(
+                s.replace("@media(scripting:none){.reveal{opacity:1}}", ""))
+
+        proc = self.run_case(mutate)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("脚本不可用", proc.stdout)
+
+    def test_detects_missing_motion_switch_in_page(self):
+        """页面缺动效开关时，用户根本无从关闭动效。"""
+        page = CLEAN_PAGE.replace(MOTION_OFF, "").replace(
+            '<button type="button" data-motion-option="on" aria-pressed="false">开启</button>', "",
+        )
+        proc = self.run_case(lambda tmp: None, page=page)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("动效开关应有 on/off 各 1 个", proc.stdout)
+
+    def test_detects_half_present_motion_switch(self):
+        """只加了一半开关（忘了 off）是最容易犯的错。"""
+        page = CLEAN_PAGE.replace(MOTION_OFF, "")
+        proc = self.run_case(lambda tmp: None, page=page)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("实际 on=1 off=0", proc.stdout)
 
 
 class TestCheckerIgnoresTooling(unittest.TestCase):
