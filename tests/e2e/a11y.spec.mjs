@@ -71,10 +71,22 @@ function violationsToText(violations) {
 // 用项目自己的总开关（data-motion="off"）把 .reveal 直接压到终态，
 // 扫描才有确定性。顺便说一句：中间态对比度低不是缺陷，那是淡入效果
 // 本来的样子，是瞬态的；真正的问题只是「测试不该在动画中途读数」。
+//
+// 关掉之后还要等两帧再扫。除了 .reveal 的淡入，.ocean-bg 还挂着一个
+// 22s 循环、改 background-position 的动画，而文字就叠在这层背景上 ——
+// 它跑到哪一段，局部背景色就不一样。设置属性会让动画停，但「停」这个
+// 动作不会立刻反映到计算样式上，不等就扫有概率读到动画中途的背景色。
 async function scan(page) {
-  await page.evaluate(() => {
-    document.documentElement.dataset.motion = 'off';
-  });
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        document.documentElement.dataset.motion = 'off';
+        // 第一帧让样式生效，第二帧确认重绘完成
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      }),
+  );
+  // 字体没就位时行高和换行都还没定，元素位置也就没定
+  await page.evaluate(() => document.fonts.ready);
   return new AxeBuilder({ page }).withTags(TAGS).analyze();
 }
 
