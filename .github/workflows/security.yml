@@ -19,3 +19,38 @@ jobs:
       # 仓库零依赖,直接用 runner 自带的 python3,无需安装步骤
       - name: 运行完整性检查
         run: python3 scripts/check_integrity.py
+
+  # 验证「严格 CSP 不会拦掉内联 JSON-LD 结构化数据」这条结论仍然成立。
+  # 这条结论是实测得来的（见 docs/csp-jsonld.md），浏览器一旦改行为就会失效，
+  # 且失效表现是「结构化数据静默失踪」，肉眼无从发现，所以值得放进 CI。
+  # 权衡：CI 里只装 chromium 一个引擎（多引擎要额外几分钟且常缺系统依赖），
+  # 因此这里的覆盖弱于本地全量跑。脚本会把「未覆盖的引擎」如实打在输出里。
+  csp-jsonld:
+    name: CSP vs JSON-LD 实测
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装 playwright 与 chromium
+        run: pip install playwright && playwright install chromium
+
+      - name: 实测 JSON-LD 是否被 CSP 拦截
+        run: python3 scripts/verify_csp_jsonld.py
+
+  # 门禁：保证仓库里提交的成品 HTML 与 src/ 源文件「逐字节一致」。
+  # 这条专门防两类静默事故：①改了 src/ 却忘了跑 build，线上还是旧内容；
+  # ②手改了成品 HTML，下次构建会被覆盖却无人察觉。
+  # 两种情况都会让 build.py 在「仅比较」模式下退出非零，CI 直接失败。
+  # 注意：本 job 不传 --write，绝不在 CI 里改写文件，只比对并拒绝通过。
+  build-consistency:
+    name: src 与成品一致性门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 比较 src/ 与已提交成品是否一致
+        run: python3 build.py
