@@ -18,7 +18,9 @@
 
 const CACHE_PREFIX = 'xiaoyu-hue';
 // 发布新内容后改这个版本号,activate 时会清掉旧缓存,用户即可看到更新。
-const CACHE_VERSION = 'v3';
+// v4:修掉「导航请求把 404 也缓存进去」的问题。仅改代码不够 ——
+// 已经被写进缓存的错误响应,只有靠换缓存名才能在 activate 时被清掉。
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const OFFLINE_URL = '/offline.html';
@@ -95,7 +97,9 @@ function kindOf(request) {
 }
 
 // 导出给 Node 单测用(浏览器里 self.__sw 不影响任何行为)
-self.__sw = { shouldBypass, kindOf, KIND, PRECACHE, CACHE_NAME, ASSET_RE };
+self.__sw = {
+  shouldBypass, kindOf, shouldCache, KIND, PRECACHE, CACHE_NAME, ASSET_RE,
+};
 
 // ---------- 生命周期 ----------
 
@@ -136,12 +140,28 @@ self.addEventListener('activate', (event) => {
 
 // ---------- 请求处理 ----------
 
+/**
+ * 只缓存成功响应。
+ *
+ * 把 404 之类的错误响应存进去，用户之后离线打开就是一张错误页，
+ * 而且它会一直留到下次 CACHE_VERSION 变更 —— 缓存一旦被错误响应
+ * 污染，用户自己没办法清，只能等站点发版。
+ *
+ * 三个分支（导航 / 静态资源 / 其他）必须都走这里。以前是三处各写
+ * 一遍 `fresh.ok`，导航那个漏了，就是这么出的问题。
+ */
+function shouldCache(response) {
+  return !!(response && response.ok);
+}
+
 /** 导航:网络优先 → 缓存 → 离线页。 */
 async function handleNavigation(request) {
   try {
     const fresh = await fetch(request);
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, fresh.clone());
+    if (shouldCache(fresh)) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, fresh.clone());
+    }
     return fresh;
   } catch (e) {
     const cached = await caches.match(request);
@@ -161,7 +181,7 @@ async function handleAsset(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
   const fresh = await fetch(request);
-  if (fresh && fresh.ok) {
+  if (shouldCache(fresh)) {
     const cache = await caches.open(CACHE_NAME);
     cache.put(request, fresh.clone());
   }
@@ -173,7 +193,7 @@ async function handleOther(request) {
   const cached = await caches.match(request);
   const network = fetch(request)
     .then((fresh) => {
-      if (fresh && fresh.ok) {
+      if (shouldCache(fresh)) {
         caches.open(CACHE_NAME).then((c) => c.put(request, fresh.clone()));
       }
       return fresh;

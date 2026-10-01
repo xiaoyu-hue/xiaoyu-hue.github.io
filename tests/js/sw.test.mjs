@@ -173,3 +173,38 @@ test('预缓存不包含 og-cover.png', () => {
 test('缓存名带版本号，便于发布时整体替换', () => {
   assert.match(sw.CACHE_NAME, /^xiaoyu-hue-v\d+$/);
 });
+
+// ---------- 什么响应才配进缓存 ----------
+
+test('shouldCache：只认成功响应', () => {
+  assert.equal(sw.shouldCache({ ok: true }), true, '2xx 应当缓存');
+  assert.equal(sw.shouldCache({ ok: false }), false, '4xx/5xx 不该缓存');
+  assert.equal(sw.shouldCache(null), false, 'null 不该缓存');
+  assert.equal(sw.shouldCache(undefined), false, 'undefined 不该缓存');
+});
+
+test('shouldCache：挡住 404 才是它存在的理由', () => {
+  // 导航请求以前缺这个判断，404 会被写进缓存。后果不是"多存了一个
+  // 坏条目"那么轻：用户之后离线打开那页就是一张 404，而且清不掉，
+  // 只能等站点改 CACHE_VERSION 发版。
+  const notFound = { ok: false, status: 404 };
+  assert.equal(sw.shouldCache(notFound), false);
+});
+
+test('三个分支都用 shouldCache，没人手写 fresh.ok 绕过', () => {
+  // 以前是三处各写一遍 fresh.ok，导航那个漏了才出的问题。
+  // 收敛成一个函数之后，这里守住"别再有人绕过它"。
+  const calls = SOURCE.match(/if \(shouldCache\(/g) || [];
+  assert.equal(calls.length, 3, `应当有 3 处调用 shouldCache，实际 ${calls.length} 处`);
+
+  // 先剥掉注释再查。shouldCache 自己的说明里就写了 fresh.ok 这个
+  // 反例（正是它解释的来历），不剥离会被自己误判成"有人绕过了"。
+  const codeOnly = SOURCE
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+  const withoutFn = codeOnly.replace(/function shouldCache[\s\S]*?\n}/, '');
+  assert.ok(
+    !/\.ok\b/.test(withoutFn),
+    '除了 shouldCache 内部，不该再有裸的 .ok 判断',
+  );
+});
