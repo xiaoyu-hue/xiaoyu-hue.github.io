@@ -16,9 +16,7 @@ from tests.support import (
 )
 
 EXPECTED_CSS = {"index.html": "assets/style.css"}
-EXPECTED_JS = {"index.html": "assets/main.js"}
 DEFAULT_CSS = "../assets/style.css"
-DEFAULT_JS = "../assets/main.js"
 
 EXPECTED_REVEAL_COUNT = {
     "index.html": 11,
@@ -119,7 +117,13 @@ class TestHeadContract(unittest.TestCase):
                                 f"{page} 的 favicon 指向了不存在的 {href}")
 
     def test_stylesheet_and_script_paths(self):
-        """相对路径必须跟着目录层级走,移动文件会立刻断链。"""
+        """相对路径必须跟着目录层级走,移动文件会立刻断链。
+
+        脚本从「只允许一个」改成「只允许清单内这几个」——
+        站点现在确实需要三个脚本(防闪 / 偏好设置 / 滚动动效),
+        真正要防的是「不知不觉挂上第 N 个脚本拖慢首屏」,
+        所以用白名单而不是放开数量。
+        """
         for page in PAGES:
             with self.subTest(page=page):
                 doc = parse(page)
@@ -131,11 +135,21 @@ class TestHeadContract(unittest.TestCase):
                 self.assertEqual(css.attrs.get("href"),
                                  EXPECTED_CSS.get(page, DEFAULT_CSS))
 
+                prefix = "" if os.path.dirname(page) == "" else "../"
+                expected_scripts = [
+                    f"{prefix}assets/theme-boot.js",   # <head> 内,防首屏闪烁
+                    f"{prefix}assets/prefs.js",        # 主题与设置面板
+                    f"{prefix}assets/main.js",         # 滚动动效
+                ]
+
                 js = doc.find_all("script")
-                self.assertEqual(len(js), 1, f"{page} 应只引用一个脚本")
-                self.assertEqual(js[0].attrs.get("src"),
-                                 EXPECTED_JS.get(page, DEFAULT_JS))
-                self.assertFalse(js[0].texts, f"{page} 的脚本标签不应有内联内容")
+                srcs = [s.attrs.get("src") for s in js]
+                self.assertEqual(
+                    srcs, expected_scripts,
+                    f"{page} 的脚本清单与预期不符（增删脚本请同步更新本测试）",
+                )
+                for s in js:
+                    self.assertFalse(s.texts, f"{page} 的脚本标签不应有内联内容")
 
 
 class TestTitleAndDescription(unittest.TestCase):

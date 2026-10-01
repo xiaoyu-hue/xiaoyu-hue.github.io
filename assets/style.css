@@ -26,6 +26,9 @@
   /* 缓动曲线 */
   --ease-out:cubic-bezier(.22,1,.36,1);
   --ease-in-out:cubic-bezier(.65,0,.35,1);
+  /* 正文色（浅色模式下会重新取值） */
+  --body-text:#cfe2ec;
+  color-scheme:dark;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -60,6 +63,27 @@ body{
   border-radius:var(--radius);
   box-shadow:var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,.12);
 }
+
+/* 跳转到主要内容（仅键盘 Tab 聚焦时出现）
+   用 clip-path + 1px 把它从布局流里摘掉，而不是靠 left:-9999px 推出屏幕 ——
+   负定位会被溢出检测认定为元素出血。同理不能用 display:none，那会让它无法被 Tab 聚焦。 */
+.skip-link{
+  position:absolute;top:0;left:0;z-index:100;
+  width:1px;height:1px;overflow:hidden;
+  clip-path:inset(50%);
+  white-space:nowrap;
+  padding:12px 20px;border-radius:0 0 12px 0;
+  background:var(--accent-2);color:#04161f;
+  font-size:14px;font-weight:600;text-decoration:none;
+}
+.skip-link:focus{
+  width:auto;height:auto;overflow:visible;
+  clip-path:none;
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+/* main 接收跳转焦点时不显示整块描边 */
+main:focus{outline:none}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
 .nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(4,17,29,.55);border-bottom:1px solid rgba(150,210,255,.12);transition:background .35s var(--ease-out),box-shadow .35s var(--ease-out)}
 .nav.scrolled{background:rgba(4,17,29,.82);box-shadow:0 6px 28px rgba(0,0,0,.35)}
@@ -116,6 +140,9 @@ section{padding:80px 0}
 .contact-grid ul{list-style:none}
 .contact-grid li{padding:8px 0;color:var(--text-dim);font-size:14.5px;border-bottom:1px dashed rgba(150,210,255,.12)}
 .contact-grid li:last-child{border-bottom:none}
+.card-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.card-actions .btn{padding:10px 20px;font-size:14px}
+.card-note{margin-top:16px;padding-top:14px;border-top:1px dashed var(--glass-border);color:var(--text-faint);font-size:13.5px;line-height:1.65}
 
 footer{padding:40px 0;text-align:center;color:var(--text-faint);font-size:13.5px;border-top:1px solid rgba(150,210,255,.1)}
 footer a{color:var(--accent);text-decoration:none}
@@ -132,7 +159,7 @@ footer a{color:var(--accent);text-decoration:none}
 .article.glass{padding:44px}
 .article h1{font-size:clamp(24px,4vw,34px);margin-bottom:10px;line-height:1.35}
 .article .date{color:var(--text-faint);margin-bottom:30px;font-size:14px}
-.article p{margin-bottom:18px;color:#cfe2ec;font-size:16.5px}
+.article p{margin-bottom:18px;color:var(--body-text);font-size:16.5px}
 .article h2{margin:34px 0 14px;font-size:22px;color:var(--text)}
 .article code{background:var(--glass-bg);padding:2px 7px;border-radius:6px;font-family:ui-monospace,monospace;font-size:14px;color:var(--accent)}
 
@@ -145,13 +172,13 @@ footer a{color:var(--accent);text-decoration:none}
   background-size:100% 1px;
 }
 /* 文章内元素 */
-.article ul,.article ol{margin:0 0 18px 22px;color:#cfe2ec;font-size:16.5px}
+.article ul,.article ol{margin:0 0 18px 22px;color:var(--body-text);font-size:16.5px}
 .article li{margin-bottom:9px}
 .article h3{margin:28px 0 12px;font-size:18px;color:var(--accent)}
 .article table{width:100%;border-collapse:collapse;margin:0 0 22px;font-size:14.5px}
 .article th,.article td{border:1px solid rgba(150,210,255,.18);padding:10px 12px;text-align:left;vertical-align:top}
 .article th{background:rgba(255,255,255,.05);color:var(--text);font-weight:600}
-.article td{color:#cfe2ec}
+.article td{color:var(--body-text)}
 .article blockquote{margin:0 0 20px;padding:14px 18px;border-left:3px solid var(--accent);background:var(--glass-bg);border-radius:0 12px 12px 0;color:var(--text-dim)}
 .article blockquote strong{color:var(--text)}
 .article .tag{display:inline-block;font-size:12.5px;color:var(--accent);border:1px solid var(--glass-border);border-radius:999px;padding:4px 12px;margin:0 8px 14px 0}
@@ -175,14 +202,43 @@ footer a{color:var(--accent);text-decoration:none}
 }
 @media(max-width:720px){
   .grid,.contact-grid{grid-template-columns:1fr}
-  .nav-links a{padding:8px 10px;font-size:13px}
   .hero-card{padding:36px 22px}
   section{padding:60px 0}
+
+  /* 导航栏：加了设置按钮后，窄屏必须防止换行挤压 */
+  .nav .wrap{gap:8px}
+  .brand{white-space:nowrap;flex-shrink:0}
+  .nav-links{
+    flex-wrap:nowrap;
+    overflow-x:auto;               /* 极窄屏可横向滑动，而不是竖排换行 */
+    scrollbar-width:none;          /* Firefox */
+    -ms-overflow-style:none;
+  }
+  .nav-links::-webkit-scrollbar{display:none}
+  .nav-links a{
+    padding:6px 8px;font-size:13px;white-space:nowrap;flex-shrink:0;
+  }
+  .prefs{flex-shrink:0}
 }
+
+/* 极窄屏（<420px）：四个导航项确实放不下，隐藏纯文字链接，
+   设置按钮里已包含「外观」等入口，站点主要入口仍在首屏按钮上 */
+@media(max-width:430px){
+  .nav-links a{padding:6px 6px;font-size:12.5px}
+}
+
 @media(prefers-reduced-motion:reduce){
   .ocean-bg,.orb,.hero-card{animation:none!important}
   .reveal{opacity:1;transform:none;transition:none}
   html{scroll-behavior:auto}
+}
+/* 脚本不可用时兜底：
+   .reveal 初始 opacity:0 靠 main.js 加 .in 才显现，没有脚本就永远是白板。
+   @media(scripting:none) 在脚本被禁用/被剥离时生效，不依赖任何 JS。
+   注意它与 prefers-reduced-motion 是两类不同用户，不能互相覆盖。 */
+@media(scripting:none){
+  .reveal{opacity:1;transform:none}
+  .nav{box-shadow:none}
 }
 
 /* 键盘可达性:仅键盘 Tab 聚焦时显示清晰焦点环,鼠标点击不显示 */
@@ -193,4 +249,246 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
   outline:2px solid var(--accent);
   outline-offset:3px;
   border-radius:6px;
+}
+
+/* ============================================================
+   主题系统
+   ------------------------------------------------------------
+   三档选择：跟随系统 / 强制深色 / 强制浅色。
+   JS 把生效结果写到 <html data-theme="dark|light">，
+   把用户的原始选择写到 <html data-theme-pref="system|dark|light">。
+
+   为什么用属性而不是 @media 单独判断：
+   用户显式选了「浅色」时，即使系统是深色也必须浅色 —— 单靠
+   prefers-color-scheme 做不到这件事，必须有一个可覆盖的钩子。
+
+   本块必须在所有基础规则之后（同权重靠源顺序取胜）。
+   ============================================================ */
+
+/* 显式选浅色 */
+html[data-theme="light"]{
+  --abyss:#eaf4fa;
+  --deep:#d3e8f4;
+  --ocean:#b9dcee;
+  --accent:#036e91;
+  --accent-2:#0b7fa8;
+  --accent-deep:#023e8a;
+  --glass-bg:rgba(255,255,255,.62);
+  --glass-bg-strong:rgba(255,255,255,.82);
+  --glass-border:rgba(3,110,145,.20);
+  --glass-shadow:0 8px 28px rgba(7,39,61,.13);
+  --text:#062a3d;
+  --text-dim:#3d6076;
+  --text-faint:#547689;
+  --body-text:#173d52;
+  color-scheme:light;
+}
+
+/* 跟随系统 + 系统是浅色：与上面同一份取值 */
+@media(prefers-color-scheme:light){
+  html[data-theme-pref="system"]{
+    --abyss:#eaf4fa;
+    --deep:#d3e8f4;
+    --ocean:#b9dcee;
+    --accent:#036e91;
+    --accent-2:#0b7fa8;
+    --accent-deep:#023e8a;
+    --glass-bg:rgba(255,255,255,.62);
+    --glass-bg-strong:rgba(255,255,255,.82);
+    --glass-border:rgba(3,110,145,.20);
+    --glass-shadow:0 8px 28px rgba(7,39,61,.13);
+    --text:#062a3d;
+    --text-dim:#3d6076;
+    --text-faint:#547689;
+    --body-text:#173d52;
+    color-scheme:light;
+  }
+}
+
+/* --- 浅色下的非变量类样式 --- */
+html[data-theme="light"] .ocean-bg{
+  background:
+    radial-gradient(circle at 20% 15%, rgba(72,202,228,.30), transparent 55%),
+    radial-gradient(circle at 80% 85%, rgba(2,62,138,.16), transparent 50%),
+    linear-gradient(160deg, #eaf4fa 0%, #d3e8f4 45%, #b9dcee 100%);
+}
+html[data-theme="light"] .orb.a{background:radial-gradient(circle,rgba(72,202,228,.30),transparent 70%)}
+html[data-theme="light"] .orb.b{background:radial-gradient(circle,rgba(2,62,138,.10),transparent 70%)}
+html[data-theme="light"] .nav{
+  background:rgba(234,244,250,.78);
+  border-bottom-color:rgba(3,110,145,.14);
+}
+html[data-theme="light"] .nav.scrolled{
+  background:rgba(234,244,250,.94);
+  box-shadow:0 6px 24px rgba(7,39,61,.10);
+}
+html[data-theme="light"] .glass{
+  box-shadow:var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,.75);
+}
+html[data-theme="light"] .card:hover,
+html[data-theme="light"] .post-card:hover{border-color:rgba(3,110,145,.42)}
+html[data-theme="light"] .btn-primary{
+  background:linear-gradient(135deg,#0b7fa8,#036e91);
+  color:#fff;
+  box-shadow:0 6px 18px rgba(3,110,145,.28);
+}
+html[data-theme="light"] .card .ico svg{stroke:#036e91}
+html[data-theme="light"] footer{border-top-color:rgba(3,110,145,.14)}
+html[data-theme="light"] .contact-grid li{border-bottom-color:rgba(3,110,145,.14)}
+html[data-theme="light"] .article th,
+html[data-theme="light"] .article td{border-color:rgba(3,110,145,.18)}
+html[data-theme="light"] .article th{background:rgba(3,110,145,.06)}
+html[data-theme="light"] .article code{background:rgba(3,110,145,.09)}
+html[data-theme="light"] .skip-link{color:#fff}
+html[data-theme="light"] .prefs-panel{
+  background:rgba(255,255,255,.96);
+  box-shadow:0 18px 48px rgba(7,39,61,.18);
+}
+html[data-theme="light"] a:focus-visible,
+html[data-theme="light"] button:focus-visible,
+html[data-theme="light"] .btn:focus-visible,
+html[data-theme="light"] .brand:focus-visible,
+html[data-theme="light"] .nav-links a:focus-visible,
+html[data-theme="light"] .card .links a:focus-visible,
+html[data-theme="light"] .article .links a:focus-visible,
+html[data-theme="light"] .article .back:focus-visible,
+html[data-theme="light"] .post-card:focus-visible{outline-color:#0b7fa8}
+
+@media(prefers-color-scheme:light){
+  html[data-theme-pref="system"] .ocean-bg{
+    background:
+      radial-gradient(circle at 20% 15%, rgba(72,202,228,.30), transparent 55%),
+      radial-gradient(circle at 80% 85%, rgba(2,62,138,.16), transparent 50%),
+      linear-gradient(160deg, #eaf4fa 0%, #d3e8f4 45%, #b9dcee 100%);
+  }
+  html[data-theme-pref="system"] .orb.a{background:radial-gradient(circle,rgba(72,202,228,.30),transparent 70%)}
+  html[data-theme-pref="system"] .orb.b{background:radial-gradient(circle,rgba(2,62,138,.10),transparent 70%)}
+  html[data-theme-pref="system"] .nav{
+    background:rgba(234,244,250,.78);border-bottom-color:rgba(3,110,145,.14);
+  }
+  html[data-theme-pref="system"] .nav.scrolled{
+    background:rgba(234,244,250,.94);box-shadow:0 6px 24px rgba(7,39,61,.10);
+  }
+  html[data-theme-pref="system"] .glass{
+    box-shadow:var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,.75);
+  }
+  html[data-theme-pref="system"] .card:hover,
+  html[data-theme-pref="system"] .post-card:hover{border-color:rgba(3,110,145,.42)}
+  html[data-theme-pref="system"] .btn-primary{
+    background:linear-gradient(135deg,#0b7fa8,#036e91);color:#fff;
+    box-shadow:0 6px 18px rgba(3,110,145,.28);
+  }
+  html[data-theme-pref="system"] .card .ico svg{stroke:#036e91}
+  html[data-theme-pref="system"] footer{border-top-color:rgba(3,110,145,.14)}
+  html[data-theme-pref="system"] .contact-grid li{border-bottom-color:rgba(3,110,145,.14)}
+  html[data-theme-pref="system"] .article th,
+  html[data-theme-pref="system"] .article td{border-color:rgba(3,110,145,.18)}
+  html[data-theme-pref="system"] .article th{background:rgba(3,110,145,.06)}
+  html[data-theme-pref="system"] .article code{background:rgba(3,110,145,.09)}
+  html[data-theme-pref="system"] .skip-link{color:#fff}
+  html[data-theme-pref="system"] .prefs-panel{
+    background:rgba(255,255,255,.96);
+    box-shadow:0 18px 48px rgba(7,39,61,.18);
+  }
+  html[data-theme-pref="system"] .prefs-seg button.is-active{color:#fff}
+}
+
+/* ============================================================
+   设置面板
+   ============================================================ */
+.prefs{position:relative}
+.prefs-toggle{
+  display:flex;align-items:center;justify-content:center;
+  width:36px;height:36px;margin-left:8px;
+  border:1px solid var(--glass-border);border-radius:999px;
+  background:var(--glass-bg);color:var(--text-dim);
+  cursor:pointer;transition:.2s;
+}
+.prefs-toggle:hover{color:var(--text);background:var(--glass-bg-strong)}
+.prefs-toggle svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.prefs-panel{
+  position:absolute;top:calc(100% + 10px);right:0;z-index:60;
+  width:min(320px,calc(100vw - 32px));
+  padding:20px;
+  display:none;
+  /* 面板浮在正文之上，必须比普通玻璃卡更实，否则背后文字会透上来干扰阅读 */
+  background:rgba(6,26,42,.94);
+  backdrop-filter:blur(20px) saturate(140%);
+  -webkit-backdrop-filter:blur(20px) saturate(140%);
+  box-shadow:0 18px 48px rgba(0,0,0,.5);
+}
+.prefs-panel.is-open{display:block}
+.prefs-panel h3{font-size:15px;margin-bottom:4px;color:var(--text)}
+.prefs-panel h4{font-size:13px;color:var(--text-faint);font-weight:600;letter-spacing:.06em;margin:18px 0 8px;text-transform:uppercase}
+.prefs-panel p{font-size:13.5px;color:var(--text-dim);line-height:1.6}
+
+/* 三档主题按钮 */
+.prefs-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.prefs-seg button{
+  display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;min-height:38px;
+  padding:8px 6px;font-size:13px;line-height:1.2;font-family:inherit;
+  white-space:nowrap;
+  border:1px solid var(--glass-border);border-radius:12px;
+  background:var(--glass-bg);color:var(--text-dim);
+  cursor:pointer;transition:.18s;
+}
+.prefs-seg button:hover{color:var(--text);background:var(--glass-bg-strong)}
+.prefs-seg button.is-active{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#04161f;border-color:transparent;font-weight:600;
+  box-shadow:0 4px 14px rgba(72,202,228,.30);
+}
+/* 浅色模式下 accent 变深，激活按钮改用白字 */
+html[data-theme="light"] .prefs-seg button.is-active{color:#fff}
+@media(prefers-color-scheme:light){
+  html[data-theme-pref="system"] .prefs-seg button.is-active{color:#fff}
+}
+
+/* 阅读记录列表 */
+.prefs-reading{margin-top:6px}
+.prefs-list{list-style:none;margin:0}
+.prefs-list li{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:7px 0;font-size:13px;
+  border-bottom:1px dashed var(--glass-border);
+}
+.prefs-list li:last-child{border-bottom:none}
+.prefs-list a{color:var(--accent);text-decoration:none}
+.prefs-list a:hover{text-decoration:underline}
+.prefs-list time{color:var(--text-faint);font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.prefs-empty{font-size:13px;color:var(--text-faint);line-height:1.6}
+
+/* 操作按钮 */
+.prefs-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.prefs-actions button{
+  flex:1 1 auto;padding:9px 14px;font-size:13px;font-family:inherit;
+  border:1px solid var(--glass-border);border-radius:12px;
+  background:var(--glass-bg);color:var(--text);cursor:pointer;transition:.18s;
+}
+.prefs-actions button:hover{background:var(--glass-bg-strong)}
+.prefs-actions .prefs-reset{color:#e07a7a;border-color:rgba(224,122,122,.35)}
+.prefs-actions .prefs-reset.is-armed{
+  background:#e07a7a;color:#fff;border-color:transparent;font-weight:600;
+}
+/* 屏幕阅读器专用（隐藏 file input） */
+.visually-hidden{
+  position:absolute;width:1px;height:1px;overflow:hidden;
+  clip-path:inset(50%);white-space:nowrap;
+}
+.prefs-msg{
+  margin-top:12px;font-size:12.5px;line-height:1.55;color:var(--text-faint);
+  display:none;
+}
+.prefs-msg.is-visible{display:block}
+.prefs-msg.is-warn{color:#e07a7a}
+.prefs-storage{
+  margin-top:14px;padding-top:12px;font-size:12.5px;color:var(--text-faint);
+  border-top:1px solid var(--glass-border);line-height:1.6;
+}
+.prefs-storage.is-warn{color:#e07a7a}
+
+@media(max-width:720px){
+  .prefs-toggle{width:32px;height:32px;margin-left:4px}
+  .prefs-panel{width:min(300px,calc(100vw - 24px));padding:16px}
 }

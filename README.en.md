@@ -63,6 +63,27 @@ xiaoyu-hue.github.io/
 
 ---
 
+## Settings
+
+The gear icon at the right of the nav bar opens a settings panel with three things:
+
+| Item | What it does |
+|------|--------------|
+| **Appearance** | Three-way switch: follow system / dark / light. An explicit choice overrides the system setting and survives reload |
+| **Reading log** | Articles you open are recorded automatically; the panel links back to them |
+| **Data** | Export / import JSON (to move between devices), and a reset button (requires a second click) |
+
+**Your data stays in your own browser's localStorage** and is never uploaded anywhere — that is not a promise, it is a physical constraint: the site's CSP includes `connect-src 'none'`, so the browser blocks every network request. Uploading is not possible.
+
+A few trade-offs, also documented in the code comments:
+
+- **Theme switching uses class toggling, never inline styles.** The `style-src 'self'` CSP has no `unsafe-inline`, so any `el.style.xxx` triggers a violation. This is how the site has always worked, not new restraint.
+- **Export downloads a real JSON file** rather than copying to the clipboard — the clipboard may be unavailable without HTTPS; a download is more reliable.
+- **Resetting takes two clicks.** The first asks "are you sure"; if you don't confirm within 4 seconds it cancels itself. Destructive actions deserve a second door.
+- **A disabled localStorage does not throw** (private mode, some corporate policies). The feature degrades; the site keeps working.
+
+---
+
 ## Local preview
 
 **No build step, no dependencies.** You do not need Node.js or anything installed:
@@ -91,7 +112,7 @@ npx playwright test                          # real browser: needs Node, run `np
 | Layer | What it covers |
 |-------|----------------|
 | Contract | `<head>` of all 7 pages, footer signature, nav, whether the CSP still matches `_headers`; whether post cards and articles stay in sync; whether the integrity checker itself still catches problems |
-| Logic | The three branches of the scroll reveal: normal observation / user prefers reduced motion / browser lacks lazy-loading support |
+| Logic | The four branches of the scroll reveal: normal observation / user prefers reduced motion / browser lacks IntersectionObserver / browser lacks matchMedia |
 | Real browser | Does the page actually render? Did CSP block CSS or JS? Does the reveal really fire? Does anything overflow at 375px? |
 
 Every push to `main` runs all three layers in CI.

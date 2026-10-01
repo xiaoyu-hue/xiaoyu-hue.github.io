@@ -7,13 +7,30 @@
 <meta name="description" content="一个非程序员和 AI Agent 协作的实验记录。">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://xiaoyu-hue.github.io/blog/index.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xiaoyu-hue">
+<meta property="og:title" content="博客 · xiaoyu-hue">
+<meta property="og:description" content="一个非程序员和 AI Agent 协作的实验记录。">
+<meta property="og:url" content="https://xiaoyu-hue.github.io/blog/index.html">
+<meta property="og:image" content="https://xiaoyu-hue.github.io/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="博客 · xiaoyu-hue">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="博客 · xiaoyu-hue">
+<meta name="twitter:description" content="一个非程序员和 AI Agent 协作的实验记录。">
+<meta name="twitter:image" content="https://xiaoyu-hue.github.io/assets/og-cover.png">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<script src="../assets/theme-boot.js"></script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
+<a class="skip-link" href="#main">跳到主要内容</a>
 <div class="ocean-bg"></div><div class="orb a"></div><div class="orb b"></div>
 
-<nav class="nav"><div class="wrap">
+<nav class="nav" aria-label="主导航"><div class="wrap">
   <a class="brand" href="../index.html">xiaoyu<span>-hue</span></a>
   <div class="nav-links">
     <a href="../index.html#about">关于</a>
@@ -21,8 +38,38 @@
     <a href="index.html">博客</a>
     <a href="../index.html#contact">联系</a>
   </div>
+    <div class="prefs">
+      <button class="prefs-toggle" type="button" aria-expanded="false" aria-controls="prefs-panel" aria-label="设置">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.38.4.71.74.94.32.22.71.34 1.1.34H21a2 2 0 0 1 0 4h-.09c-.39 0-.78.12-1.1.34-.34.23-.6.56-.74.94z"/></svg>
+      </button>
+
+      <div class="prefs-panel glass" id="prefs-panel" role="dialog" aria-label="站点设置">
+        <h3>设置</h3>
+
+        <h4>外观</h4>
+        <div class="prefs-seg" role="group" aria-label="主题">
+          <button type="button" data-theme-option="system" aria-pressed="false">跟随系统</button>
+          <button type="button" data-theme-option="dark" aria-pressed="false">深色</button>
+          <button type="button" data-theme-option="light" aria-pressed="false">浅色</button>
+        </div>
+
+        <h4>阅读记录</h4>
+        <div class="prefs-reading"></div>
+
+        <h4>数据</h4>
+        <div class="prefs-actions">
+          <button type="button" class="prefs-export">导出 JSON</button>
+          <button type="button" class="prefs-import">导入 JSON</button>
+          <button type="button" class="prefs-reset">清空全部数据</button>
+        </div>
+        <input type="file" class="prefs-file visually-hidden" accept="application/json,.json" aria-label="选择要导入的 JSON 文件">
+        <p class="prefs-msg" role="status" aria-live="polite"></p>
+        <p class="prefs-storage"></p>
+      </div>
+    </div>
 </div></nav>
 
+<main id="main" tabindex="-1">
 <section><div class="wrap">
   <h2 class="section-title reveal">博客<small>BLOG</small></h2>
   <a class="glass post-card reveal" href="post-2.html">
@@ -55,11 +102,13 @@
     <p>一个不会写代码的人,怎么和 AI Agent 一起把项目做出来?这篇先说清楚我们的协作规则,以及为什么"如实标注做不到什么"比"看起来很厉害"重要得多。</p>
   </a>
 </div></section>
+</main>
 
 <footer><div class="wrap">
   <div>© 2026 xiaoyu-hue · <span class="sign">一半烟火以谋生，一半诗意以谋爱</span></div>
 </div></footer>
 
+<script src="../assets/prefs.js"></script>
 <script src="../assets/main.js"></script>
 </body>
 </html>

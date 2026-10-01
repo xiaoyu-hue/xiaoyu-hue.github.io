@@ -10,6 +10,11 @@ export default defineConfig({
   testDir: 'tests/e2e',
   outputDir: 'test-results',
   fullyParallel: true,
+  // python3 -m http.server 是单线程的，扛不住和测试数一样多的并发连接。
+  // 用例变多后（23 个 worker）会出现 networkidle 偶发超时，
+  // 看起来像「页面有问题」，其实是本地静态服务器先扛不住了。
+  // 限制并发，让本地和 CI 都稳定。
+  workers: process.env.CI ? 2 : 4,
   forbidOnly: !!process.env.CI,
   // 真浏览器测试偶发抖动，CI 上给一次重试；本地不重试，免得掩盖问题
   retries: process.env.CI ? 1 : 0,
