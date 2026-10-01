@@ -225,11 +225,15 @@ node --test 'tests/js/**/*.test.mjs'         # logic layer: needs Node 18+
 npx playwright test                          # real browser: needs Node, run `npm ci` first
 ```
 
+The real-browser layer includes an **accessibility baseline** (`tests/e2e/a11y.spec.mjs`, built on axe-core). It covers what static review cannot: whether two hex colours in a CSS file actually clear the contrast threshold is invisible to code reading — you need a browser and colour-space maths. This site had exactly that problem live (`--text-faint` on `--abyss` measured 4.347:1 against a 4.5:1 requirement). The scan covers every page × light/dark themes, plus the settings panel while it is open.
+
+axe lives in devDependencies only — **the site itself still ships zero runtime dependencies**. It has no extra Node requirement (axe-core asks for Node 4+), so CI's existing Node 20 runs it fine.
+
 | Layer | What it covers |
 |-------|----------------|
 | Contract | `<head>` of all 8 pages, footer signature, nav, whether the CSP still matches `_headers`; whether post cards and articles stay in sync; PWA manifest validity and real icon dimensions; whether `sw.js` sits at the root and whether the precache list has dead links; whether the integrity checker itself still catches problems |
 | Logic | The four branches of the scroll reveal (normal / reduced motion / no IntersectionObserver / no matchMedia); Service Worker request routing (navigation vs asset vs other) and its bypass rules for cross-origin and non-GET |
-| Real browser | Does the page actually render? Did CSP block CSS or JS? Does the reveal really fire? Does anything overflow at 375px? Also: Service Worker registration, **whether the home page and articles open while offline**, and whether uncached pages fall back to the offline page |
+| Real browser | Does the page actually render? Did CSP block CSS or JS? Does the reveal really fire? Does anything overflow at 375px? Also: Service Worker registration, **whether the home page and articles open while offline**, and whether uncached pages fall back to the offline page; plus an **accessibility baseline** — contrast, semantics and ARIA across every page × light/dark themes, and inside the settings panel while it is open |
 
 Every push to `main` runs all three layers in CI.
 
