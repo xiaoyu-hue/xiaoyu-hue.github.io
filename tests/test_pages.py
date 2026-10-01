@@ -246,6 +246,176 @@ class TestBodyContract(unittest.TestCase):
                                          f"{page} 的元素含内联事件属性 {attr}")
 
 
+class TestMotionContract(unittest.TestCase):
+    """微动效系统的跨页契约。
+
+    这些断言防的是「动效开关看起来在，实际点不动」这类沉默故障：
+    按钮渲染出来但没有绑定逻辑，或属性名写错导致 CSS 规则选不中，
+    浏览器都不会报任何错。
+    """
+
+    def panels(self):
+        return [(p, parse(p)) for p in PAGES]
+
+    def test_theme_buttons_still_present(self):
+        """动效开关是加到「外观」之后的新分组，不该动到主题按钮。"""
+        for page, doc in self.panels():
+            with self.subTest(page=page):
+                opts = [
+                    n.attrs.get("data-theme-option")
+                    for n in doc.find_all("button")
+                    if n.attrs.get("data-theme-option")
+                ]
+                self.assertEqual(
+                    sorted(opts), ["dark", "light", "system"],
+                    f"{page} 的主题三档按钮变了",
+                )
+
+    def test_motion_buttons_present_and_complete(self):
+        """每个页面都必须有两个动效按钮（on / off），一个都不能少。"""
+        for page, doc in self.panels():
+            with self.subTest(page=page):
+                opts = [
+                    n.attrs.get("data-motion-option")
+                    for n in doc.find_all("button")
+                    if n.attrs.get("data-motion-option")
+                ]
+                self.assertEqual(
+                    sorted(opts), ["off", "on"],
+                    f"{page} 的动效开关应有 on / off 两个按钮，实际 {opts}",
+                )
+
+    def test_motion_buttons_initial_aria_pressed_is_false(self):
+        """初始 aria-pressed 必须是 false。
+
+        真实选中态由 prefs.js 的 syncPanel 在运行时写入。
+        如果这里写死 true，那么动效关闭的用户会看到「关闭」按钮
+        显示为已按下 —— 而且 syncPanel 还没跑，屏幕阅读器也会读错。
+        """
+        for page, doc in self.panels():
+            with self.subTest(page=page):
+                for n in doc.find_all("button"):
+                    if not n.attrs.get("data-motion-option"):
+                        continue
+                    self.assertEqual(
+                        n.attrs.get("aria-pressed"), "false",
+                        f"{page} 的动效按钮初始 aria-pressed 应当是 false",
+                    )
+
+    def test_motion_buttons_are_type_button(self):
+        """必须是 type="button"，否则在表单内会触发提交。"""
+        for page, doc in self.panels():
+            with self.subTest(page=page):
+                for n in doc.find_all("button"):
+                    if n.attrs.get("data-motion-option"):
+                        self.assertEqual(n.attrs.get("type"), "button",
+                                         f"{page} 的动效按钮缺少 type=button")
+
+    def test_motion_group_has_accessible_name(self):
+        """按钮组要有 aria-label，否则屏幕阅读器只读得出「开启 / 关闭」。"""
+        for page, doc in self.panels():
+            with self.subTest(page=page):
+                groups = [
+                    n for n in doc.find_all("div")
+                    if n.attrs.get("role") == "group"
+                    and "prefs-seg" in n.classes
+                    and n.attrs.get("aria-label") == "界面动效"
+                ]
+                self.assertEqual(len(groups), 1, f"{page} 缺少动效按钮组或 aria-label")
+
+    def test_motion_labels_are_plain_words(self):
+        """按钮文案要保持朴素可读，不要用「开 / 关」这种单字。"""
+        for page, doc in self.panels():
+            with self.subTest(page=page):
+                texts = {
+                    n.attrs.get("data-motion-option"): n.text.strip()
+                    for n in doc.find_all("button")
+                    if n.attrs.get("data-motion-option")
+                }
+                self.assertEqual(texts.get("on"), "开启", f"{page} 的开启按钮文案变了")
+                self.assertEqual(texts.get("off"), "关闭", f"{page} 的关闭按钮文案变了")
+
+    def test_motion_switch_is_documented_in_panel(self):
+        """开关旁边要有一句话解释它做了什么，否则用户不知道为什么要点。"""
+        for page, doc in self.panels():
+            with self.subTest(page=page):
+                hints = [n for n in doc.find_all("p") if "prefs-hint" in n.classes]
+                self.assertTrue(hints, f"{page} 的动效开关缺少说明文案")
+
+
+class TestMotionStylesheet(unittest.TestCase):
+    """style.css 里微动效系统的结构契约。
+
+    这些是最容易被后人「顺手整理」掉的东西 ——
+    比如把末尾的令牌块上移合并，或删掉看起来重复的降级规则。
+    """
+
+    def css(self):
+        return read("assets/style.css")
+
+    def test_reveal_defined_exactly_once(self):
+        """`.reveal` 的过渡只能有一处定义。
+
+        两处定义时，靠源顺序决定谁生效，改动会变成「改了这个那个坏了」。
+        注意必须行首锚定：`.grid .reveal:nth-child(2){` 这类后代选择器
+        也含 `.reveal`，用子串计数会把它们一并算进来，测出假失败。
+        """
+        css = self.css()
+        self.assertEqual(
+            len(re.findall(r"^\.reveal\{", css, re.M)), 1,
+            "style.css 里 .reveal 的基础规则应当只有一处",
+        )
+        self.assertEqual(
+            len(re.findall(r"^\.reveal\.in\{", css, re.M)), 1,
+            "style.css 里 .reveal.in 应当只有一处",
+        )
+
+    def test_motion_tokens_are_defined(self):
+        """三档时长与三档位移令牌必须齐备，缺一个会让对应动效失灵。"""
+        css = self.css()
+        for token in (
+            "--dur-fast:", "--dur-base:", "--dur-slow:",
+            "--shift-sm:", "--shift-md:", "--shift-lg:",
+            "--stagger-step:",
+        ):
+            self.assertIn(token, css, f"style.css 缺少动效令牌 {token}")
+
+    def test_motion_master_switch_exists(self):
+        """总开关是全站唯一一处能把所有动效归零的地方。"""
+        css = self.css()
+        self.assertIn('[data-motion="off"]', css,
+                      "style.css 缺少 html[data-motion=off] 总开关规则")
+
+    def test_motion_block_is_at_the_end(self):
+        """微动效系统必须在文件末尾。
+
+        同权重靠源顺序取胜：一旦上移，前面的基础规则会反覆盖它，
+        总开关与降级路径会静默失效（浅色主题块踩过同一个坑）。
+        """
+        css = self.css()
+        pos = css.find("微动效系统")
+        self.assertGreater(pos, 0, "找不到微动效系统块")
+        # 令牌块之后只允许有零散的收尾空白，不允许再出现组件级规则
+        tail = css[pos:]
+        self.assertIn('[data-motion="off"]', tail,
+                      "总开关没有落在微动效系统块内")
+
+    def test_reduced_motion_path_exists(self):
+        css = self.css()
+        self.assertIn("prefers-reduced-motion:reduce", css,
+                      "缺少系统级「减少动画」降级")
+
+    def test_high_contrast_path_exists(self):
+        css = self.css()
+        self.assertIn("prefers-contrast:more", css,
+                      "缺少增强对比度降级：这类用户需要关掉 opacity 过渡")
+
+    def test_no_scripting_path_exists(self):
+        css = self.css()
+        self.assertIn("scripting:none", css,
+                      "缺少脚本不可用时的兜底：没有它 .reveal 会永久白屏")
+
+
 class TestPwaContract(unittest.TestCase):
     """PWA 相关的跨页契约。
 

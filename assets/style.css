@@ -416,9 +416,19 @@ html[data-theme="light"] .post-card:focus-visible{outline-color:#0b7fa8}
 .prefs-panel h3{font-size:15px;margin-bottom:4px;color:var(--text)}
 .prefs-panel h4{font-size:13px;color:var(--text-faint);font-weight:600;letter-spacing:.06em;margin:18px 0 8px;text-transform:uppercase}
 .prefs-panel p{font-size:13.5px;color:var(--text-dim);line-height:1.6}
+/* 选项下方的解释文案。比正文再小半档、去掉行高余量，
+   目的是让它读起来像"注解"而不是"又一个选项"。 */
+.prefs-hint{
+  margin-top:8px;font-size:12.5px;line-height:1.55;
+  color:var(--text-faint);
+}
 
 /* 三档主题按钮 */
 .prefs-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+/* 二档（动效开关）。为什么单独一个类而不是复用三列：
+   两列用三列网格会留出一个空位，视觉上像是"少了一个选项"。
+   这里显式声明列数，避免依赖 grid 的自动填充行为。 */
+.prefs-seg-2{grid-template-columns:repeat(2,1fr)}
 .prefs-seg button{
   display:flex;align-items:center;justify-content:center;
   box-sizing:border-box;min-height:38px;
