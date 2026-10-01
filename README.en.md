@@ -74,7 +74,9 @@ xiaoyu-hue.github.io/
 
 > `_headers` only takes effect on the **primary site (Cloudflare Pages)**: CSP, X-Frame-Options, COOP, Permissions-Policy and the rest are all delivered from it.
 >
-> 🔴 **The mirror (GitHub Pages) cannot serve custom response headers** — a platform limit, not a config mistake. The mirror ships HSTS only, and `_headers` is publicly downloadable there as a static file. Treat the primary site's headers as authoritative.
+> 🟡 **The mirror (GitHub Pages) cannot serve custom response headers** — a platform limit, not a config mistake. Measured directly, the mirror returns HSTS and nothing else.
+>
+> **That does not mean the mirror is unprotected.** The CSP lives in a `<meta http-equiv>` tag on every page, so both sites enforce the same script and style restrictions. What is actually missing is only the set of headers that *cannot* be expressed via `<meta>` (see [What actually differs](#what-actually-differs)) — and of those, the one with real consequences is clickjacking protection: `frame-ancestors` delivered through `<meta>` is ignored by browsers, so the mirror cannot stop someone embedding it in an iframe. Treat the primary site's headers as authoritative.
 >
 > 🔴 **`sw.js` is not affected by that limitation.** A Service Worker is registered from JavaScript (`assets/pwa.js`), not from response headers, so it works on both sites.
 
@@ -195,11 +197,20 @@ Not for the comfort of the word "backup", but because the two have **different f
 
 | | Primary | Mirror |
 |---|---------|--------|
-| Security headers | All applied (from `_headers`) | HSTS only — platform limit |
+| CSP | Yes (response header + page `<meta>`) | **Yes** (page `<meta>`) |
+| Anti-framing (`frame-ancestors` / `X-Frame-Options`) | Yes | **No** — `<meta>` delivery is ignored by browsers, and the mirror cannot send headers |
+| `X-Content-Type-Options: nosniff` | Yes | No |
+| `Cross-Origin-Opener-Policy` | Yes | No |
+| `Referrer-Policy` | Yes | No |
+| `Permissions-Policy` | Yes | No |
+| `Strict-Transport-Security` | Yes | Yes |
+| The `_headers` file | Applied, not exposed | **Publicly downloadable** as a static file (it only contains header config, nothing sensitive) |
 | HTTP/3 | Yes | No |
 | Edge | Global Anycast | Single region |
 | Custom domain | Supported | Supported, still no custom headers |
 | PWA / offline | Works | Works |
+
+These rows come from measuring both sites, not from copying platform docs. **Only the anti-framing gap has real consequences**: the mirror could be embedded in someone else's iframe (a clickjacking vector). The rest matter little on a static site with no login and no forms — this one sets `form-action 'none'` and serves no dynamic content that would need `nosniff` as a backstop.
 
 ### Two things that bite
 

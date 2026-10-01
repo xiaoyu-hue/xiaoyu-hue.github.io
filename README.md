@@ -80,7 +80,9 @@ xiaoyu-hue.github.io/
 
 > `_headers` 只在**主站（Cloudflare Pages）**上生效：CSP、X-Frame-Options、COOP、Permissions-Policy 等全部响应头都由它下发。
 >
-> 🔴 **备用站（GitHub Pages）不支持自定义响应头**，这是平台限制、改不了——备站实际只带一个 HSTS，其余安全头全都没有，而且 `_headers` 会被当成静态文件公开提供。安全头以主站为准。
+> 🟡 **备用站（GitHub Pages）不支持自定义响应头**，这是平台限制、改不了——实测备站只返回一个 HSTS，其余响应头一个都没有。
+>
+> 但**这不等同于备站在裸奔**：CSP 写在每个页面的 `<meta http-equiv>` 里，两站都有，脚本与样式的加载限制是一致的。真正缺失的是**只能通过响应头下发、`<meta>` 又表达不了的那几条**（详见「[两者的实际差异](#两者的实际差异)」），其中唯一有实际影响的是 iframe 嵌套防护 —— `frame-ancestors` 用 `<meta>` 下发会被浏览器直接忽略，所以备站防不住被别人嵌进 iframe。安全头以主站为准。
 >
 > 🔴 **但 `sw.js` 不受此限制**：Service Worker 由页面里的 JS 注册（`assets/pwa.js`），不依赖响应头，两个站点都能正常工作。
 
@@ -243,11 +245,20 @@ python3 -m http.server 8000
 
 | 项目 | 主站 | 备用站 |
 |------|------|--------|
-| 安全响应头 | 全部生效（`_headers`） | 仅 HSTS，平台限制无法补 |
+| CSP | 有（响应头 + 页面 `<meta>` 双份） | **有**（页面 `<meta>`） |
+| 防 iframe 嵌套（`frame-ancestors` / `X-Frame-Options`） | 有 | **无** —— `<meta>` 下发会被浏览器忽略，只能靠响应头，备站加不了 |
+| `X-Content-Type-Options: nosniff` | 有 | 无 |
+| `Cross-Origin-Opener-Policy` | 有 | 无 |
+| `Referrer-Policy` | 有 | 无 |
+| `Permissions-Policy` | 有 | 无 |
+| `Strict-Transport-Security` | 有 | 有 |
+| `_headers` 文件本身 | 生效，不对外暴露 | **会被当成静态文件公开提供**（内容只是安全头配置，不含敏感信息） |
 | HTTP/3 | 支持 | 不支持 |
 | 边缘节点 | 全球 Anycast | 单区域 |
 | 自定义域名 | 支持 | 支持，但仍加不了响应头 |
 | PWA / 离线 | 正常 | 正常 |
+
+上面这些是实测两个站的响应头得出的，不是照抄平台文档。差异里**唯一有实际影响的是 iframe 嵌套防护**：备站可能被别人嵌进 iframe（点击劫持的载体），其余几条在纯静态、无登录、无表单的站点上影响很小 —— 本站 `form-action 'none'`，也没有任何需要 `nosniff` 兜底的动态内容。
 
 ### 两个容易踩的点
 
