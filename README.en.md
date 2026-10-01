@@ -250,6 +250,39 @@ Every push to `main` runs all three layers in CI.
 
 ---
 
+## Dependencies
+
+**The site itself has zero dependencies.** No third-party JS, CSS, fonts or images are loaded — everything referenced from `index.html` is a local file. Typography uses a system font stack (`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …) and downloads no web font: one request fewer, and no FOIT. You do not need Node.js to visit or deploy the site.
+
+Everything below is only needed when you want to change code and verify it:
+
+| Package | Version | License | Used for |
+|---------|---------|---------|----------|
+| [`@playwright/test`](https://github.com/microsoft/playwright) | 1.63.0 | Apache-2.0 | Real-browser layer: serves the site locally and drives real Chromium across 83 cases |
+| `playwright` / `playwright-core` | 1.63.0 | Apache-2.0 | Underlying the above; not installed separately |
+| [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | 4.13.0 | MPL-2.0 | Accessibility baseline: injects axe and runs WCAG rules |
+| `axe-core` | 4.13.0 | MPL-2.0 | Rules engine behind the above; not installed separately |
+
+MPL-2.0 is file-level copyleft, but it only bites if you modify and redistribute that project's own source. Here everything is a build-time tool: it never reaches the site and is never served to visitors, so it does not affect this repository's MIT license.
+
+**System requirements**
+
+| Layer | Needs |
+|-------|-------|
+| Contract (82 cases) | `python3` — standard library only, no pip packages |
+| Logic (63 cases) | Node 18+ |
+| Real browser (83 cases) | Node 18+; Chromium is downloaded by Playwright (not committed) |
+
+CI runs on Node 20.
+
+**GitHub Actions used**
+
+`actions/checkout@v4`, `actions/setup-node@v4`, `actions/cache@v4`, `actions/upload-artifact@v4`.
+
+These are referenced by **version tag**, not pinned to a commit SHA. Tags are movable in principle, but this repository holds **no secrets** and both workflows narrow `permissions` to `contents: read`. That trade-off was looked at and accepted — noted here because it is a deliberate choice, not an oversight.
+
+---
+
 ## Updating the site
 
 - Edit `index.html` to update project cards, the about section, and contact info
@@ -271,6 +304,33 @@ node scripts/build-icons.mjs
 No programming background; all code was produced with AI agent assistance. The collaboration rules used (confirm requirements before starting, break large tasks into verifiable steps, state honestly what cannot be done) are described in the first blog post.
 
 > 一半烟火以谋生，一半诗意以谋爱 *(Half for a living, half for love)*
+
+---
+
+## Credits
+
+This site stays simple to look at and safe to change largely because of these projects.
+
+**[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft
+
+The whole real-browser layer runs on it. What deserves credit is not "it can click pages" but that it makes **offline** testable — one `context.setOffline(true)` verifies that the home page still opens with no network, which is this site's most important and most quietly breakable feature. Without it, that check depends on someone manually pulling a plug, and nobody keeps doing that.
+
+**[axe-core](https://github.com/dequelabs/axe-core)** · MPL-2.0 · Deque Systems
+
+Rules engine behind the accessibility baseline. It caught two things I could never have found by reading code: `--text-faint` on `--abyss` measuring 4.347:1 against a required 4.5:1 — in CSS that is just two hex literals — and a timing problem, where reading contrast mid fade-in produces fake numbers, which forced "disable motion before scanning" into the test itself. Deque designs it to prefer false negatives over false positives, and that matters: too many false alarms and people start ignoring the tool.
+
+**Hosting**
+
+[Cloudflare Pages](https://pages.cloudflare.com/) (primary) and [GitHub Pages](https://pages.github.com/) (mirror) both provide free static hosting with automatic builds. Their failure domains differ, so they cover for each other. Not dependencies of this project, but without them there would be no site.
+
+**Deliberately not used**
+
+Recording what research ruled out, so nobody repeats it:
+
+- **Workbox** (Service Worker framework): needs a build step to generate its precache manifest, which conflicts directly with this site's no-build constraint. The hand-written SW is a couple hundred readable, testable lines; adopting it would add a layer without buying anything.
+- **StrykerJS** (mutation testing): no `node:test` runner exists, so only the generic command runner applies — no coverage optimisation, meaning every mutant reruns the whole suite. Version 10.x also requires Node ≥ 22, which conflicts with CI's Node 20.
+- **Valibot / Zod** (runtime validation): the import validator here is about thirty hand-written lines. A library would not fix the actual problem — missing tests — and would break the no-build rule.
+- **Web fonts**: see [Dependencies](#dependencies); the system font stack is intentional.
 
 ---
 

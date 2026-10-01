@@ -298,6 +298,39 @@ axe 只装在 devDependencies，**站点本身依旧零运行时依赖**。它�
 
 ---
 
+## 依赖
+
+**站点本身零依赖**：不加载任何第三方 JS、CSS、字体或图片资源，`index.html` 里引用的全是本站自己的文件。字体走系统字体栈（`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …），不下载任何 web font —— 省一次请求，也不会有 FOIT（字体加载完成前的空白或闪动）。访问和部署都不需要 Node.js。
+
+下面的东西只在你要改代码、跑验证时才需要：
+
+| 包 | 版本 | 许可证 | 用在哪 |
+|------|------|--------|--------|
+| [`@playwright/test`](https://github.com/microsoft/playwright) | 1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑 83 个用例 |
+| `playwright` / `playwright-core` | 1.63.0 | Apache-2.0 | 上面那个的底层，不需要单独装 |
+| [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | 4.13.0 | MPL-2.0 | 可访问性基线：把 axe 注入页面跑 WCAG 规则 |
+| `axe-core` | 4.13.0 | MPL-2.0 | 上面那个的规则引擎，不需要单独装 |
+
+MPL-2.0 是文件级 copyleft，但它只约束"你把这份代码的源文件改了再分发"；这里全部只作开发期工具，不进站点、不随页面分发，所以对本站的 MIT 许可没有影响。
+
+**系统要求**
+
+| 用途 | 需要什么 |
+|------|----------|
+| 契约层（82 例） | `python3` —— 只用标准库，一个 pip 包都不装 |
+| 逻辑层（63 例） | Node 18+ |
+| 真浏览器层（83 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
+
+CI 上跑的是 Node 20。
+
+**CI 用到的 GitHub Actions**
+
+`actions/checkout@v4`、`actions/setup-node@v4`、`actions/cache@v4`、`actions/upload-artifact@v4`。
+
+它们目前按**版本标签**引用，没有钉到具体的 commit SHA。理论上标签是可以被移动的，但本仓库**没有任何 secrets**，两个 workflow 也都把 `permissions` 收敛到了 `contents: read`，权衡后认为风险可以接受 —— 记在这里，是因为这是个主动选择，不是没注意到。
+
+---
+
 ## 更新站点
 
 - 改 `index.html` 可更新项目卡片、关于与联系方式
@@ -319,6 +352,33 @@ node scripts/build-icons.mjs
 没有编程背景，所有代码由 AI Agent 辅助完成。协作规则（需求先确认、任务拆小步、如实标注做不到什么）写在博客第一篇文章里。
 
 > 一半烟火以谋生，一半诗意以谋爱。
+
+---
+
+## 开源致敬
+
+这个站点能长期保持"看起来简单、改起来放心"，靠的是下面这些项目。
+
+**[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft
+
+真浏览器层全部跑在它上面。最值得说的不是"能自动化点页面"，而是它让**离线**这种场景变得可测 —— 一句 `context.setOffline(true)` 就能验证"断网后首页还能不能打开"，而这恰恰是本站最核心、也最容易悄悄坏掉的能力。没有它，这类问题只能靠人手动断网去试，试两次就不试了。
+
+**[axe-core](https://github.com/dequelabs/axe-core)** · MPL-2.0 · Deque Systems
+
+可访问性基线的规则引擎。它抓出过两个我自己永远发现不了的问题：一是 `--text-faint` 配 `--abyss` 的对比度只有 4.347:1（要求 4.5:1），而这在 CSS 里就是两个十六进制常量，读代码看不出来；二是扫描时机 —— 元素淡入动画进行中读到的对比度是假的，逼着我把"扫之前先关动效"变成测试的一部分。Deque 把它设计成**宁可漏报也不误报**，这点很关键：误报一多，人就会开始忽略它。
+
+**托管平台**
+
+[Cloudflare Pages](https://pages.cloudflare.com/)（主站）与 [GitHub Pages](https://pages.github.com/)（备用站）都提供免费的静态托管与自动构建，两者故障域不同，互为兜底。它们不是本项目的依赖，但没有它们就没有这个站点。
+
+**刻意的"不引入"**
+
+也记一下调研后**没有**采用的东西，免得以后重复一遍调研：
+
+- **Workbox**（SW 框架）：它需要构建步骤来生成 precache 清单，与本站"零构建"的约束直接冲突；本站 SW 只有两百多行手写、逻辑清晰可测，换它反而多一层配置。
+- **StrykerJS**（变异测试）：官方 runner 里没有 `node:test`，只能用 command runner（无法做覆盖率优化，每个变异体都要跑全量测试）；而且 10.x 要求 Node ≥ 22，与 CI 的 Node 20 冲突。
+- **Valibot / Zod**（运行时校验库）：本站导入校验只有三十来行手写代码，引入它们解决不了"没有测试"这个真问题，还会打破零构建。
+- **Web font**：见「[依赖](#依赖)」，用系统字体栈是有意的。
 
 ---
 
