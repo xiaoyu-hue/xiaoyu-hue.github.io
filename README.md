@@ -44,15 +44,19 @@ xiaoyu-hue.github.io/
 ├── index.html          # 主站首页（关于 / 项目 / 联系）
 ├── assets/
 │   ├── style.css       # 液态玻璃 × 海洋风格样式
-│   └── main.js         # 滚动淡入（尊重 prefers-reduced-motion）
+│   ├── main.js         # 滚动淡入（尊重 prefers-reduced-motion）
+│   └── favicon.svg     # 站点图标
 ├── blog/
 │   ├── index.html      # 博客列表
 │   └── post-*.html     # 文章
 ├── scripts/
 │   └── check_integrity.py   # 完整性检查（死链 / CSP / 第三方资源）
+├── tests/              # 契约测试、逻辑测试、真浏览器测试
+├── playwright.config.mjs
 ├── _headers            # 安全响应头配置，仅 Cloudflare Pages 等平台生效
 └── .github/workflows/
-    └── security.yml    # CI：每次 push 自动跑完整性检查
+    ├── security.yml    # CI：每次 push 自动跑完整性检查
+    └── test.yml        # CI：每次 push 自动跑三层测试
 ```
 
 > `_headers` 在 GitHub Pages 上**不生效**（Pages 不支持自定义响应头），它是为将来迁移到 Cloudflare Pages 等支持该文件的平台准备的。
@@ -71,6 +75,26 @@ python3 -m http.server 8000
 ```
 
 推荐 Chrome / Edge。
+
+---
+
+## 测试
+
+站点本身依然**零依赖** —— 下面的工具只在你要改代码时用来验证，访问和部署站点都不需要。
+
+```bash
+python3 -m unittest discover -s tests -t .   # 契约层：只要 python3
+node --test 'tests/js/**/*.test.mjs'         # 逻辑层：需要 Node 18+
+npx playwright test                          # 真浏览器层：需要 Node，先跑 npm ci
+```
+
+| 层 | 管什么 |
+|------|--------|
+| 契约层 | 7 个页面的 head、页脚签名、导航、CSP 是否与 `_headers` 一致；文章卡片与文章是否同步；完整性检查脚本自己是否还抓得到问题 |
+| 逻辑层 | 滚动动效的三条分支：正常观察 / 用户开了「减少动画」/ 浏览器不支持懒加载 |
+| 真浏览器层 | 页面真的渲染了吗、CSS 和 JS 有没有被 CSP 拦掉、动效真的触发了吗、375px 下有没有元素溢出 |
+
+每次 push 到 `main`，CI 会自动跑完三层。
 
 ---
 

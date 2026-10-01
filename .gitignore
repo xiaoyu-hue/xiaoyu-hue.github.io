@@ -1,0 +1,8 @@
+# 测试工具链产物。
+# 必须忽略：这些目录里含 .html，会被 scripts/check_integrity.py 递归扫到（已排除），
+# 更重要的是它们不是站点内容，不该进仓库。
+node_modules/
+test-results/
+playwright-report/
+__pycache__/
+*.pyc

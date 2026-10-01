@@ -28,7 +28,20 @@ def rel(p):
     return os.path.relpath(p, ROOT)
 
 
-html_files = sorted(glob.glob(os.path.join(ROOT, "**", "*.html"), recursive=True))
+# 测试工具链会在仓库内生成大量 .html（node_modules、Playwright 报告等）,
+# 它们不是站点内容,必须排除,否则会被当成"缺 CSP 的页面"误报。
+EXCLUDED_DIRS = {"node_modules", "playwright-report", "test-results", ".git"}
+
+
+def is_excluded(path):
+    parts = os.path.relpath(path, ROOT).split(os.sep)
+    return any(part in EXCLUDED_DIRS for part in parts[:-1])
+
+
+html_files = sorted(
+    p for p in glob.glob(os.path.join(ROOT, "**", "*.html"), recursive=True)
+    if not is_excluded(p)
+)
 md_files = sorted(glob.glob(os.path.join(ROOT, "*.md")))
 
 if not html_files:

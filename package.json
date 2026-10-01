@@ -1,0 +1,15 @@
+{
+  "name": "xiaoyu-hue-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "个人主站 —— 站点本身零构建零依赖；这里的依赖只用于跑测试，访问和部署站点都不需要 Node.js",
+  "type": "module",
+  "scripts": {
+    "test:unit": "python3 -m unittest discover -s tests -t .",
+    "test:js": "node --test \"tests/js/**/*.test.mjs\"",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

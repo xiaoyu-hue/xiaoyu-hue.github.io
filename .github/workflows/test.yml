@@ -1,0 +1,59 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: 契约与逻辑测试
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 站点零依赖，用 runner 自带的 python3，不需要 setup-python
+      - name: 页面契约 / 博客一致性 / 检查器自检
+        run: python3 -m unittest discover -s tests -t .
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 滚动动效逻辑
+        run: node --test 'tests/js/**/*.test.mjs'
+
+  e2e:
+    name: 真浏览器实测
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

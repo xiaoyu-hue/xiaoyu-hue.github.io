@@ -44,15 +44,19 @@ xiaoyu-hue.github.io/
 ├── index.html          # Home (about / projects / contact)
 ├── assets/
 │   ├── style.css       # Liquid glass × ocean theme
-│   └── main.js         # Scroll reveal (respects prefers-reduced-motion)
+│   ├── main.js         # Scroll reveal (respects prefers-reduced-motion)
+│   └── favicon.svg     # Site icon
 ├── blog/
 │   ├── index.html      # Blog index
 │   └── post-*.html     # Articles
 ├── scripts/
 │   └── check_integrity.py   # Integrity check (links / CSP / third-party)
+├── tests/              # Contract, logic, and real-browser tests
+├── playwright.config.mjs
 ├── _headers            # Security headers; applies on Cloudflare Pages-style hosts
 └── .github/workflows/
-    └── security.yml    # CI: runs the integrity check on every push
+    ├── security.yml    # CI: runs the integrity check on every push
+    └── test.yml        # CI: runs the three test layers on every push
 ```
 
 > `_headers` has **no effect on GitHub Pages** (Pages does not support custom response headers). It is included for a future move to a host that supports it, such as Cloudflare Pages.
@@ -71,6 +75,26 @@ python3 -m http.server 8000
 ```
 
 Chrome or Edge recommended.
+
+---
+
+## Tests
+
+The site itself stays **dependency-free** — the tools below are only for verifying changes. You do not need any of them to visit or deploy the site.
+
+```bash
+python3 -m unittest discover -s tests -t .   # contract layer: needs python3 only
+node --test 'tests/js/**/*.test.mjs'         # logic layer: needs Node 18+
+npx playwright test                          # real browser: needs Node, run `npm ci` first
+```
+
+| Layer | What it covers |
+|-------|----------------|
+| Contract | `<head>` of all 7 pages, footer signature, nav, whether the CSP still matches `_headers`; whether post cards and articles stay in sync; whether the integrity checker itself still catches problems |
+| Logic | The three branches of the scroll reveal: normal observation / user prefers reduced motion / browser lacks lazy-loading support |
+| Real browser | Does the page actually render? Did CSP block CSS or JS? Does the reveal really fire? Does anything overflow at 375px? |
+
+Every push to `main` runs all three layers in CI.
 
 ---
 
