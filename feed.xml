@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>xiaoyu-hue · 博客</title>
+    <link>https://xiaoyu-hue-github-io.pages.dev/blog/index.html</link>
+    <description>一个非程序员和 AI Agent 协作的实验记录。</description>
+    <language>zh-CN</language>
+    <atom:link href="https://xiaoyu-hue-github-io.pages.dev/feed.xml" rel="self" type="application/rss+xml"/>
+    <lastBuildDate>Thu, 01 Oct 2026 00:00:00 GMT</lastBuildDate>
+    <item>
+      <title>Sonder520:把一天装进浏览器,代价是什么 · xiaoyu-hue</title>
+      <link>https://xiaoyu-hue-github-io.pages.dev/blog/post-2.html</link>
+      <guid isPermaLink="true">https://xiaoyu-hue-github-io.pages.dev/blog/post-2.html</guid>
+      <pubDate>Thu, 01 Oct 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>Sonder520:把一天装进浏览器,代价是什么</h1>
+    <div class="date">2026-10-01 · 项目故事 · <a href="https://github.com/xiaoyu-hue/sonder520">sonder520</a></div>
+    <div>
+      <span class="tag">本地优先</span><span class="tag">零依赖</span><span class="tag">12 模块</span><span class="tag">776 项测试</span>
+    </div>
+
+    <p>这是四个项目里做得最久的一个,也是我最想解释清楚的一个。因为它身上有一个看起来很美、实则很贵的决定:<strong>数据只存在你的浏览器里,哪儿也不去</strong>。</p>
+
+    <h2>起因:我只是想要一个不联网也能用的工具</h2>
+    <p>我想要的很简单——记录今天要做什么、看了什么书、赚了多少钱、想到了什么。市面上的工具要么要注册账号,要么数据默认上云,要么用着用着开始收费。</p>
+    <p>我不反对这些商业模式,但我确实不想把自己的日程、客户和收入交给一个我读不懂的服务条款。于是需求就变成了:<strong>能不能做一个完全不联网、数据不离开本机的工具?</strong></p>
+
+    <h2>它现在长什么样</h2>
+    <p>12 个模块,从今日计划、番茄钟、快速备忘,到自媒体排期、开发笔记、咨询收入、书单阅读、资讯收藏、灵感收集,再加上数据统计和设置。<strong>外加 6 款迷你游戏</strong>(井字棋、五子棋、扫雷等)——这部分纯属我不想让工具太严肃。</p>
+    <p>技术上它是"过时"的:纯 HTML/CSS/原生 JavaScript,<strong>零运行时依赖、零构建步骤</strong>。下载下来双击 <code>index.html</code> 就能跑,不需要 Node.js,不需要 npm install,不需要等编译。</p>
+
+    <h2>我拍板的三个决定</h2>
+
+    <h3>1. 数据不出本机,代价是放弃同步</h3>
+    <p>主存储是 IndexedDB(浏览器的本地数据库),localStorage 只做副本和跨标签页信号。数据<strong>不会</strong>上传到任何服务器——这不是承诺,是代码里根本没有上传这条路。</p>
+    <p>可选加密也做了:开启后用 PBKDF2 派生密钥 + AES-GCM-256 加密存储,即使有人拿到你的浏览器数据也读不出来。</p>
+    <p>但这个决定的代价很实在:<strong>换设备不会自动同步,清了浏览器数据就没了</strong>。备份只能靠手动导出 JSON。我在文档里把这条写进了"不适合什么场景"的第一条——想要跨设备自动同步的人,请去找别的工具。</p>
+
+    <h3>2. 零依赖,代价是没有框架替我兜底</h3>
+    <p>不用 React、不用 Vue、不用任何 UI 库,意味着布局、响应式、状态管理、动画全得自己写。代价是开发慢、代码量大。换来的是:<strong>十年后这个项目依然能双击打开</strong>,不会因为某个依赖停止维护而烂掉。</p>
+    <p>对一个不会写代码的人来说,这个取舍尤其值得——越少的依赖,越少的地方会因为我读不懂而失控。</p>
+
+    <h3>3. 776 项测试,因为这是我唯一能信任的东西</h3>
+    <p>这一条是我的私心。我读不懂几千行代码,但我能看懂"测试全绿"这四个字。所以我把测试当成了护栏:单元测试 + 契约测试 + 集成测试 + Playwright 三端 E2E(桌面/平板/手机),共 <strong>776 项</strong>。</p>
+    <p>再加上 14 份 ADR(架构决策记录)——每次重大改动为什么这么定,都留一份记录。这不是给外人看的工程仪式感,是给"三个月后忘了当初为什么这么做的我"留的线索。</p>
+
+    <h2>架构是被逼出来的,不是设计出来的</h2>
+    <p>项目现在分了层,从上到下是:页面 → 领域规则(纯函数) → 数据访问边界 → 模块工厂与状态 → 渲染引擎与事件总线 → 安全存储层 → IndexedDB。</p>
+    <p>说实话,这套分层不是我一开始就画出来的。它是被"越改越难改"逼出来的——早期所有逻辑堆在一起,加一个功能就碰坏另一个,后来才逐步拆出规则层和数据边界。<strong>这是这个项目花掉最多时间的地方,也是最不"AI 一键生成"的地方。</strong></p>
+
+    <h2>诚实清单:它做不到什么</h2>
+    <ul>
+      <li><strong>跨设备自动同步</strong> — 数据只在当前浏览器,换设备要手动导入备份</li>
+      <li><strong>团队协作</strong> — 这是个人工具,没有多人共享和权限管理</li>
+      <li><strong>原生 App 体验</strong> — 它是 PWA,后台推送、系统级通知这类能力受限</li>
+      <li><strong>当唯一存储</strong> — 浏览器数据可能被清理,重要数据请定期导出备份</li>
+    </ul>
+
+    <h2>回过头看</h2>
+    <p>Sonder520 证明的不是"AI 能写多少代码",而是一个更朴素的事:<strong>一个不懂技术的人,只要能清楚说出自己要什么、愿意承担什么代价,是可以把一个工具做到能用的。</strong></p>
+    <p>代价清单我写在文档最显眼的位置。因为"看起来很厉害"很容易,但那不是我要的东西。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue.github.io/sonder520/">在线体验</a>
+      <a href="https://github.com/xiaoyu-hue/sonder520">GitHub 仓库</a>
+      <a href="https://xiaoyu-hue-github-io.pages.dev/blog/index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>]]></description>
+    </item>
+    <item>
+      <title>Nymir:我给 AI 划下的安全边界 · xiaoyu-hue</title>
+      <link>https://xiaoyu-hue-github-io.pages.dev/blog/post-3.html</link>
+      <guid isPermaLink="true">https://xiaoyu-hue-github-io.pages.dev/blog/post-3.html</guid>
+      <pubDate>Thu, 01 Oct 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>Nymir:我给 AI 划下的安全边界</h1>
+    <div class="date">2026-10-01 · 项目故事 · <a href="https://github.com/xiaoyu-hue/Nymir">Nymir</a></div>
+    <div>
+      <span class="tag">P2P</span><span class="tag">端到端加密</span><span class="tag">阅读即焚</span><span class="tag">293 项测试</span>
+    </div>
+
+    <blockquote>
+      <strong>先说最重要的:</strong>这个项目由 AI 辅助开发,作者为零编程基础的个人开发者,代码<strong>尚未经过专业安全审计</strong>,不建议用于真实敏感场景。
+    </blockquote>
+
+    <p>这句话写在 Nymir 仓库最顶上,也在每一次介绍它的最前面。它不是免责声明的客套话——<strong>它是这个项目的第一功能</strong>。因为一个不会写密码学的人做加密聊天工具,最危险的不是做不出功能,而是做出"看起来安全"的功能。</p>
+
+    <h2>一条消息的旅程</h2>
+    <p>Nymir 是 P2P 匿名聊天工具,消息直接在两台设备之间传输,不经过我搭建的任何服务器。发送时:明文 → AES-256-GCM 加密 → Ed25519 签名 → 通过 P2P 通道发出。接收时:验签 → 解密 → 字段加密后写入本地 IndexedDB。</p>
+    <p>加密和签名都在浏览器里完成,中间节点只能看到密文和签名,看不到明文。密钥协商用 X25519,每消息的密钥由 HKDF 单独派生——<strong>不同消息的密钥不同</strong>。</p>
+    <p>这里有个关键的诚实点:<strong>Nymir 不实现任何密码学原语</strong>。它只调用浏览器内置的 WebCrypto API,那是有专业团队维护、经过审计的实现。这是我给自己划的第一条边界——不自己发明加密算法。</p>
+
+    <h2>三个我主动放弃的东西</h2>
+
+    <h3>1. 放弃"完全去中心化"这个说法</h3>
+    <p>很多隐私工具喜欢说自己"完全去中心化"。Nymir 的存储和传输确实是本地/P2P,但要让两个陌生人找到彼此,仍然需要公共信令(MQTT / Nostr / WebTorrent,三策略冗余)。</p>
+    <p>所以我把它写成了:<strong>无业务服务器 + 本地优先 + P2P 通信</strong>。这个词没那么响亮,但它是真的。我不打算用一个听起来更厉害的说法去换信任。</p>
+
+    <h3>2. 安全码必须是用户自己核对</h3>
+    <p>端到端加密有个绕不开的坑叫 <strong>TOFU(首次见面信任)</strong>:第一次交换公钥时,如果中间人抢先塞给你一个假公钥,协议自己识破不了。</p>
+    <p>Nymir 的应对是聊天页右上角的盾牌——显示双方共同的 15 位数字 + 7 个 emoji,你可以用另一条渠道(打个电话、发个语音)核对。核对后可以钉住,之后对方公钥再变会自动红色警告。</p>
+    <p>这个思路不是我发明的,借鉴了 Signal 的 Safety Number 和 Matrix 的 SAS。但有个细节我改了:Matrix 社区已在提案中建议弃用 emoji 验证(不同系统渲染不一致),所以 Nymir 把<strong>15 位数字作为唯一主验证手段,emoji 只作视觉辅助</strong>。</p>
+    <p>最关键的是这句话我写进了文档:<strong>核对是可选行为,不核对等同于裸奔。</strong>我不想让用户以为"开了加密就安全了"。</p>
+
+    <h3>3. 验签失败要看得见</h3>
+    <p>验签失败的消息,气泡上会明确标示,<strong>不静默展示</strong>。这是一个很小的交互决定,但逻辑很硬:安全问题上的沉默,等于帮攻击者隐瞒。</p>
+
+    <h2>还做了什么</h2>
+    <ul>
+      <li><strong>阅读即焚</strong> — 被查看后可选择自动销毁(但要说明:防不住对方截图或复制)</li>
+      <li><strong>本地存储加密</strong> — AES-256-GCM,PBKDF2 60 万次迭代派生密钥</li>
+      <li><strong>持久化身份</strong> — 刷新页面后加密身份不变,安全码核对长期有效</li>
+      <li><strong>可验证密钥轮换</strong> — 换钥时用旧签名私钥签新公钥,对端验签通过才接受(ADR-007 有完整记录)</li>
+      <li><strong>加密备份</strong> — 换设备可恢复,但必须用同一把锁屏密码</li>
+      <li><strong>二维码离线配对</strong> — v1.6.0 起可以扫码加入房间</li>
+    </ul>
+    <p>293 项测试,React 19 + TypeScript + Vite,AGPL-3.0 协议。CI 里挂着 CodeQL 和 Semgrep 做必检门禁。</p>
+
+    <h2>做不到什么(这部分请认真读)</h2>
+    <ul>
+      <li><strong>高风险通信不要用</strong> — 记者、活动人士、举报人面临国家级对手的场景,请选经过实战检验的专业工具</li>
+      <li><strong>流量混淆强度有限</strong> — 约每 30 秒、固定约 48 字节的噪声,等间隔等长填充在流量分析中可能可识别,对抗不了认真的分析</li>
+      <li><strong>无服务端离线收件箱</strong> — 对方不在线,消息就发不出去</li>
+      <li><strong>心跳消息不加密</strong> — 每 5 秒的 ping/pong 明文走 P2P 通道,不泄露内容但泄露在线状态</li>
+      <li><strong>忘记锁屏密码 = 数据永久丢失</strong> — 包括备份文件也打不开,这不是吓唬人</li>
+      <li><strong>锁屏密码至少 10 位</strong> — 太短会被离线暴力破解</li>
+    </ul>
+
+    <h2>为什么还是做了</h2>
+    <p>因为"一个不懂密码学的人能不能做出像样的加密工具"本身就是值得验证的问题。答案是:<strong>能做出功能,但做不出信任</strong>。</p>
+    <p>信任需要专业审计、需要时间、需要有人真的拿它去对抗对手——这些我都给不了。我能给的,是把做不到的事情一条一条写在最显眼的地方。</p>
+    <p>这大概是这个项目最诚实的部分,也是我最看重它的原因。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue.github.io/Nymir/">在线体验</a>
+      <a href="https://github.com/xiaoyu-hue/Nymir">GitHub 仓库</a>
+      <a href="https://xiaoyu-hue-github-io.pages.dev/blog/index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>]]></description>
+    </item>
+    <item>
+      <title>xy-club:改四处文案,就能换一个俱乐部 · xiaoyu-hue</title>
+      <link>https://xiaoyu-hue-github-io.pages.dev/blog/post-4.html</link>
+      <guid isPermaLink="true">https://xiaoyu-hue-github-io.pages.dev/blog/post-4.html</guid>
+      <pubDate>Thu, 01 Oct 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>xy-club:改四处文案,就能换一个俱乐部</h1>
+    <div class="date">2026-10-01 · 项目故事 · <a href="https://github.com/xiaoyu-hue/xy-club">xy-club</a></div>
+    <div>
+      <span class="tag">模板复用</span><span class="tag">零数据库</span><span class="tag">可视化后台</span><span class="tag">123 项测试</span>
+    </div>
+
+    <blockquote>
+      <strong>部署后请第一时间修改默认管理密码。</strong>后台鉴权是单密码机制,未经专业安全审计。
+    </blockquote>
+
+    <p>前两个项目是"我自己要用",这个不一样——它是我做给别人用的第一个东西。</p>
+
+    <h2>起因:一个俱乐部想有官网,通常卡在两件事</h2>
+    <p>要么找人开发,花钱;要么用建站平台,被模板绑死,想改点东西就得加钱。<strong>中间缺一个"够用、免费、能自己改"的选项。</strong></p>
+    <p>所以xy-club 的定位是:<strong>一套代码,改内容就能给任意俱乐部用。</strong>换一个俱乐部,改四处文案、换个主题色就行,不用碰代码。</p>
+
+    <h2>核心设计:官网和后台共用一份数据</h2>
+    <p>所有内容存在一个 <code>db.json</code> 文件里。<strong>后台改什么,前台立刻是什么</strong>——不需要重新构建,不需要部署,不需要懂技术。这在技术上很朴素,但正是"非技术人员能自己维护"的关键。</p>
+    <p>后台是可视化的:板块可以增删改、上下排序、一键显隐,随时新增板块。目前支持多种板块类型——价目列表、卡片网格、客户评价、常见问答、须知列表、图片集、图文段落,以及可引用全局字段的自由文本。</p>
+
+    <h2>我做的取舍</h2>
+
+    <h3>1. 零数据库 —— 代价是不能扛并发</h3>
+    <p>不用 MySQL、不用 PostgreSQL,就是单个 JSON 文件加 Node.js + Express。好处是任何支持 Node 的平台都能跑,不需要配数据库、不需要付数据库钱。<strong>代价是只能跑一个进程,多副本部署会写冲突,也不适合高流量。</strong></p>
+
+    <h3>2. 零前端框架 —— 代价是代码更啰嗦</h3>
+    <p>原生 HTML/CSS/JS,没有 React/Vue,没有打包器。改完刷新就生效。这个底线我写进了贡献指南——<strong>不接受引入前端框架的 PR</strong>,因为一旦引入,这个项目就不再是"下载下来就能跑"了。</p>
+
+    <h3>3. 视觉上舍得花力气</h3>
+    <p>8 套主题配色(4 套暗色:极光紫 / 深海蓝 / 落日金 / 晨雾白;4 套亮色商务:米白·晨雾 / 浅灰·云影 / 燕麦·暖调 / 藏蓝·经典),后台一键切换。8 处微交互:光标高光追踪、卡片 3D 微倾斜、按钮涟漪、数字滚动、滚动进度条、返回顶部、导航高亮、错落渐显。</p>
+    <p>移动端会自动降级——倾斜和高光只在有鼠标的设备生效,触屏不会误触发。这类细节是"看起来专业"和"真的专业"的分界线。</p>
+
+    <h3>4. 导出配置时把图片内联</h3>
+    <p>这是个很小的决定,但解决了一个真实的痛点:早期版本导出配置再导入到新站点,图片全裂了。现在导出的 JSON 会把图片<strong>内联成 data URI</strong>,配置自包含,导入新站点时自动还原成图片文件。<strong>不再丢图。</strong></p>
+
+    <h2>安全上做了什么,以及没做什么</h2>
+    <p>做了的:管理密码用 scrypt 哈希存储(不存明文)、登录失败限流(同 IP 连续 5 次错误锁定 5 分钟)、写操作强制校验 CSRF token、HTTP 安全头(nosniff / X-Frame-Options / CSP)、输入白名单校验防原型链污染、上传限 8MB 且禁用 svg(可内嵌脚本)。</p>
+    <p>没做的,也必须说清楚:</p>
+    <ul>
+      <li><strong>单密码单管理员</strong> — 没有多用户、没有角色权限,无法区分谁改了什么</li>
+      <li><strong>会话存内存</strong> — 服务重启后所有登录态失效</li>
+      <li><strong>上传只校验格式和大小</strong> — 没做图片内容扫描</li>
+      <li><strong>未经专业安全审计</strong></li>
+    </ul>
+
+    <h2>不适合什么场景</h2>
+    <ul>
+      <li><strong>涉及支付的交易站点</strong> — 没有订单、库存、支付与对账,也不满足合规要求</li>
+      <li><strong>需要多管理员协作</strong> — 单密码,分不清谁改了什么</li>
+      <li><strong>高流量 / 高并发</strong> — 单进程 + JSON 全量读写,没有缓存</li>
+      <li><strong>需要 SEO 与服务端渲染</strong> — 内容由前端 JS 异步拉取,爬虫不一定拿得到</li>
+      <li><strong>存储用户敏感信息</strong> — 单密码鉴权 + 无操作审计日志,担不起实名、证件这类数据</li>
+    </ul>
+
+    <h2>一句话</h2>
+    <p>xy-club 追求的是"开箱即用、零依赖",代价是放弃了企业级能力。<strong>这个取舍是我主动选的,但它确实是取舍,不是优点。</strong></p>
+    <p>123 项单元测试是唯一强制门禁,覆盖密码哈希与限流、CSRF、安全头、输入验证、上传白名单、内容容错,以及"文档和代码是否还对齐"——最后这条听着奇怪,但对由 AI 辅助开发的项目来说,文档漂移是真实风险。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue.github.io/xy-club/">在线预览</a>
+      <a href="https://github.com/xiaoyu-hue/xy-club">GitHub 仓库</a>
+      <a href="https://xiaoyu-hue-github-io.pages.dev/blog/index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>]]></description>
+    </item>
+    <item>
+      <title>xy-intro-card:一张能发走的名片,和一次&quot;克制&quot;的练习 · xiaoyu-hue</title>
+      <link>https://xiaoyu-hue-github-io.pages.dev/blog/post-5.html</link>
+      <guid isPermaLink="true">https://xiaoyu-hue-github-io.pages.dev/blog/post-5.html</guid>
+      <pubDate>Thu, 01 Oct 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>xy-intro-card:一张能发走的名片,和一次"克制"的练习</h1>
+    <div class="date">2026-10-01 · 项目故事 · <a href="https://github.com/xiaoyu-hue/xy-intro-card">xy-intro-card</a></div>
+    <div>
+      <span class="tag">单文件</span><span class="tag">零依赖</span><span class="tag">离线可用</span><span class="tag">双击即用</span>
+    </div>
+
+    <p>这是四个项目里最小的一个,也是我最喜欢的一个。因为它回答了一个我一直在想的问题:<strong>工具做到多小,才算够?</strong></p>
+
+    <h2>起因:官网搭好了,成员的名片怎么办</h2>
+    <p>做完 xy-club(俱乐部官网模板)之后,自然的下一步是:俱乐部官网有了,里面的成员自己要不要一张个人介绍卡?</p>
+    <p>需求很具体——填内容就出卡,不用注册、不用联网、<strong>发给别人就能打开</strong>。而且风格要和官网对得上。</p>
+
+    <h2>它有多小</h2>
+    <ul>
+      <li><strong>单个 HTML 文件</strong>,字体、图标、头像全部内嵌</li>
+      <li><strong>零第三方依赖</strong> — 没有 npm 包,没有 CDN 外链,没有在线字体托管</li>
+      <li><strong>不联网、不上传</strong> — 所有计算都在你的浏览器里完成,头像和填写的内容不会离开本机</li>
+      <li><strong>双击就能用</strong> — 不需要服务器,不需要安装任何东西</li>
+    </ul>
+    <p>功能上:两种模式可切换——「人设卡」(名字·年龄·星座·技能·签名)和「通用名片」(姓名·头衔·简介·联系方式);8 套主题色,与 xy-club 同名同色;头像上传后用 Canvas 自动压到 512px,大图不会卡死;左侧填、右侧实时预览,满意了点一下导出。</p>
+
+    <h2>最关键的一个决定:导出的是 HTML,不是图片</h2>
+    <p>大部分名片工具导出 PNG 或 PDF。xy-intro-card 导出的是<strong>一份独立的 HTML 文件</strong>。</p>
+    <p>理由很实际:图片发过去,对方只能看;独立 HTML 发过去,对方双击就能打开,<strong>而且还是能交互、能看清、能缩放的</strong>。又因为所有资源都内嵌了,这份文件断网也能正常显示。</p>
+    <p>代价是:它不是一张能直接发朋友圈的图。这是取舍,不是缺陷——但我会把它明说出来,免得有人下载后才发现不是自己想要的。</p>
+
+    <h2>和 xy-club 是同一家族</h2>
+    <p>两个项目视觉同源:液态玻璃风格一致,四套主题色(落日金 / 深海蓝 / 极光紫 / 晨雾白)同名同色。典型用法是——<strong>用 xy-club 搭好俱乐部官网,再用这个工具为每位成员生成统一风格的名片,挂到官网的「团队成员」板块。</strong></p>
+    <p>顺便说一句:默认演示里的「XY俱乐部」只是示例,并非专属品牌。把演示内容换成任意俱乐部或团队,工具逻辑完全不变。</p>
+
+    <h2>"克制"体现在哪儿</h2>
+    <p>这个项目最有意思的地方,是我<strong>决定不做什么</strong>:</p>
+    <ul>
+      <li><strong>不做后端存储</strong> — 没有账号、没有云端、数据不出本机</li>
+      <li><strong>不做多人协作编辑</strong> — 它是个人工具</li>
+      <li><strong>不做复杂动画和 3D</strong> — 刻意保持轻量优先</li>
+      <li><strong>不做服务端鉴权</strong> — 因为压根没有服务端</li>
+    </ul>
+    <p>每一条"不做"都让工具更小、更稳、更不容易坏。对四个项目做下来,我最大的体会是:<strong>加功能容易,克制难。</strong>尤其当 AI 能在几分钟内给你变出一个新功能的时候,克制就更难了。</p>
+
+    <h2>还有几处小用心</h2>
+    <p>移动端优先的多断点适配;帧率不足时自动降级;尊重系统的「减弱动态」无障碍设置(系统里开了就会自动关掉动画);手机端精简毛玻璃层数以保证流畅。这些都是很小的事,但加起来决定了"拿出去给别人用"时别人的第一印象。</p>
+
+    <h2>做不到什么</h2>
+    <ul>
+      <li>需要后端存储 / 多人在线协作编辑 — 不做</li>
+      <li>需要复杂动画 / 3D — 刻意保持轻量</li>
+      <li>需要服务端鉴权 — 没有后端</li>
+    </ul>
+
+    <h2>写在最后</h2>
+    <p>四个项目写完,回头看,最小的一个反而最贴近我一开始想证明的事:<strong>不会写代码的人,也可以做出一个别人真的能用的东西。</strong></p>
+    <p>当然,这四个项目没有一个是"我手写代码"做出来的。但它们每一个,都是我做的决定。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue.github.io/xy-intro-card/">在线体验</a>
+      <a href="https://github.com/xiaoyu-hue/xy-intro-card">GitHub 仓库</a>
+      <a href="https://xiaoyu-hue-github-io.pages.dev/blog/index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>]]></description>
+    </item>
+    <item>
+      <title>雨里的甘蔗叶 · xiaoyu-hue</title>
+      <link>https://xiaoyu-hue-github-io.pages.dev/blog/post-6.html</link>
+      <guid isPermaLink="true">https://xiaoyu-hue-github-io.pages.dev/blog/post-6.html</guid>
+      <pubDate>Thu, 01 Oct 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>雨里的甘蔗叶</h1>
+    <div class="date">2026-10-01 · 随笔</div>
+
+    <p>今天放学，刚下公交车，天就压了下来。乌云密布，狂风乱窜，下着小雨。</p>
+
+    <p>我走到一家店铺门口，小雨突然变成大雨，被狂风吹得倾斜。雨丝仿佛活了过来，斜斜地在空中肆意起舞。</p>
+
+    <p>我走进店铺，隔着透明的玻璃，看到风雨里的那丛甘蔗叶。它被无情的狂风与大雨拍打着，随着风摆动，却丝毫不肯低头。它迎着风雨，像是在嘲笑风雨的无能——你没能把它击垮。</p>
+
+    <p>我看着它，看着风雨，看着乌云。</p>
+
+    <p>情绪不知所起，淡淡的忧伤。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue-github-io.pages.dev/blog/index.html">← 返回博客</a>
+    </div>
+
+  </article>
+</div></section>]]></description>
+    </item>
+    <item>
+      <title>不过昙花一现罢了 · xiaoyu-hue</title>
+      <link>https://xiaoyu-hue-github-io.pages.dev/blog/post-7.html</link>
+      <guid isPermaLink="true">https://xiaoyu-hue-github-io.pages.dev/blog/post-7.html</guid>
+      <pubDate>Thu, 01 Oct 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>不过昙花一现罢了</h1>
+    <div class="date">2026-10-01 · 随笔</div>
+
+    <p>不过昙花一现罢了——可你见过昙花的人都知道，它选在子时开，是因为那时候月光最薄，薄到刚好够它把自己全部的白，一寸一寸地还回去。它不欠这世间什么，也不向谁借光，开完就合上，像一封写完就烧掉的信，灰烬里全是没对人说过的字。</p>
+
+    <p>你说不过尔尔，可你记得它开的样子。你记得，它就开着；你忘了，它也开着。这世上有些事不为谁记，只为它自己曾经发生过。</p>
+
+    <p>选择是什么呢？没有选择，只是放弃什么罢了。可你说这话的时候，手里已经在攥着什么了——攥着清醒，攥着不骗自己的狠劲，像秋天松开最后一片叶子的树。松手的时候它疼，可它知道根在哪儿。那些放下的，不是丢了，是化成了根边的薄雪，来年踩上去，你会比从前高半寸，那半寸就是它们还在的证据。</p>
+
+    <p>你后悔过——后悔是昨日的你蹲在雨里，今天的你路过，没拉他，只在他旁边坐下。两个人的影子被水洼盛着，晃晃悠悠拼成一个完整的"人"字。雨停了，你站起来，没拍土，带着那块湿继续走。这才是真的不倒。</p>
+
+    <p>真正的强大是允许自己塌方，然后在塌方的地方，种一棵往后年年都结果的树。</p>
+
+    <p>回头看这一路不过如此——可你回头的时候路也在看你。看一个背包里只装梦的人，变成一个背着一包碎石头却还肯把石头磨亮的人。那些石头全是别人说"你不行"的时候你咽下去的，现在每一块都带着你的体温，你背着它们，像背着一座会开花的小山。</p>
+
+    <p>你说你很骄傲，你自己能力你自己清晰——那就骄傲。骄傲不是踩在谁头上，是暴雨里自己撑伞，伞骨断了三根还在撑；是知道自己几斤几两，然后稳稳站在自己的重量里，像一棵树站在自己的年轮里，不嫌自己长得慢，也不羡慕风跑得快。</p>
+
+    <p>成功又如何，失败又如何，遗憾又如何——你真正想说的其实是我还在。成功来时我在，失败走时我也在，遗憾落下去像石子入深井，我听见了回声，然后我还在。这个"在"，是这世上最轻也最重的字。</p>
+
+    <p>以绝对的自我认同走下去——这是你手里唯一的火把，不需要向谁借光，不需要等谁来点，你自己就是那个光源。你体内有口井，无论外面下不下雨，它都有自己的水位。别人看见深浅，月亮看见的是底下原来盛着整片天。</p>
+
+    <p>且将这一生的荒凉与滚烫都酿成自己的月光，不必盛给谁看，不必等谁来尝。你只管举杯，对影成三人——一个是哭过的你，一个是笑过的你，一个是正在走的你。碰杯时整个夜空轻轻晃了一下，晃的那一下，你听见了。那声音不大，刚好够你把自己重新信一遍。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue-github-io.pages.dev/blog/index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>]]></description>
+    </item>
+    <item>
+      <title>灰度空间 · xiaoyu-hue</title>
+      <link>https://xiaoyu-hue-github-io.pages.dev/blog/post-8.html</link>
+      <guid isPermaLink="true">https://xiaoyu-hue-github-io.pages.dev/blog/post-8.html</guid>
+      <pubDate>Thu, 01 Oct 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>灰度空间</h1>
+    <div class="date">2026-10-01 · 读书摘录</div>
+
+    <p>灰度空间是辩证思维的根基。</p>
+
+    <p>一件事情绝非只有简单的对错之分。承认事件里错综复杂的利益与矛盾，才能跳出非黑即白的定式，多角度审视问题，避免预先站队，单纯地划分敌我。</p>
+
+    <p>但承认复杂性并不代表放弃是非判断。在具体情境之中，依旧可以做出价值取舍。</p>
+
+    <p class="card-note">本篇为读书摘录，非原创。放在这里当作提醒：遇事先别急着站队。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue-github-io.pages.dev/blog/index.html">← 返回博客</a>
+    </div>
+
+  </article>
+</div></section>]]></description>
+    </item>
+    <item>
+      <title>我和 AI 的协作方式:先把边界写清楚 · xiaoyu-hue</title>
+      <link>https://xiaoyu-hue-github-io.pages.dev/blog/post-1.html</link>
+      <guid isPermaLink="true">https://xiaoyu-hue-github-io.pages.dev/blog/post-1.html</guid>
+      <pubDate>Wed, 30 Sep 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<section><div class="wrap">
+  <article class="article glass reveal">
+    <h1>我和 AI 的协作方式:先把边界写清楚</h1>
+    <div class="date">2026-09-30 · 关于方法</div>
+
+    <p>很多人听到"不会写代码的人用 AI 做项目",第一反应是:那不就是让 AI 全写了?其实不是。代码是 AI 写的,但<strong>每一次"做什么、不做什么、做到哪算够"都是我定的</strong>。这篇把这个协作方式摊开说,也当作这个博客的第一篇。</p>
+
+    <h2>需求确认后再开工</h2>
+    <p>动手前先讲清目标和范围。缺信息就先问,不中途瞎猜。这条看起来朴素,却是避免"做了一堆不对的东西"的唯一办法。对一个非程序员来说,最贵的不是写代码,是<strong>在错误的方向上空转</strong>。</p>
+
+    <h2>大任务拆成可验证的小步</h2>
+    <p>一个完整功能,会被拆成一连串能分别验证的小步骤,做完一步交付一步。这样每一步都能看见东西在动,也能在跑偏的瞬间就拽回来,而不是等到最后发现整栋楼歪了。</p>
+
+    <h2>如实标注"做不到什么"</h2>
+    <p>这是我和 AI 协作里最重要的一条,也是这个博客会反复出现的主题。每个项目我都写明:<strong>哪里还没经过专业验证、哪些场景不该用、哪些是我拍板但可能错的判断</strong>。我宁可它看起来"没那么神",也不想用"看起来很厉害"去糊弄别人或糊弄自己。</p>
+
+    <h2>为什么写这个博客</h2>
+    <p>因为"非程序员 × AI Agent"到底能把人推到哪里,目前还没有太多诚实的一手记录。我想把过程、判断、翻车都留下来——不是教学成果,是一份<strong>可验证的实验记录</strong>。你看到的每一个项目,背后都是上面这几条规则在跑。</p>
+
+    <p>如果你也在用 AI 做东西,欢迎在仓库里开 issue 聊聊。</p>
+
+    <div class="links">
+      <a href="https://xiaoyu-hue-github-io.pages.dev/blog/index.html">← 返回博客</a>
+    </div>
+  </article>
+</div></section>]]></description>
+    </item>
+  </channel>
+</rss>

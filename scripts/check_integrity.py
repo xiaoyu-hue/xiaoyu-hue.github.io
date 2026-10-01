@@ -31,7 +31,12 @@ def rel(p):
 
 # 测试工具链会在仓库内生成大量 .html（node_modules、Playwright 报告等）,
 # 它们不是站点内容,必须排除,否则会被当成"缺 CSP 的页面"误报。
-EXCLUDED_DIRS = {"node_modules", "playwright-report", "test-results", ".git"}
+#
+# src/ 也属于要排除的一类,但理由不同：它是构建源码（页面模板 + 被模板包进去的
+# 正文片段）。单独看一个 src/pages/*.body.html,它本来就不构成完整的 HTML 页面,
+# 拿本文件的标准去要求它没有意义。源码和成品是否一致,由 `python3 build.py` 负责
+# 校验（逐字节比对）。这里只管"最终要发布出去的那些页面"。
+EXCLUDED_DIRS = {"node_modules", "playwright-report", "test-results", ".git", "src"}
 
 
 def is_excluded(path):
@@ -90,9 +95,25 @@ for f in html_files:
         problems.append(f"[第三方资源] {rel(f)} 引用了外部资源: {m.group(1)}")
 
 # ---------- 4. 内联脚本 / 事件属性回归 ----------
+# <script type="application/ld+json"> 是 data block（数据块），不是可执行脚本。
+# HTML 规范「prepare the script」算法规定：script 的 type 若不匹配 JavaScript MIME，
+# 浏览器把它当纯数据直接返回，不进入执行路径；而 CSP 的内联检查挂在执行路径上，
+# 因此它不受 script-src 'self' 约束。已用 Chromium / Firefox / WebKit 三引擎实测确认，
+# 已有对照实验证明：同一页里同一策略下的 classic 内联脚本确实被三引擎全部拦下、
+# 且各触发 1 条 CSP 违规，说明实验装置有效、不是「没报错」而已。详见 docs/csp-jsonld.md。
+#
+# 这里用「显式白名单」而不是「凡有 type 就放行」，避免将来某个新 type 被静默放过：
+# 只有明确列进来的、确定不可执行的 type 才豁免，其余一律照旧报错。
+DATA_BLOCK_TYPES = ("application/ld+json", "application/json")
 for f in html_files:
     text = open(f, encoding="utf-8").read()
-    if re.search(r"<script(?![^>]*\ssrc=)[^>]*>", text):
+    for m in re.finditer(r"<script([^>]*)>", text):
+        attrs = m.group(1)
+        if re.search(r"\ssrc=", attrs):
+            continue                      # 外链脚本，'self' 下合法
+        tm = re.search(r'\stype\s*=\s*"([^"]+)"', attrs)
+        if tm and tm.group(1).strip() in DATA_BLOCK_TYPES:
+            continue                      # 不可执行的 data block，CSP 不管
         problems.append(f"[内联脚本] {rel(f)} 含内联 <script>，会被 CSP 拦截")
     if re.search(r"\son[a-z]+\s*=", text, re.I):
         problems.append(f"[事件属性] {rel(f)} 含 on*= 内联事件属性，会被 CSP 拦截")

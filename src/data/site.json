@@ -1,0 +1,11 @@
+{
+  "base_url": "https://xiaoyu-hue-github-io.pages.dev",
+  "csp_meta": "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'",
+  "footers": {
+    "home": "  <div>AI 时代的个体赋能,祝我们共同见证未来的 AGI。</div>\n  <div class=\"footer-sign\">© 2026 xiaoyu-hue · <span class=\"sign\">一半烟火以谋生，一半诗意以谋爱</span></div>",
+    "page": "  <div>© 2026 xiaoyu-hue · <span class=\"sign\">一半烟火以谋生，一半诗意以谋爱</span></div>"
+  },
+  "author": "xiaoyu-hue",
+  "lang": "zh-CN",
+  "feed_title": "xiaoyu-hue · 博客"
+}

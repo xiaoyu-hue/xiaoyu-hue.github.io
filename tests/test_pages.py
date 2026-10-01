@@ -30,6 +30,19 @@ ALL_PAGES = PAGES + [OFFLINE_PAGE]
 EXPECTED_CSS = {"index.html": "assets/style.css"}
 DEFAULT_CSS = "../assets/style.css"
 
+# <script type="application/ld+json"> 是 data block（数据块），不是可执行脚本：
+# HTML 规范里 script 的 type 不匹配 JavaScript MIME 时浏览器把它当纯数据返回，
+# 不进入执行路径，因此不受 script-src 'self' 约束。三引擎实测确认，
+# 详见 docs/csp-jsonld.md。这里仍然用显式白名单，不放开任意 type。
+DATA_BLOCK_TYPES = ("application/ld+json", "application/json")
+
+# 每页应有的结构化数据类型：搜索引擎靠它显示面包屑/作者/发布时间，
+# 内容聚合器与 AI 摘要工具也主要读这一层而不是猜正文。404(离线)页刻意不写。
+EXPECTED_JSONLD_TYPE = {
+    "index.html": "WebSite",
+    "blog/index.html": "CollectionPage",
+}
+
 EXPECTED_REVEAL_COUNT = {
     "index.html": 11,
     "blog/index.html": 9,
@@ -158,7 +171,11 @@ class TestHeadContract(unittest.TestCase):
                     f"{prefix}assets/main.js",         # 滚动动效
                 ]
 
-                js = doc.find_all("script")
+                # 只把「可执行脚本」纳入清单比对，data block 单独处理
+                js = [
+                    s for s in doc.find_all("script")
+                    if s.attrs.get("type") not in DATA_BLOCK_TYPES
+                ]
                 srcs = [s.attrs.get("src") for s in js]
                 self.assertEqual(
                     srcs, expected_scripts,
@@ -166,6 +183,60 @@ class TestHeadContract(unittest.TestCase):
                 )
                 for s in js:
                     self.assertFalse(s.texts, f"{page} 的脚本标签不应有内联内容")
+
+    def test_jsonld_present_and_parsable(self):
+        """结构化数据必须存在、必须是合法 JSON、必须声明正确的 @type。
+
+        这条契约的价值在于：JSON-LD 写错时页面看起来毫无异常，
+        只有搜索引擎静默失效——靠肉眼完全看不到。
+        """
+        for page in PAGES:
+            with self.subTest(page=page):
+                doc = parse(page)
+                blocks = [
+                    s for s in doc.find_all("script")
+                    if s.attrs.get("type") == "application/ld+json"
+                ]
+                self.assertTrue(
+                    blocks, f"{page} 没有任何 JSON-LD 结构化数据",
+                )
+                parsed = []
+                for b in blocks:
+                    raw = b.text
+                    self.assertIsNotNone(raw, f"{page} 的 JSON-LD 是空的")
+                    try:
+                        parsed.append(json.loads(raw))
+                    except json.JSONDecodeError as e:
+                        self.fail(f"{page} 的 JSON-LD 不是合法 JSON：{e}")
+                types = [p.get("@type") for p in parsed]
+                want = EXPECTED_JSONLD_TYPE.get(page) or "BlogPosting"
+                self.assertIn(
+                    want, types,
+                    f"{page} 的 JSON-LD 缺 @type={want}，实际为 {types}",
+                )
+
+    def test_jsonld_urls_are_absolute(self):
+        """结构化数据里的 url 必须是绝对地址。
+
+        相对路径在本地渲染毫无问题，但被搜索引擎抓走后会指向它自己的域名，
+        等于给自己制造一堆错 URL。
+        """
+        for page in PAGES:
+            with self.subTest(page=page):
+                for b in parse(page).find_all("script"):
+                    if b.attrs.get("type") != "application/ld+json":
+                        continue
+                    data = json.loads(b.text)
+                    if "url" in data:
+                        self.assertTrue(
+                            data["url"].startswith("https://"),
+                            f"{page} 的 JSON-LD 字段 url 不是绝对 URL：{data['url']!r}",
+                        )
+                    if data.get("author", {}).get("url"):
+                        self.assertTrue(
+                            data["author"]["url"].startswith("https://"),
+                            f"{page} 的 author.url 不是绝对 URL",
+                        )
 
 
 class TestTitleAndDescription(unittest.TestCase):

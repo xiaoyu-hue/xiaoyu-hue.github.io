@@ -7,7 +7,8 @@
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-主站-F38020?style=flat-square)](https://xiaoyu-hue-github-io.pages.dev/)
 [![备用站](https://img.shields.io/badge/GitHub%20Pages-备用站-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
-[![零构建](https://img.shields.io/badge/构建-无-6B728C?style=flat-square)](https://github.com/xiaoyu-hue/xiaoyu-hue.github.io)
+[![零依赖](https://img.shields.io/badge/运行时依赖-无-2F855A?style=flat-square)](https://github.com/xiaoyu-hue/xiaoyu-hue.github.io)
+[![构建可选](https://img.shields.io/badge/构建-可选%20Python-3776AB?style=flat-square)](https://github.com/xiaoyu-hue/xiaoyu-hue.github.io)
 
 **主站：<https://xiaoyu-hue-github-io.pages.dev/>**
 
@@ -44,10 +45,21 @@
 
 ```
 xiaoyu-hue.github.io/
-├── index.html              # 主站首页（关于 / 项目 / 联系）
+├── build.py                # 构建脚本：把 src/ 拼成成品页面。零依赖，只用 Python 标准库
+├── src/                    # 构建源码（改站点内容改这里）
+│   ├── layouts/base.html   #   页面模板：head / 导航 / 设置面板 / 页脚 / 脚本，全站共用一份
+│   ├── pages/*.body.html   #   每个页面的正文片段
+│   └── data/               #   site.json（CSP / 主站域名 / 页脚）+ pages.json（每页标题摘要）
+├── index.html              # ↓ 以下都是 build.py 的构建产物，直接手改会被下次构建覆盖
+├── sitemap.xml             # 给搜索引擎的页面清单（含每篇文章的更新时间）
+├── robots.txt              # 爬虫规则 + sitemap 位置（指向主站，与 canonical 一致）
+├── feed.xml                # RSS 2.0 全文订阅源，8 篇文章都带正文
+├── 404.html                # 404 页面（刻意不写结构化数据，此页不该被索引）
 ├── offline.html            # 离线回退页（断网且页面未缓存时显示）
 ├── manifest.webmanifest    # PWA 应用清单（名字、图标、启动方式）
 ├── sw.js                   # Service Worker（必须在根目录，见下文）
+├── docs/                   # 实测记录：结论怎么来的、边界在哪
+│   └── csp-jsonld.md       #   CSP 会不会拦掉 JSON-LD 结构化数据（附可复现脚本）
 ├── assets/
 │   ├── style.css           # 液态玻璃 × 海洋风格样式（深/浅双主题 + 微动效系统四层令牌）
 │   ├── theme-boot.js       # <head> 内同步应用主题与动效偏好，防刷新时闪色
@@ -69,14 +81,24 @@ xiaoyu-hue.github.io/
 │   └── post-*.html         # 文章
 ├── scripts/
 │   ├── check_integrity.py  # 完整性检查（死链 / CSP / PWA 资产）
+│   ├── verify_csp_jsonld.py  # 实测：严格 CSP 下 JSON-LD 是否可读（需 playwright，可选）
 │   └── build-icons.mjs     # 从 icon.svg 导出各尺寸 PNG
 ├── tests/                  # 契约测试、逻辑测试、真浏览器测试
 ├── playwright.config.mjs
 ├── _headers                # 安全响应头配置，仅 Cloudflare Pages 等平台生效
 └── .github/workflows/
-    ├── security.yml        # CI：每次 push 自动跑完整性检查
+    ├── security.yml        # CI：每次 push 自动跑完整性检查 + CSP/JSON-LD 实测
     └── test.yml            # CI：每次 push 自动跑三层测试
 ```
+
+> **这一层决定别人能不能找到你的站点。** 上述 `sitemap.xml` / `robots.txt` / `feed.xml` / `404.html` 与每个页面
+> `<head>` 里的 JSON-LD 结构化数据，都由 `build.py` 一并生成，手改会在下次构建时被覆盖。
+>
+> - **搜索引擎**靠 sitemap 找到页面、靠 JSON-LD 认出「这是谁写的、什么时候发的」
+> - **RSS 阅读器**靠 feed.xml 订阅；注意其中的链接已全部转成绝对地址，否则在阅读器里点开是死链
+> - **AI 摘要工具**主要读 JSON-LD 这一层，而不是猜正文
+>
+> JSON-LD 必须内联写在 HTML 里，但本站 CSP 禁止内联脚本——这看起来直接冲突。结论是**不冲突**（详见 [`docs/csp-jsonld.md`](docs/csp-jsonld.md)），那份文档给出了实测过程与结论边界，不是推测。
 
 > `_headers` 只在**主站（Cloudflare Pages）**上生效：CSP、X-Frame-Options、COOP、Permissions-Policy 等全部响应头都由它下发。
 >
@@ -210,7 +232,7 @@ Service Worker 的**作用域受它所在路径限制**。放在 `assets/sw.js` 
 
 ## 本地预览
 
-**零构建、零依赖**，不需要 Node.js、不需要安装任何东西：
+**只是看站点的话，零构建、零依赖**，不需要 Node.js、不需要安装任何东西：
 
 ```bash
 git clone https://github.com/xiaoyu-hue/xiaoyu-hue.github.io.git
@@ -220,6 +242,23 @@ python3 -m http.server 8000
 ```
 
 推荐 Chrome / Edge。
+
+### 要改内容时
+
+成品 HTML 不再手写修改 —— 改 `src/` 里的源码，然后跑一次构建：
+
+```bash
+python3 build.py           # 先只比对：逐个文件告诉你会不会改动线上内容
+python3 build.py --write   # 确认无误后再写入成品 HTML 与 _headers
+```
+
+`build.py` 零依赖，只用 Python 标准库，不需要 pip install、不需要 Node.js。
+它会把构建结果和你仓库里的现有成品**逐字节比对**，任何非预期的差异都会被报出来并拒绝通过 ——
+所以「改了模板忘了同步」这类事会被挡住，不会悄悄上线。
+
+这次为什么要多出这一步：以前 head、导航、页脚这些样板在每个 HTML 里各抄一份，改一次要动
+**10 个文件**；现在它们只在 `src/layouts/base.html` 里存在一份，CSP 与 `base_url` 也各自收敛到
+一行。代价是修改多了一步构建，换来的是「不会漏改某一页」这件事由工具保证，而不是靠记性。
 
 > **测 PWA 功能必须用 `http://localhost:8000`，不能用 `http://127.0.0.1:8000` 之外的 IP。**
 > Service Worker 只在「安全上下文」下工作：HTTPS，或 localhost。用局域网 IP（如 `192.168.x.x`）访问时，SW 会静默注册失败，离线功能不可用——这是浏览器的安全限制，不是站点的问题。
@@ -282,6 +321,7 @@ python3 -m http.server 8000
 python3 -m unittest discover -s tests -t .   # 契约层：只要 python3
 node --test 'tests/js/**/*.test.mjs'         # 逻辑层：需要 Node 18+
 npx playwright test                          # 真浏览器层：需要 Node，先跑 npm ci
+python3 scripts/verify_csp_jsonld.py         # CSP/JSON-LD 实测：需要 playwright（可选）
 ```
 
 真浏览器层里包含一份**可访问性基线**（`tests/e2e/a11y.spec.mjs`，用的是 axe-core）。它补的是静态审查查不到的那一类问题：CSS 里两个十六进制常量配在一起，对比度够不够，不跑浏览器、不做色彩空间计算，读代码永远看不出来 —— 本站就实测抓到过一个已经上线的问题（`--text-faint` 配 `--abyss` 只有 4.347:1，WCAG AA 要求 4.5:1）。扫描覆盖全站页面 × 浅/深两种主题，外加设置面板展开后的面板内部。
@@ -290,11 +330,14 @@ axe 只装在 devDependencies，**站点本身依旧零运行时依赖**。它�
 
 | 层 | 管什么 |
 |------|--------|
-| 契约层 | 8 个页面的 head、页脚签名、导航、CSP 是否与 `_headers` 一致；文章卡片与文章是否同步；PWA 清单合法性与图标真实尺寸；Service Worker 是否在根目录、预缓存清单有没有死链；**微动效系统的令牌齐备性、总开关、降级路径、每页动效开关成对**；完整性检查脚本自己是否还抓得到问题 |
+| 契约层 | 10 个页面的 head、页脚签名、导航、CSP 是否与 `_headers` 一致；文章卡片与文章是否同步；PWA 清单合法性与图标真实尺寸；Service Worker 是否在根目录、预缓存清单有没有死链；**微动效系统的令牌齐备性、总开关、降级路径、每页动效开关成对**；**结构化数据：每页必须有 JSON-LD、必须是合法 JSON、`@type` 正确、URL 必须是绝对地址**；完整性检查脚本自己是否还抓得到问题 |
 | 逻辑层 | 滚动淡入的四类分支（正常观察 / 用户开了「减少动画」/ 不支持 IntersectionObserver / 没有 matchMedia）；同组错落编号与封顶、1.5s 硬超时兜底、总开关三种取值；首屏偏好同步（含动效）与老数据兼容；Service Worker 的请求分流（导航 / 静态资源 / 其他）与跨域、非 GET 放行 |
 | 真浏览器层 | 页面真的渲染了吗、CSS 和 JS 有没有被 CSP 拦掉、动效令牌真的被消费了吗、同组错落是否严格递增且封顶 320ms、开关即时生效且刷新保持、关后内容仍可见（**令牌归零是按计算值断言的，不只是看 `transition`**）、375px 下有没有元素溢出；Service Worker 注册、**断网后能否打开首页与文章**、未缓存页面是否回退到离线页；以及**可访问性基线**：全站页面 × 浅/深两种主题的对比度、语义与 ARIA，外加设置面板展开后的面板内部 |
 
-每次 push 到 `main`，CI 会自动跑完三层。
+> JSON-LD 契约单独拎出来说一句：它是那种**写错了页面照样好看、只有搜索引擎静默失效**的东西。
+> 相对 URL 尤其阴 —— 本地渲染毫无问题，被抓走后就指向别人的域名了。所以让它进 CI 盯着。
+
+每次 push 到 `main`，CI 会自动跑完三层，外加一遍 CSP/JSON-LD 实测（CI 里只装 Chromium 一个引擎，本地可以跑全三个）。
 
 ---
 
@@ -317,9 +360,10 @@ MPL-2.0 是文件级 copyleft，但它只约束"你把这份代码的源文件�
 
 | 用途 | 需要什么 |
 |------|----------|
-| 契约层（82 例） | `python3` —— 只用标准库，一个 pip 包都不装 |
+| 契约层（84 例） | `python3` —— 只用标准库，一个 pip 包都不装 |
 | 逻辑层（63 例） | Node 18+ |
 | 真浏览器层（83 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
+| CSP/JSON-LD 实测 | Python 3 + `playwright` —— **可选**，不装也能构建和部署站点，只是没法亲自复现 [`docs/csp-jsonld.md`](docs/csp-jsonld.md) 里的结论 |
 
 CI 上跑的是 Node 20。
 
@@ -333,9 +377,29 @@ CI 上跑的是 Node 20。
 
 ## 更新站点
 
-- 改 `index.html` 可更新项目卡片、关于与联系方式
-- 新增文章：复制 `blog/post-1.html` 改内容，再往 `blog/index.html` 加一张 `.post-card`
-- 新增文章后，**记得把新文件加进 `sw.js` 的 `PRECACHE` 清单**，否则该文章离线时打不开（完整性检查会抓到清单里的死链，但不会告诉你"少了一篇"）
+成品 HTML 一律不再手改（改了也会被下次构建覆盖），正确顺序是：
+
+1. 在 `src/pages/` 加正文片段，例如 `blog-post-9.body.html`
+2. 在 `src/data/pages.json` 加一条元数据，`body` 指向刚才的片段，并填好 `title` / `description` / `og_type` / `date`：
+
+   ```json
+   "blog/post-9.html": {
+     "body": "blog-post-9.body.html",
+     "url_path": "blog/post-9.html",
+     "title": "文章标题 · xiaoyu-hue",
+     "description": "一句话摘要",
+     "og_type": "article",
+     "footer": "page",
+     "date": "2026-10-02"
+   }
+   ```
+
+3. `python3 build.py --write`
+4. 改项目卡片、关于与联系方式同理，改的是 `src/pages/index.body.html`
+
+`date` 这一项不是装饰：它决定这篇文章会不会进 `feed.xml`、在 `sitemap.xml` 里有没有 `lastmod`、JSON-LD 里有没有 `datePublished`。**没填 date 的页面会被生成逻辑当作「不是文章」跳过**——所以写完发现新文章没进 RSS，先查这里。
+
+新增文章后，**记得把新文件加进 `sw.js` 的 `PRECACHE` 清单**，否则该文章离线时打不开（完整性检查会抓到清单里的死链，但不会告诉你"少了一篇"）
 - **发版时把 `sw.js` 的 `CACHE_VERSION` 加一**
 - 推到 `main` 分支后，**主站与备用站会各自自动部署**（见「[部署：主站与备用站](#部署主站与备用站)」）
 
@@ -375,9 +439,9 @@ node scripts/build-icons.mjs
 
 也记一下调研后**没有**采用的东西，免得以后重复一遍调研：
 
-- **Workbox**（SW 框架）：它需要构建步骤来生成 precache 清单，与本站"零构建"的约束直接冲突；本站 SW 只有两百多行手写、逻辑清晰可测，换它反而多一层配置。
+- **Workbox**（SW 框架）：它需要一条 Node/npm 构建链来生成 precache 清单，而本站的构建只用 Python 标准库；换来的却只是把一段已经写好、逻辑清晰可测的手写 SW 换成黑盒。
 - **StrykerJS**（变异测试）：官方 runner 里没有 `node:test`，只能用 command runner（无法做覆盖率优化，每个变异体都要跑全量测试）；而且 10.x 要求 Node ≥ 22，与 CI 的 Node 20 冲突。
-- **Valibot / Zod**（运行时校验库）：本站导入校验只有三十来行手写代码，引入它们解决不了"没有测试"这个真问题，还会打破零构建。
+- **Valibot / Zod**（运行时校验库）：本站导入校验只有三十来行手写代码，引入它们解决不了"没有测试"这个真问题，还会打破「零运行时依赖」这条底线——它们会被打进页面 JS，成为访客实际下载的一部分。
 - **Web font**：见「[依赖](#依赖)」，用系统字体栈是有意的。
 
 ---

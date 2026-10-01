@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://xiaoyu-hue-github-io.pages.dev/sitemap.xml
