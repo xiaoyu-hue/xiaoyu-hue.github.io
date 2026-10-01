@@ -260,7 +260,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
    本块必须在所有基础规则之后（同权重靠源顺序取胜）。
    ============================================================ */
 
-/* 显式选浅色 */
+/* 显式选浅色
+   --text-faint 别用肉眼调浅：它会落在 abyss / deep / ocean 三级背景上，
+   当前值是在最深一级（ocean #b9dcee）上仍满足 WCAG AA 4.5:1 的下限。
+   只按最浅的一级背景调，换背景时就会重新踩坑。改色请重跑 a11y 基线测试。 */
 html[data-theme="light"]{
   --abyss:#eaf4fa;
   --deep:#d3e8f4;
@@ -274,7 +277,7 @@ html[data-theme="light"]{
   --glass-shadow:0 8px 28px rgba(7,39,61,.13);
   --text:#062a3d;
   --text-dim:#3d6076;
-  --text-faint:#547689;
+  --text-faint:#3f5d72;
   --body-text:#173d52;
   color-scheme:light;
 }
@@ -294,7 +297,7 @@ html[data-theme="light"]{
     --glass-shadow:0 8px 28px rgba(7,39,61,.13);
     --text:#062a3d;
     --text-dim:#3d6076;
-    --text-faint:#547689;
+    --text-faint:#3f5d72;
     --body-text:#173d52;
     color-scheme:light;
   }
