@@ -254,7 +254,10 @@
     } catch (e) {
       return { ok: false, msg: '不是合法的 JSON 文件。' };
     }
-    if (!parsed || typeof parsed !== 'object') {
+    // 数组 typeof 也是 'object'，不单独排除的话会穿过这一层、
+    // 掉到下面的 schema 检查里，给用户报「版本不匹配（实际 undefined）」——
+    // 结论一样是拒绝，但原因说错了，对着提示查半天查不到点子上。
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return { ok: false, msg: '文件内容不是对象。' };
     }
     if (parsed.schema !== SCHEMA) {

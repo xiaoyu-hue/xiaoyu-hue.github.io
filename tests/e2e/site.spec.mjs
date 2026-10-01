@@ -491,6 +491,104 @@ test.describe('设置面板', () => {
   });
 });
 
+test.describe('备份导入的校验', () => {
+  // 导入是用户唯一能把外部数据喂进来的入口，校验就是这里的门。
+  // 这些分支此前一条都没测 —— 把 THEMES.indexOf(d.theme) < 0 改成
+  // if (false) 的时候，逻辑层十几个用例全过，盲区就是这么来的。
+
+  /** 把一段 JSON（或一段故意写坏的文本）喂给隐藏的 file input */
+  async function feed(page, payload) {
+    const text = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    await page.locator('.prefs-file').setInputFiles({
+      name: 'backup.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(text),
+    });
+  }
+
+  async function openPanel(page) {
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await expect(page.locator('.prefs-panel')).toBeVisible();
+  }
+
+  const valid = (overrides = {}) => ({
+    schema: 1,
+    data: { theme: 'light', motion: 'off', reading: {}, ...overrides },
+  });
+
+  test('合法备份：导入成功，且主题真的被应用', async ({ page }) => {
+    await openPanel(page);
+    await feed(page, valid());
+
+    const msg = page.locator('.prefs-msg');
+    await expect(msg).toContainText('已导入');
+    await expect(msg).not.toHaveClass(/is-warn/);
+    // 光看提示不够：提示是代码自己写的，主题才是真的落到了页面上
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  });
+
+  test('不是合法 JSON：拒绝，并给出人话提示', async ({ page }) => {
+    await openPanel(page);
+    await feed(page, '{ 这不是 json');
+    await expect(page.locator('.prefs-msg')).toContainText('不是合法的 JSON');
+  });
+
+  test('JSON 合法但内容不是对象：拒绝', async ({ page }) => {
+    await openPanel(page);
+    await feed(page, '[1,2,3]');
+    await expect(page.locator('.prefs-msg')).toContainText('不是对象');
+  });
+
+  test('schema 版本不匹配：拒绝', async ({ page }) => {
+    await openPanel(page);
+    await feed(page, { schema: 99, data: { theme: 'light' } });
+    await expect(page.locator('.prefs-msg')).toContainText('版本不匹配');
+  });
+
+  test('缺 data 字段：拒绝', async ({ page }) => {
+    await openPanel(page);
+    await feed(page, { schema: 1 });
+    await expect(page.locator('.prefs-msg')).toContainText('缺少 data');
+  });
+
+  test('主题值不合法：拒绝（走的是白名单，不是照抄）', async ({ page }) => {
+    await openPanel(page);
+    await feed(page, valid({ theme: 'neon' }));
+    await expect(page.locator('.prefs-msg')).toContainText('主题值不合法');
+  });
+
+  test('动效值不合法：拒绝', async ({ page }) => {
+    await openPanel(page);
+    await feed(page, valid({ motion: 'turbo' }));
+    await expect(page.locator('.prefs-msg')).toContainText('动效设置值不合法');
+  });
+
+  test('老备份没有 motion 字段：放行，且不动当前设置', async ({ page }) => {
+    // 这是刻意的设计，不是漏判：拒绝整个文件会让用户没法用旧备份
+    // 恢复主题和阅读记录，代价远大于收益。所以这条必须能过。
+    await openPanel(page);
+    await feed(page, { schema: 1, data: { theme: 'light', reading: {} } });
+
+    await expect(page.locator('.prefs-msg')).toContainText('已导入');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    // 当前动效默认是 on，导入不该顺手把它改掉
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'on');
+  });
+
+  test('带 __proto__ 的备份：能正常处理，不污染、不崩溃', async ({ page }) => {
+    await openPanel(page);
+    await feed(
+      page,
+      '{"schema":1,"data":{"theme":"light","reading":{}},"__proto__":{"polluted":true}}',
+    );
+
+    await expect(page.locator('.prefs-msg')).toContainText('已导入');
+    const polluted = await page.evaluate(() => ({}).polluted);
+    expect(polluted, 'Object.prototype 不该被导入的数据污染').toBeUndefined();
+  });
+});
+
 test.describe('PWA：可安装与离线', () => {
   // Service Worker 在测试间不共享状态：每个 test 都是全新的 context，
   // 必须重新等它就绪，不能依赖上一个用例的注册结果。
