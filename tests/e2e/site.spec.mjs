@@ -205,6 +205,42 @@ test.describe('微动效系统', () => {
     expect(result.opacity).toBe('1');
   });
 
+  test('总开关真的把动效令牌归零（不只是把 transition 关掉）', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await page.locator('[data-motion-option="off"]').click();
+
+    // 上面那条测的是 .reveal 的 transitionDuration，而总开关里对应的
+    // 规则是 transition:none —— 无论 --dur-base 被改成多少，它都是 0s。
+    // 也就是说把 --dur-base:1ms 改成 500ms，上面那条照样绿。
+    // 这条直接读令牌的计算值，才是真正在守总开关。
+    const html = page.locator('html');
+    await expect(html).toHaveCSS('--dur-fast', '1ms');
+    await expect(html).toHaveCSS('--dur-base', '1ms');
+    await expect(html).toHaveCSS('--dur-slow', '1ms');
+    await expect(html).toHaveCSS('--shift-sm', '0px');
+    await expect(html).toHaveCSS('--shift-md', '0px');
+    await expect(html).toHaveCSS('--shift-lg', '0px');
+  });
+
+  test('开启动效时令牌没有被归零（防止总开关写反、永远生效）', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await page.locator('[data-motion-option="on"]').click();
+
+    // 反向断言：只要求"不是归零值"。不写死 240ms/6px 这些具体数字，
+    // 因为它们在 @media 里另有覆盖，写死会让测试和排版改动互相打架。
+    const tokens = await page.evaluate(() => {
+      const cs = getComputedStyle(document.documentElement);
+      return {
+        base: cs.getPropertyValue('--dur-base').trim(),
+        shift: cs.getPropertyValue('--shift-md').trim(),
+      };
+    });
+    expect(tokens.base).not.toBe('1ms');
+    expect(tokens.shift).not.toBe('0px');
+  });
+
   test('关掉动效后不做滚动淡入，元素直接就在', async ({ page }) => {
     await page.goto('/');
     await page.locator('.prefs-toggle').click();
