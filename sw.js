@@ -18,7 +18,7 @@
 
 const CACHE_PREFIX = 'xiaoyu-hue';
 // 发布新内容后改这个版本号,activate 时会清掉旧缓存,用户即可看到更新。
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const OFFLINE_URL = '/offline.html';
@@ -39,6 +39,9 @@ const PRECACHE = [
   '/blog/post-3.html',
   '/blog/post-4.html',
   '/blog/post-5.html',
+  '/blog/post-6.html',
+  '/blog/post-7.html',
+  '/blog/post-8.html',
   '/offline.html',
   '/manifest.webmanifest',
   '/assets/style.css',

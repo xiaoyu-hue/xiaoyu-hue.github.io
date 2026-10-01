@@ -13,6 +13,9 @@ const PAGES = [
   { path: '/blog/post-3.html', name: 'post-3' },
   { path: '/blog/post-4.html', name: 'post-4' },
   { path: '/blog/post-5.html', name: 'post-5' },
+  { path: '/blog/post-6.html', name: 'post-6' },
+  { path: '/blog/post-7.html', name: 'post-7' },
+  { path: '/blog/post-8.html', name: 'post-8' },
 ];
 
 const SIGNATURE = '一半烟火以谋生，一半诗意以谋爱';
@@ -132,8 +135,13 @@ test.describe('站内导航', () => {
     await page.goto('/blog/index.html');
     const first = page.locator('.post-card').first();
     const heading = (await first.locator('h3').textContent()).trim();
+    // 从卡片自身的 href 推出目标，不写死文章编号 ——
+    // 否则每次调整列表排序都会误报（列表本来就该能重新排序）。
+    const href = await first.getAttribute('href');
+    expect(href).toMatch(/^post-\d+\.html$/);
+
     await first.click();
-    await expect(page).toHaveURL(/post-2\.html/);
+    await expect(page).toHaveURL(new RegExp(href.replace('.', '\\.')));
     await expect(page.locator('h1')).toHaveText(heading);
   });
 

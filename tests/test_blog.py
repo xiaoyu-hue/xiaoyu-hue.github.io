@@ -9,12 +9,19 @@ import unittest
 from tests.support import exists, parse
 
 BLOG_INDEX = "blog/index.html"
+
+# 列表页的展示顺序：按日期倒序，同一天内新写的排在前面。
+# 写死这个顺序是为了让「不小心打乱排序」变成一次测试失败，
+# 而不是等读者发现列表排列奇怪。
 EXPECTED_ORDER = [
-    "post-2.html",
-    "post-3.html",
-    "post-4.html",
-    "post-5.html",
-    "post-1.html",
+    "post-8.html",   # 2026-10-01 读书摘录
+    "post-7.html",   # 2026-10-01 随笔
+    "post-6.html",   # 2026-10-01 随笔
+    "post-5.html",   # 2026-10-01 项目故事
+    "post-4.html",   # 2026-10-01 项目故事
+    "post-3.html",   # 2026-10-01 项目故事
+    "post-2.html",   # 2026-10-01 项目故事
+    "post-1.html",   # 2026-09-30 关于方法
 ]
 
 

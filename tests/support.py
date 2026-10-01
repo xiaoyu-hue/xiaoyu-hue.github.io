@@ -9,7 +9,7 @@ from html.parser import HTMLParser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-PAGES = ["index.html", "blog/index.html"] + [f"blog/post-{i}.html" for i in range(1, 6)]
+PAGES = ["index.html", "blog/index.html"] + [f"blog/post-{i}.html" for i in range(1, 9)]
 
 SIGNATURE = "一半烟火以谋生，一半诗意以谋爱"
 
