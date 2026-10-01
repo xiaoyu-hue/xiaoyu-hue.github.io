@@ -143,7 +143,7 @@ Once installed, it opens without a browser address bar, like a native app.
 
 The following is pre-cached on your **first visit** and opens without a network:
 
-- Home, blog index, all 5 articles
+- Home, blog index, all 8 articles
 - All styles, scripts, and icons
 
 Visiting a page that was **never cached** shows an offline notice listing the articles you can read offline.
@@ -155,10 +155,10 @@ Visiting a page that was **never cached** shows an offline notice listing the ar
 `sw.js` starts with a version constant:
 
 ```js
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v5';
 ```
 
-**After publishing new content, bump this number** (`v1` → `v2`). On the user's next visit the Service Worker drops the old cache, re-fetches, and shows a "new version available" bar.
+**After publishing new content, bump this number** (`v5` → `v6`). On the user's next visit the Service Worker drops the old cache, re-fetches, and shows a "new version available" bar.
 
 If you don't bump it, the HTML itself still updates (it is network-first), but styles and scripts may stay on the old version — so change it whenever you publish.
 
@@ -284,7 +284,7 @@ axe lives in devDependencies only — **the site itself still ships zero runtime
 
 | Layer | What it covers |
 |-------|----------------|
-| Contract | `<head>` of all 10 pages, footer signature, nav, whether the CSP still matches `_headers`; whether post cards and articles stay in sync; PWA manifest validity and real icon dimensions; whether `sw.js` sits at the root and whether the precache list has dead links; **structured data: every page must carry JSON-LD, it must parse, its `@type` must be right, and its URLs must be absolute**; whether the integrity checker itself still catches problems |
+| Contract | `<head>` of all 12 pages, footer signature, nav, whether the CSP still matches `_headers`; whether post cards and articles stay in sync; PWA manifest validity and real icon dimensions; whether `sw.js` sits at the root and whether the precache list has dead links; **structured data: every page must carry JSON-LD, it must parse, its `@type` must be right, and its URLs must be absolute**; whether the integrity checker itself still catches problems |
 | Logic | The four branches of the scroll reveal (normal / reduced motion / no IntersectionObserver / no matchMedia); Service Worker request routing (navigation vs asset vs other) and its bypass rules for cross-origin and non-GET |
 | Real browser | Does the page actually render? Did CSP block CSS or JS? Does the reveal really fire? Does anything overflow at 375px? Also: Service Worker registration, **whether the home page and articles open while offline**, and whether uncached pages fall back to the offline page; plus an **accessibility baseline** — contrast, semantics and ARIA across every page × light/dark themes, and inside the settings panel while it is open |
 
@@ -296,16 +296,16 @@ Every push to `main` runs all three layers in CI, plus one CSP/JSON-LD check (CI
 
 ## Dependencies
 
-**The site itself has zero dependencies.** No third-party JS, CSS, fonts or images are loaded — everything referenced from `index.html` is a local file. Typography uses a system font stack (`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …) and downloads no web font: one request fewer, and no FOIT. You do not need Node.js to visit or deploy the site.
+**The site itself has zero dependencies.** No third-party JS, CSS, fonts or images are loaded — everything referenced from `index.html` is a local file. Typography uses a system font stack (`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …) and downloads no web font: one request fewer, and no FOIT. Every HTML file was checked line by line: all `src`/`href` point only to this site's own domain or to the semantic namespaces of JSON-LD / Open Graph (schema.org, ogp.me, w3.org …) — no CDN, no web font, no third-party script. You do not need Node.js to visit or deploy the site.
 
 Everything below is only needed when you want to change code and verify it:
 
 | Package | Version | License | Used for |
 |---------|---------|---------|----------|
-| [`@playwright/test`](https://github.com/microsoft/playwright) | 1.63.0 | Apache-2.0 | Real-browser layer: serves the site locally and drives real Chromium across 83 cases |
-| `playwright` / `playwright-core` | 1.63.0 | Apache-2.0 | Underlying the above; not installed separately |
-| [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | 4.13.0 | MPL-2.0 | Accessibility baseline: injects axe and runs WCAG rules |
-| `axe-core` | 4.13.0 | MPL-2.0 | Rules engine behind the above; not installed separately |
+| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | Real-browser layer: serves the site locally and drives real Chromium across 92 cases |
+| `playwright` / `playwright-core` | ^1.63.0 | Apache-2.0 | Underlying the above; not installed separately |
+| [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | ^4.13.0 | MPL-2.0 | Accessibility baseline: injects axe and runs WCAG rules |
+| `axe-core` | ^4.13.0 | MPL-2.0 | Rules engine behind the above; not installed separately |
 
 MPL-2.0 is file-level copyleft, but it only bites if you modify and redistribute that project's own source. Here everything is a build-time tool: it never reaches the site and is never served to visitors, so it does not affect this repository's MIT license.
 
@@ -315,7 +315,7 @@ MPL-2.0 is file-level copyleft, but it only bites if you modify and redistribute
 |-------|-------|
 | Contract (84 cases) | `python3` — standard library only, no pip packages |
 | Logic (63 cases) | Node 18+ |
-| Real browser (83 cases) | Node 18+; Chromium is downloaded by Playwright (not committed) |
+| Real browser (92 cases) | Node 18+; Chromium is downloaded by Playwright (not committed) |
 | CSP/JSON-LD check | Python 3 + `playwright` — **optional**. You can build and deploy the site without it; you just cannot reproduce the conclusion in [`docs/csp-jsonld.md`](docs/csp-jsonld.md) yourself |
 
 CI runs on Node 20.
@@ -374,13 +374,13 @@ No programming background; all code was produced with AI agent assistance. The c
 
 ## Credits
 
-This site stays simple to look at and safe to change largely because of these projects.
+This site stays simple to look at and safe to change largely because of these projects. One fact up front: the live site contains **no third-party code at all**, so what is genuinely worth crediting is only build-time tooling and hosting — listed below.
 
-**[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft
+**[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft (currently ^1.63.0)
 
 The whole real-browser layer runs on it. What deserves credit is not "it can click pages" but that it makes **offline** testable — one `context.setOffline(true)` verifies that the home page still opens with no network, which is this site's most important and most quietly breakable feature. Without it, that check depends on someone manually pulling a plug, and nobody keeps doing that.
 
-**[axe-core](https://github.com/dequelabs/axe-core)** · MPL-2.0 · Deque Systems
+**[axe-core](https://github.com/dequelabs/axe-core)** · MPL-2.0 · Deque Systems (currently ^4.13.0)
 
 Rules engine behind the accessibility baseline. It caught two things I could never have found by reading code: `--text-faint` on `--abyss` measuring 4.347:1 against a required 4.5:1 — in CSS that is just two hex literals — and a timing problem, where reading contrast mid fade-in produces fake numbers, which forced "disable motion before scanning" into the test itself. Deque designs it to prefer false negatives over false positives, and that matters: too many false alarms and people start ignoring the tool.
 

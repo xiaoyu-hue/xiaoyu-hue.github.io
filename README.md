@@ -191,7 +191,7 @@ xiaoyu-hue.github.io/
 
 以下内容在**首次访问时**就被预缓存下来，断网后可直接打开：
 
-- 首页、博客列表、全部 5 篇文章
+- 首页、博客列表、全部 8 篇文章
 - 全部样式与脚本、图标
 
 访问**没缓存过的**页面时（例如分享链接里的新文章），会显示一个离线提示页，上面列出可离线阅读的文章。
@@ -203,12 +203,12 @@ xiaoyu-hue.github.io/
 `sw.js` 顶部有一个版本号：
 
 ```js
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v5';
 ```
 
-**发布新内容后，把这个数字加一**（`v3` → `v4`），用户下次访问时 Service Worker 会丢掉旧缓存、重新抓取，并弹出「有新版本可用」的提示条。
+**发布新内容后，把这个数字加一**（`v5` → `v6`），用户下次访问时 Service Worker 会丢掉旧缓存、重新抓取，并弹出「有新版本可用」的提示条。
 
-不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。本站引入微动效系统时把版本号从 `v2` 升到了 `v3`，正是为了让老用户尽快拿到带动效的新样式与脚本。
+不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。本站历经模板化、机器可读层、微动效系统等多次大改，缓存版本已累计升到 `v5`，每次大改都靠升版本号让老用户尽快拿到新样式与脚本。
 
 ### 为什么 Service Worker 必须在根目录
 
@@ -330,7 +330,7 @@ axe 只装在 devDependencies，**站点本身依旧零运行时依赖**。它�
 
 | 层 | 管什么 |
 |------|--------|
-| 契约层 | 10 个页面的 head、页脚签名、导航、CSP 是否与 `_headers` 一致；文章卡片与文章是否同步；PWA 清单合法性与图标真实尺寸；Service Worker 是否在根目录、预缓存清单有没有死链；**微动效系统的令牌齐备性、总开关、降级路径、每页动效开关成对**；**结构化数据：每页必须有 JSON-LD、必须是合法 JSON、`@type` 正确、URL 必须是绝对地址**；完整性检查脚本自己是否还抓得到问题 |
+| 契约层 | 12 个页面的 head、页脚签名、导航、CSP 是否与 `_headers` 一致；文章卡片与文章是否同步；PWA 清单合法性与图标真实尺寸；Service Worker 是否在根目录、预缓存清单有没有死链；**微动效系统的令牌齐备性、总开关、降级路径、每页动效开关成对**；**结构化数据：每页必须有 JSON-LD、必须是合法 JSON、`@type` 正确、URL 必须是绝对地址**；完整性检查脚本自己是否还抓得到问题 |
 | 逻辑层 | 滚动淡入的四类分支（正常观察 / 用户开了「减少动画」/ 不支持 IntersectionObserver / 没有 matchMedia）；同组错落编号与封顶、1.5s 硬超时兜底、总开关三种取值；首屏偏好同步（含动效）与老数据兼容；Service Worker 的请求分流（导航 / 静态资源 / 其他）与跨域、非 GET 放行 |
 | 真浏览器层 | 页面真的渲染了吗、CSS 和 JS 有没有被 CSP 拦掉、动效令牌真的被消费了吗、同组错落是否严格递增且封顶 320ms、开关即时生效且刷新保持、关后内容仍可见（**令牌归零是按计算值断言的，不只是看 `transition`**）、375px 下有没有元素溢出；Service Worker 注册、**断网后能否打开首页与文章**、未缓存页面是否回退到离线页；以及**可访问性基线**：全站页面 × 浅/深两种主题的对比度、语义与 ARIA，外加设置面板展开后的面板内部 |
 
@@ -343,16 +343,16 @@ axe 只装在 devDependencies，**站点本身依旧零运行时依赖**。它�
 
 ## 依赖
 
-**站点本身零依赖**：不加载任何第三方 JS、CSS、字体或图片资源，`index.html` 里引用的全是本站自己的文件。字体走系统字体栈（`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …），不下载任何 web font —— 省一次请求，也不会有 FOIT（字体加载完成前的空白或闪动）。访问和部署都不需要 Node.js。
+**站点本身零依赖**：不加载任何第三方 JS、CSS、字体或图片资源，`index.html` 里引用的全是本站自己的文件。字体走系统字体栈（`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …），不下载任何 web font —— 省一次请求，也不会有 FOIT（字体加载完成前的空白或闪动）。已逐文件核对：所有 HTML 的 `src`/`href` 只指向本站域名与 JSON-LD / Open Graph 的语义命名空间（schema.org、ogp.me、w3.org 等），不含任何 CDN、web font 或第三方脚本。访问和部署都不需要 Node.js。
 
 下面的东西只在你要改代码、跑验证时才需要：
 
 | 包 | 版本 | 许可证 | 用在哪 |
 |------|------|--------|--------|
-| [`@playwright/test`](https://github.com/microsoft/playwright) | 1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑 83 个用例 |
-| `playwright` / `playwright-core` | 1.63.0 | Apache-2.0 | 上面那个的底层，不需要单独装 |
-| [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | 4.13.0 | MPL-2.0 | 可访问性基线：把 axe 注入页面跑 WCAG 规则 |
-| `axe-core` | 4.13.0 | MPL-2.0 | 上面那个的规则引擎，不需要单独装 |
+| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑 92 个用例 |
+| `playwright` / `playwright-core` | ^1.63.0 | Apache-2.0 | 上面那个的底层，不需要单独装 |
+| [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | ^4.13.0 | MPL-2.0 | 可访问性基线：把 axe 注入页面跑 WCAG 规则 |
+| `axe-core` | ^4.13.0 | MPL-2.0 | 上面那个的规则引擎，不需要单独装 |
 
 MPL-2.0 是文件级 copyleft，但它只约束"你把这份代码的源文件改了再分发"；这里全部只作开发期工具，不进站点、不随页面分发，所以对本站的 MIT 许可没有影响。
 
@@ -362,7 +362,7 @@ MPL-2.0 是文件级 copyleft，但它只约束"你把这份代码的源文件�
 |------|----------|
 | 契约层（84 例） | `python3` —— 只用标准库，一个 pip 包都不装 |
 | 逻辑层（63 例） | Node 18+ |
-| 真浏览器层（83 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
+| 真浏览器层（92 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
 | CSP/JSON-LD 实测 | Python 3 + `playwright` —— **可选**，不装也能构建和部署站点，只是没法亲自复现 [`docs/csp-jsonld.md`](docs/csp-jsonld.md) 里的结论 |
 
 CI 上跑的是 Node 20。
@@ -421,13 +421,13 @@ node scripts/build-icons.mjs
 
 ## 开源致敬
 
-这个站点能长期保持"看起来简单、改起来放心"，靠的是下面这些项目。
+这个站点能长期保持"看起来简单、改起来放心"，靠的是下面这些项目。先说清一个事实：线上站点**不含任何第三方代码**，所以真正值得致谢的只有开发期工具与托管平台——下面这些。
 
-**[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft
+**[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft（当前 ^1.63.0）
 
 真浏览器层全部跑在它上面。最值得说的不是"能自动化点页面"，而是它让**离线**这种场景变得可测 —— 一句 `context.setOffline(true)` 就能验证"断网后首页还能不能打开"，而这恰恰是本站最核心、也最容易悄悄坏掉的能力。没有它，这类问题只能靠人手动断网去试，试两次就不试了。
 
-**[axe-core](https://github.com/dequelabs/axe-core)** · MPL-2.0 · Deque Systems
+**[axe-core](https://github.com/dequelabs/axe-core)** · MPL-2.0 · Deque Systems（当前 ^4.13.0）
 
 可访问性基线的规则引擎。它抓出过两个我自己永远发现不了的问题：一是 `--text-faint` 配 `--abyss` 的对比度只有 4.347:1（要求 4.5:1），而这在 CSS 里就是两个十六进制常量，读代码看不出来；二是扫描时机 —— 元素淡入动画进行中读到的对比度是假的，逼着我把"扫之前先关动效"变成测试的一部分。Deque 把它设计成**宁可漏报也不误报**，这点很关键：误报一多，人就会开始忽略它。
 
