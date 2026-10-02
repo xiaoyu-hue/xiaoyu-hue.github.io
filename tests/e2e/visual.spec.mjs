@@ -34,6 +34,10 @@
 
 import { test, expect } from '@playwright/test';
 
+// 本文件仅 chromium 项目运行；像素基线只在 chromium 下生成，
+// firefox 项目跳过（否则会误生成 firefox 快照导致比对红）。Firefox 的跨浏览器验证见 cross-browser.spec。
+test.skip(({ browserName }) => browserName === 'firefox', '仅 chromium 项目运行（基线以 chromium 为准）');
+
 // 关键页面：覆盖首页（hero / 流光 / 导航）、博客列表（卡片网格）、
 // 典型文章页（含正文排版 / 代码块）。不扫全部 11 页，控制快照数量。
 const PAGES = [

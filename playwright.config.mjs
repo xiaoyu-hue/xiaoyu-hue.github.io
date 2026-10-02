@@ -25,9 +25,17 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+      // 仅运行跨浏览器降级护栏。其余用例（site/a11y/visual）在各自 spec 顶部
+      // 用 test.skip 排除 firefox 项目，避免重复跑、也避免视觉基线在 firefox 下误生成。
+    },
   ],
   webServer: {
-    command: `python3 -m http.server ${PORT} --bind 127.0.0.1`,
+    // 用 ThreadingHTTPServer 而非单线程 http.server：chromium + firefox 两个项目
+    // 并行时并发连接数翻倍，单线程服务器会出现偶发连接重置导致测试红。
+    command: `python3 -c "from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler; ThreadingHTTPServer(('127.0.0.1', ${PORT}), SimpleHTTPRequestHandler).serve_forever()"`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,

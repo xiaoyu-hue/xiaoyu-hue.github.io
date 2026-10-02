@@ -48,7 +48,7 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-
 
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium firefox
 
       # 视觉回归基线在 Linux + Noto CJK 下生成；ubuntu-latest 运行器默认无中文字体，
       # 中文会渲染成豆腐块导致像素比对失败。先装同款字体再跑测试。
