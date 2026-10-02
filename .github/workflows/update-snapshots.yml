@@ -33,7 +33,7 @@ jobs:
           # 用内置 token 即可提交（contents:write 已授权）
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
