@@ -29,6 +29,8 @@
   /* 正文色（浅色模式下会重新取值） */
   --body-text:#cfe2ec;
   color-scheme:dark;
+  /* v7 模糊聚焦入场：.reveal 入场初始模糊半径 */
+  --reveal-blur:6px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -705,8 +707,9 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 .reveal{
   opacity:0;
   transform:translateY(var(--shift-lg));
-  /* 入场过渡：覆盖 opacity 与 transform 两条轴 */
-  transition-property:opacity,transform;
+  filter:blur(var(--reveal-blur,6px));
+  /* 入场过渡：覆盖 opacity 与 transform 两条轴（再加 filter，用于模糊聚焦） */
+  transition-property:opacity,transform,filter;
   transition-duration:var(--dur-base);
   transition-timing-function:var(--ease-out);
   /* 同组内按序号错开启动；--i 由 main.js 注入，缺省 0。
@@ -716,7 +719,7 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
      仍然生效（那两条走的是 .card 的 transition-property），
      而 transform 的过渡由本规则接管，两者互不覆盖。 */
 }
-.reveal.in{opacity:1;transform:none}
+.reveal.in{opacity:1;transform:none;filter:blur(0)}
 
 /* 静态列表（项目卡、联系卡）用 nth-child 给 --i，
    这样即便没有 JS 注入，它们也有错落效果。
@@ -755,8 +758,8 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
     animation-range: entry 0% cover 35%;
   }
   @keyframes reveal-in {
-    from { opacity: 0; transform: translateY(var(--shift-lg)); }
-    to   { opacity: 1; transform: none; }
+    from { opacity: 0; transform: translateY(var(--shift-lg)); filter: blur(var(--reveal-blur,6px)); }
+    to   { opacity: 1; transform: none; filter: blur(0); }
   }
 }
 
@@ -799,12 +802,19 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
     --shift-lg:0px;
   }
   .ocean-bg,.orb,.hero-card{animation:none!important}
-  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s;animation:none}
+  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s;animation:none!important;filter:none!important}
   .card:hover,.post-card:hover{transform:none}
   .btn:active,.prefs-toggle:active,.prefs-seg button:active,
   .prefs-actions button:active{transform:none}
   html{scroll-behavior:auto}
   .nav,.brand,#main,.footer .wrap{view-transition-name:none}
+  /* v7 新效果降级（减少动画：定格/隐藏，内容不动） */
+  .hero h1{background:none!important;-webkit-text-fill-color:var(--text)!important;color:var(--text)!important;animation:none!important}
+  .ocean-bg,.orb{animation:none!important}
+  main > section + section::before{animation:none}
+  .card::after,.post-card::after{animation:none;opacity:0}
+  body::after{display:none}
+  .ripple__dot{display:none}
 }
 
 /* 路径 2：用户开了系统级「增强对比度」
@@ -812,7 +822,8 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
    所以这里额外关掉 .reveal 的 opacity 过渡，只保留位移 ——
    位移不会让内容"暂时看不见"，透明度会。 */
 @media(prefers-contrast:more){
-  .reveal{opacity:1;transition:transform var(--dur-base) var(--ease-out);transition-delay:0s}
+  .reveal{opacity:1;transition:transform var(--dur-base) var(--ease-out);transition-delay:0s;filter:none!important}
+  .hero h1{background:none!important;-webkit-text-fill-color:var(--text)!important;color:var(--text)!important}
   .pwa-update,.pwa-ios-hint{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
 
@@ -822,9 +833,10 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 /* 路径 6：脚本完全不可用。
    由 @media(scripting:none) 兜底，不依赖任何 JS。 */
 @media(scripting:none){
-  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s;animation:none}
+  .reveal{opacity:1;transform:none;transition:none;transition-delay:0s;animation:none!important;filter:none!important}
   .prefs-panel{visibility:visible;opacity:1;transform:none}
   .nav{box-shadow:none}
+  .ripple__dot{display:none}
 }
 
 /* 路径 7：浏览器不支持 min() 与自定义属性组合（如 Safari 14 及更早）。
@@ -880,7 +892,12 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 :root[data-motion="off"] .orb.a,
 :root[data-motion="off"] .orb.b{animation:none}
 :root[data-motion="off"] .hero-card{animation:none}
-:root[data-motion="off"] .reveal{transition-delay:0s;animation:none}
+:root[data-motion="off"] .reveal{transition-delay:0s;animation:none;filter:none}
+:root[data-motion="off"] .hero h1{background:none!important;-webkit-text-fill-color:var(--text)!important;color:var(--text)!important;animation:none!important}
+:root[data-motion="off"] main > section + section::before{animation:none}
+:root[data-motion="off"] .card::after,.post-card::after{animation:none;opacity:0}
+:root[data-motion="off"] body::after{display:none}
+:root[data-motion="off"] .ripple__dot{display:none}
 :root[data-motion="off"] .btn:active,
 :root[data-motion="off"] .prefs-toggle:active,
 :root[data-motion="off"] .prefs-seg button:active,
@@ -936,3 +953,110 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 }
 h1, h2, h3 { text-wrap: balance; }
 .prefs-panel { transition-behavior: allow-discrete; }
+
+/* ============================================================
+   视觉冲击增强（v7）：纯原生 CSS + 极少量 JS，零依赖、零 HTML 改动
+   - 全部接入五层降级（reduced-motion / prefers-contrast / scripting:none / data-motion=off）
+   - 原则：动效可无，内容不可无；移动桌面一致
+   - 渐进增强：不支持的特性在 @supports 外自动回退到现有表现
+   ============================================================ */
+
+/* ---- ① 流光渐变标题（hero 主标题，零 HTML 改动，直接选中 .hero h1） ---- */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero h1 {
+    color: var(--text);                                  /* 不支持裁剪时的可读兜底 */
+    background: linear-gradient(100deg,
+      var(--accent) 0%, var(--accent-2) 30%,
+      #a8e6f0 50%, var(--accent-2) 70%, var(--accent) 100%);
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: gradient-flow 7s linear infinite;
+  }
+  @keyframes gradient-flow { to { background-position: 220% center; } }
+}
+
+/* ---- ③ 滚动视差海洋背景（扩展 .ocean-bg / .orb，scroll() 时间线驱动） ---- */
+@supports (animation-timeline: scroll()) {
+  .ocean-bg {
+    animation: drift 22s ease-in-out infinite,
+               ocean-parallax linear both;
+    animation-timeline: auto, scroll(root block);
+    animation-range: normal, 0% 100%;
+  }
+  .orb.a { animation: orb-a linear both;
+           animation-timeline: scroll(root block); animation-range: 0% 100%; }
+  .orb.b { animation: orb-b linear both;
+           animation-timeline: scroll(root block); animation-range: 0% 100%; }
+  @keyframes ocean-parallax { to { transform: translateY(-36px); } }
+  @keyframes orb-a { to { transform: translateY(54px); } }
+  @keyframes orb-b { to { transform: translateY(-48px); } }
+}
+
+/* ---- ④ 波浪分隔带（章节之间，纯 CSS 伪元素，零 HTML 改动） ---- */
+main > section + section { position: relative; }
+main > section + section::before {
+  content: "";
+  display: block;
+  height: 54px;
+  margin: var(--space-4) auto;
+  max-width: var(--maxw);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='54' viewBox='0 0 160 54'%3E%3Cpath d='M0 27 Q40 7 80 27 T160 27 V54 H0 Z' fill='%2348cae4' opacity='0.16'/%3E%3Cpath d='M0 27 Q40 7 80 27 T160 27' fill='none' stroke='%23a8e6f0' stroke-width='1.5' opacity='0.5'/%3E%3C/svg%3E") repeat-x center / 160px 100%;
+  opacity: .7;
+  animation: wave-drift 9s ease-in-out infinite alternate;
+}
+@keyframes wave-drift { from { background-position-x: 0; } to { background-position-x: 160px; } }
+
+/* ---- ② 焦散水光描边（玻璃卡片流动光边，@property 驱动角度旋转） ---- */
+@property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.card, .post-card { position: relative; overflow: hidden; }
+.card::after, .post-card::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--angle),
+    transparent 0deg, rgba(72,202,228,0) 40deg,
+    var(--accent) 110deg, var(--accent-2) 150deg,
+    transparent 220deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: .5;
+  pointer-events: none;
+  transition: opacity .3s var(--ease-out);
+  animation: border-spin 7s linear infinite;
+}
+.card:hover::after, .post-card:hover::after { opacity: 1; }
+@keyframes border-spin { to { --angle: 360deg; } }
+
+/* ---- ⑪ 阅读进度条（纯 CSS scroll() 时间线，零 HTML 改动） ---- */
+body::after {
+  content: "";
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 3px; z-index: 60;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), #a8e6f0);
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  body::after { animation: progress-grow linear both;
+                animation-timeline: scroll(root block); animation-range: 0% 100%; }
+  @keyframes progress-grow { to { transform: scaleX(1); } }
+}
+
+/* ---- ⑩ 跟手水波纹（CSS 部分；运行时 .ripple__dot 由 main.js 在落点注入） ---- */
+.btn, .card, .post-card { position: relative; overflow: hidden; }
+.ripple__dot {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, rgba(168,230,240,.55), rgba(72,202,228,.22) 60%, transparent 70%);
+  transform: scale(0);
+  opacity: .6;
+  pointer-events: none;
+  animation: ripple-out .6s var(--ease-out) forwards;
+}
+@keyframes ripple-out { to { transform: scale(1); opacity: 0; } }
