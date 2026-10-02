@@ -14,11 +14,32 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXPECTED_CSP = (
-    "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; "
-    "font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; "
-    "base-uri 'self'; form-action 'none'"
-)
+
+
+def _expected_csp():
+    """取 CSP 真值（src/data/site.json 的 csp_meta）。
+
+    CSP 只应有这一处真值：build.py 由它派生各页面 <meta>，本检查器也读它，
+    避免"检查器认为对、页面实际是另一套"的静默漂移。
+
+    惰性读取而非模块顶层加载：本脚本的测试会把脚本单独复制到临时目录运行
+    （那里没有 src/data/site.json），顶层加载会直接抛异常让所有用例一起失败。
+    找不到来源时明确报错退出，不静默放行。
+
+    可用环境变量 SITE_CSP 覆盖来源：供测试在隔离目录里注入真值
+    （测试自己已持有 CSP，不必依赖被复制过去的 site.json）。
+    """
+    override = os.environ.get("SITE_CSP")
+    if override:
+        return override
+    path = os.path.join(ROOT, "src", "data", "site.json")
+    try:
+        return json.load(open(path, encoding="utf-8"))["csp_meta"]
+    except (OSError, KeyError, ValueError) as e:
+        print(f"无法从 {path} 读取 csp_meta：{e}", file=sys.stderr)
+        sys.exit(1)
+
+
 # 已知会被浏览器忽略的指令：禁止加回来（会制造虚假安全感）
 FORBIDDEN_CSP_DIRECTIVES = ["frame-ancestors", "sandbox", "report-uri", "report-to"]
 
@@ -67,6 +88,9 @@ for f in html_files + md_files:
             problems.append(f"[死链] {rel(f)} -> {raw}")
 
 # ---------- 2. CSP 存在性与一致性 ----------
+# 只在确实有页面要检查时才去读真值来源（惰性），
+# 避免"被复制到隔离目录运行"的测试场景因缺 site.json 而整体崩溃。
+_expected_csp = _expected_csp()
 for f in html_files:
     text = open(f, encoding="utf-8").read()
     m = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]*)"', text)
@@ -74,8 +98,8 @@ for f in html_files:
         problems.append(f"[缺 CSP] {rel(f)} 没有 meta CSP")
         continue
     csp = m.group(1)
-    if csp != EXPECTED_CSP:
-        problems.append(f"[CSP 不一致] {rel(f)} 的策略与基准不同:\n    实际: {csp}\n    基准: {EXPECTED_CSP}")
+    if csp != _expected_csp:
+        problems.append(f"[CSP 不一致] {rel(f)} 的策略与基准不同:\n    实际: {csp}\n    基准: {_expected_csp}")
     for d in FORBIDDEN_CSP_DIRECTIVES:
         if re.search(r"(^|[;\s])" + d + r"(\s|$)", csp):
             problems.append(

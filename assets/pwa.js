@@ -144,36 +144,11 @@
     }
   }
 
-  function setupInstallButton() {
-    var btn = document.querySelector('.pwa-install');
-    if (!btn) return;
-
-    var deferred = null;
-
-    window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();   // 拦下浏览器默认的迷你提示条，改由我们控制时机
-      deferred = e;
-      btn.classList.add('is-available');
-    });
-
-    btn.addEventListener('click', function () {
-      if (!deferred) return;
-      deferred.prompt();
-      deferred.userChoice.then(function (choice) {
-        deferred = null;
-        btn.classList.remove('is-available');
-        if (choice && choice.outcome === 'accepted') {
-          var msg = document.querySelector('.pwa-install-note');
-          if (msg) msg.textContent = '已添加到主屏幕。';
-        }
-      });
-    });
-
-    window.addEventListener('appinstalled', function () {
-      deferred = null;
-      btn.classList.remove('is-available');
-    });
-  }
+  // 注：曾有一个 setupInstallButton()，监听 beforeinstallprompt 并驱动
+  // 页面里的 .pwa-install 按钮。但 .pwa-install / .pwa-install-note 这两个
+  // 元素在任何页面都不存在，函数第一行 `if (!btn) return` 之后就再无执行，
+  // 属纯死代码，已删除。清单（manifest）本身完整可安装，浏览器原生安装提示
+  // 不受影响；若日后要提供站内安装入口，再连同按钮一起加回来。
 
   // ---------- 4. theme-color 跟随站内主题 ----------
   //
@@ -223,7 +198,6 @@
   function boot() {
     registerSW();
     setupIOSHint();
-    setupInstallButton();
     observeTheme();
   }
 

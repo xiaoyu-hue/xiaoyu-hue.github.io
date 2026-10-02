@@ -27,18 +27,23 @@
 """
 
 import http.server
+import json
 import os
 import socketserver
 import sys
 import tempfile
 import threading
 
-# 与 src/data/site.json 中的 csp_meta 保持一致
-CSP = (
-    "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; "
-    "font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; "
-    "base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
-)
+# CSP 真值只有一处：src/data/site.json 的 csp_meta。
+# 不再手抄一份 —— 手抄的那份只能靠注释提醒"保持一致"，没有任何机制强制，
+# 改一处漏一处不会被抓到，而本脚本恰恰是用来证明"CSP 不会拦掉 JSON-LD"的，
+# 它自己参数错了会让结论失真。
+#
+# 注意 frame-ancestors 是刻意追加的：<meta> 里该指令会被浏览器忽略，
+# 本脚本用 HTTP 头下发，所以这里带上它（与 _headers 的实际下发方式对齐）。
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SITE = json.load(open(os.path.join(_ROOT, "src", "data", "site.json"), encoding="utf-8"))
+CSP = _SITE["csp_meta"] + "; frame-ancestors 'none'"
 
 # 行号在这份 HTML 里是硬契约：判据靠它归属 CSP 违规，改动请同步更新。
 PAGE_LINES = [

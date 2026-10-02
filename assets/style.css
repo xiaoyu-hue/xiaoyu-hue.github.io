@@ -95,6 +95,9 @@ main:focus{outline:none}
 .nav-links{display:flex;gap:6px}
 .nav-links a{color:var(--text-dim);text-decoration:none;padding:8px 14px;border-radius:999px;font-size:14px;transition:.2s}
 .nav-links a:hover{color:var(--text);background:var(--glass-bg)}
+/* 当前页标识：语义上由 aria-current="page" 提供，视觉上用同等的强调色，
+   让"我在哪一页"对键盘/读屏用户和普通用户都同样清晰。 */
+.nav-links a[aria-current="page"]{color:var(--text);background:var(--glass-bg-strong)}
 
 .hero{min-height:88vh;min-height:88dvh;display:flex;align-items:center;justify-content:center;padding:var(--space-7) 24px}
 .hero-card{max-width:680px;text-align:center;padding:48px 40px;animation:float 7s ease-in-out infinite}
@@ -623,7 +626,7 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 .nav          { view-transition-name: nav; }
 .brand        { view-transition-name: brand; }
 #main         { view-transition-name: main; }
-.footer .wrap { view-transition-name: footer; }
+footer .wrap { view-transition-name: footer; }
 
 /* ---------- 第 1 层：编排层 ---------- */
 /*
@@ -807,7 +810,7 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
   .btn:active,.prefs-toggle:active,.prefs-seg button:active,
   .prefs-actions button:active{transform:none}
   html{scroll-behavior:auto}
-  .nav,.brand,#main,.footer .wrap{view-transition-name:none}
+  .nav,.brand,#main,footer .wrap{view-transition-name:none}
   /* v7 新效果降级（减少动画：定格/隐藏，内容不动） */
   .hero h1{background:none!important;-webkit-text-fill-color:var(--text)!important;color:var(--text)!important;animation:none!important}
   .ocean-bg,.orb{animation:none!important}
@@ -907,7 +910,7 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 :root[data-motion="off"] .nav,
 :root[data-motion="off"] .brand,
 :root[data-motion="off"] #main,
-:root[data-motion="off"] .footer .wrap{view-transition-name:none}
+:root[data-motion="off"] footer .wrap{view-transition-name:none}
 
 /* ---------- 精准响应式（容器查询 + :has，渐进增强） ---------- */
 /*

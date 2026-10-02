@@ -150,6 +150,13 @@ def path_vars(url_path):
 
     这条逻辑替代了原来每份 HTML 里手抄的相对路径，搬家时也不会写错。
     """
+    # 导航高亮：处于博客区（blog/index.html 及各文章）时，给「博客」这一项
+    # 加 aria-current="page"。首页各锚点（关于/项目/联系）指向首页本身，
+    # 不是"当前页"，所以只有博客链接需要这个标记。
+    # 前导空格是刻意的：模板里写成 href="{{blog}}"{{blog_current}}，
+    # 非博客页为空串（不多出空格），博客页为 ' aria-current="page"'。
+    blog_current = ' aria-current="page"' if url_path.startswith("blog/") else ""
+
     depth = url_path.count("/")
     if depth == 0:
         return {
@@ -157,12 +164,14 @@ def path_vars(url_path):
             "home": "index.html",           # 品牌位回首页
             "anchor": "",                   # 首页锚点： #about
             "blog": "blog/index.html",      # 博客入口
+            "blog_current": blog_current,   # 当前在博客区则加 aria-current
         }
     return {
         "rel": "../",
         "home": "../index.html",
         "anchor": "../index.html",
         "blog": "index.html",
+        "blog_current": blog_current,
     }
 
 

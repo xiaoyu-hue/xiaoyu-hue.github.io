@@ -19,17 +19,26 @@ CHECKER = os.path.join("scripts", "check_integrity.py")
 
 
 def _csp_from_checker():
-    """从检查器源码里提取 EXPECTED_CSP,而不是在这里再抄一份。
+    """取 CSP 真值，而不是在这里再抄一份。
 
     抄一份的问题是:以后改 CSP 要改两个地方,忘了改这里,
     样本就会自带旧策略,测试会「通过」但检查器其实已经在报不一致 ——
     测了个假东西。让真值只有一个来源。
+
+    真值的唯一来源是 src/data/site.json 的 csp_meta：
+    build.py 由它派生各页面的 <meta>，check_integrity.py 也改成读它。
+    所以这里直接读同一个来源 —— 比正则抽取检查器源码更直接，
+    也不会因为检查器内部实现方式变化而误报（本测试最初就是靠正则抽
+    check_integrity.py 的字面量，当那份字面量改成"读取 site.json"时，
+    正则失效、测试报错 —— 这恰好证明它在守护"真值只有一个"这条约定）。
     """
-    src = open(os.path.join(ROOT, CHECKER), encoding="utf-8").read()
-    m = re.search(r"EXPECTED_CSP\s*=\s*\((.*?)\)", src, re.S)
-    if not m:
-        raise AssertionError("在 check_integrity.py 里找不到 EXPECTED_CSP")
-    return "".join(re.findall(r'"([^"]*)"', m.group(1)))
+    import json
+
+    site = json.load(open(os.path.join(ROOT, "src", "data", "site.json"), encoding="utf-8"))
+    csp = site.get("csp_meta")
+    if not csp:
+        raise AssertionError("src/data/site.json 里找不到 csp_meta")
+    return csp
 
 
 CSP = _csp_from_checker()
@@ -144,9 +153,13 @@ def build_site(tmp, pages, style=None):
 
 
 def run_checker(tmp):
+    # 检查器在隔离目录里跑，那里没有 src/data/site.json。
+    # 用 SITE_CSP 把真值注入进去（值就是本文件从 site.json 读到的 CSP），
+    # 这样既不依赖被复制过去的 site.json，也仍然保持"真值只有一个来源"。
+    env = dict(os.environ, SITE_CSP=CSP)
     proc = subprocess.run(
         [sys.executable, os.path.join(tmp, CHECKER)],
-        capture_output=True, text=True, cwd=tmp,
+        capture_output=True, text=True, cwd=tmp, env=env,
     )
     return proc
 

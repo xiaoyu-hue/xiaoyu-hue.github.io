@@ -35,6 +35,10 @@ import urllib.error
 # 线上站点。用 sitemap.xml 里登记的规范域名（Cloudflare Pages）。
 DEFAULT_URL = "https://xiaoyu-hue-github-io.pages.dev/"
 
+# CSP 的唯一真值来源（与 build.py、check_integrity.py 同源）。
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SITE = json.load(open(os.path.join(_ROOT, "src", "data", "site.json"), encoding="utf-8"))
+
 # 期望的安全头，键为头名（小写），值为期望值。
 # 这些值必须与仓库根目录的 `_headers` 文件保持一致；
 # 哪边改了而另一边没改，就是本脚本要抓的不一致。
@@ -54,19 +58,23 @@ EXPECTED_HEADERS_PREFIX = {
 
 # CSP 逐条指令校验：只要线上 CSP 里出现了这些指令且值一致即可，
 # 不做整串精确比对（平台可能调整顺序或空白）。
-EXPECTED_CSP_DIRECTIVES = {
-    "default-src": "'self'",
-    "script-src": "'self'",
-    "worker-src": "'self'",
-    "style-src": "'self'",
-    "font-src": "'self'",
-    "img-src": "'self' data:",
-    "connect-src": "'self'",
-    "object-src": "'none'",
-    "base-uri": "'self'",
-    "form-action": "'none'",
-    "frame-ancestors": "'none'",
-}
+#
+# 指令表不手抄：直接从 src/data/site.json 的 csp_meta（CSP 唯一真值）解析，
+# 再补上 frame-ancestors —— 它在 <meta> 里会被浏览器忽略、刻意不进 csp_meta，
+# 但线上是通过 HTTP 头下发的，所以实际会带上，这里必须一起校验。
+def _csp_directives():
+    directives = {}
+    for part in _SITE["csp_meta"].split(";"):
+        part = part.strip()
+        if not part:
+            continue
+        name, _, value = part.partition(" ")
+        directives[name] = value.strip()
+    directives["frame-ancestors"] = "'none'"
+    return directives
+
+
+EXPECTED_CSP_DIRECTIVES = _csp_directives()
 
 # Permissions-Policy 是逗号分隔的特性列表，逐项检查存在性。
 EXPECTED_PERMISSIONS = ["geolocation=()", "microphone=()", "camera=()", "payment=()"]
