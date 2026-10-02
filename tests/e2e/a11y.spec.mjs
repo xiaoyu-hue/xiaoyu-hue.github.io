@@ -16,7 +16,7 @@ import { AxeBuilder } from '@axe-core/playwright';
 
 // 本文件仅 chromium 项目运行；firefox 项目跳过（cross-browser.spec 才覆盖 Firefox）
 test.skip(({ browserName }) => browserName === 'firefox', '仅 chromium 项目运行');
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -114,11 +114,47 @@ test.describe('页面清单本身', () => {
 test.describe('可访问性基线', () => {
   // 浅色和深色是两套独立的颜色令牌，必须各扫一遍。
   // 上一轮就是浅色挂了、深色干净 —— 只扫一种会漏。
+  //
+  // ⚠️ 这里曾经失过效：循环写着 ['light','dark']，却忘了调 emulateMedia 真正切换，
+  // 结果两个用例跑的都是同一个默认主题（深色对比度从未被扫到），
+  // 而注释还写着"必须各扫一遍" —— 典型的「注释正确、实现失效」假护栏。
+  // 所以下面除了切换主题，还补了一条自证断言：主题真的变了才继续，
+  // 一旦将来主题机制改动导致切换失效，这条会立刻报错，而不是静默退化成假护栏。
+  // 有些页面不参与主题切换（例如 offline.html 是极简离线页，只引 offline.js，
+  // 固定深色不做主题）。对这类页面只扫一次，避免"浅色"用例去断言一个
+  // 永远不会变浅的页面。判定依据是页面本身有没有引入 theme-boot.js，
+  // 而不是手写页面名 —— 新增页面时结论自动正确。
+  function hasThemeBoot(path) {
+    const rel = path.replace(/^\//, '');
+    try {
+      return readFileSync(join(ROOT, rel), 'utf-8').includes('theme-boot.js');
+    } catch {
+      return false;
+    }
+  }
+
+  const EXPECTED_BG = { light: 'rgb(234, 244, 250)', dark: 'rgb(4, 17, 29)' };
   for (const path of PAGES) {
-    for (const scheme of ['light', 'dark']) {
-      const label = scheme === 'light' ? '浅色' : '深色';
+    // 不参与主题切换的页面：只跑默认配色一次（标为"默认"以免误导）
+    const schemes = hasThemeBoot(path) ? ['light', 'dark'] : ['default'];
+    for (const scheme of schemes) {
+      const label = scheme === 'light' ? '浅色' : scheme === 'dark' ? '深色' : '默认';
       test(`${path}（${label}）无 WCAG AA 违规`, async ({ page }) => {
+        // ⚠️ 必须在 goto 之前切换配色：theme-boot.js 只在页面加载时读一次
+        // matchMedia，它不监听媒体查询变化。若在 goto 之后切换，主题不会跟着变，
+        // 断言就会随执行时机时红时绿（实测过：全量跑 7 failed / 6 failed 波动）。
+        if (scheme !== 'default') {
+          await page.emulateMedia({ colorScheme: scheme });
+        }
         await page.goto(path, { waitUntil: 'load' });
+
+        // 自证：主题确实切过去了（否则说明切换机制失效，立刻报错而非静默通过）
+        if (scheme !== 'default') {
+          const bg = await page.evaluate(
+            () => getComputedStyle(document.body).backgroundColor
+          );
+          expect(bg, `主题未切换到${label}，本条会成为假护栏`).toBe(EXPECTED_BG[scheme]);
+        }
 
         const { violations, incomplete } = await scan(page);
 
