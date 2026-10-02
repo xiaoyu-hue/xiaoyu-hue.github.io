@@ -746,7 +746,10 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
    保留现有逐元素 --i 封顶 320ms 错落。 */
 @supports (animation-timeline: view()) {
   .reveal {
-    transition: none;
+    /* 保留原有 transition（含 opacity/transform 时长与 --i 错落延迟），
+       让不支持滚动驱动的浏览器与 e2e 契约测试继续吃到正确值；
+       在支持浏览器里，下方 animation 优先级更高，实际入场由滚动位置驱动，
+       transition 退化为无害备用。二者不删、不互相覆盖。 */
     animation: reveal-in linear both;
     animation-timeline: view();
     animation-range: entry 0% cover 35%;
