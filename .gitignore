@@ -4,5 +4,7 @@
 node_modules/
 test-results/
 playwright-report/
+# Lighthouse CI 本地报告 / 临时产物（CI 阶段会作为 artifact 留存，不必入库）
+.lighthouseci/
 __pycache__/
 *.pyc

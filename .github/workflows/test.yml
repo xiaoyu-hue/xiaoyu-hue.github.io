@@ -63,3 +63,36 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  lighthouse:
+    name: 性能/可访问性/SEO 红线
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # 不下载 puppeteer 自带 Chromium，复用运行器预装的 Chrome（与本地沙箱同款策略）
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      # ubuntu-latest 预装 Chrome，定位路径传给 lhci（跳过 sandbox 的 --no-sandbox 已在 lighthouserc.cjs 配置）
+      - name: 定位系统 Chrome
+        id: chrome
+        run: echo "path=$(which google-chrome || which chromium || which chromium-browser)" >> "$GITHUB_OUTPUT"
+
+      - name: 运行 Lighthouse CI（分数红线断言）
+        run: npx lhci autorun
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.path }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          retention-days: 7
