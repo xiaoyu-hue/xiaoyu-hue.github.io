@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: 运行 Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           # 公共仓库不需要 GITHUB_TOKEN 也能跑，但传上更稳妥（用于 PR 评论）
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
