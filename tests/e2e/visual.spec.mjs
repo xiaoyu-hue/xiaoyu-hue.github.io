@@ -15,22 +15,19 @@
 // 深色干净，只截一种会漏）。
 // 双视口：桌面 + 移动，守住响应式布局不退化。
 //
-// ⚠️ 跨环境一致性：本仓库用系统字体栈（无 web font），macOS / Windows 的
-// 中文字形与 Linux 不同。因此**基线以 Linux 为准**（CI 与本地沙箱同环境），
-// 本地 macOS / Windows 只跑流程、不要用 --update-snapshots，否则会把
-// 跨平台字形差异当成「回归」误提交。
+// ⚠️ 跨环境一致性（重要）：像素比对对渲染环境极其敏感 —— 字体、抗锯齿、
+// Chromium 构建、系统库版本都会造成差异。因此本仓库的**唯一基线来源是 CI**：
 //
-// ⚠️ CI 字体：基线在本沙箱用 Noto Sans/Serif CJK SC 生成，而 GitHub
-// ubuntu-latest 运行器默认**不装中文字体**，中文会渲染成豆腐块导致比对
-// 失败。因此 test.yml 的 e2e job 会先 `apt-get install fonts-noto-cjk`，
-// 让 CI 用同款字体渲染；下面 0.03 容差再吸收 jammy/noble 字体版本的小差异。
+//   · 生成/更新基线：在 GitHub Actions 页运行「更新视觉基线」workflow
+//     （.github/workflows/update-snapshots.yml），由 CI 环境重建并提交回 main。
+//   · 本地（沙箱 / macOS / Windows）**只跑比对，不要 --update-snapshots** ——
+//     否则会把你本地环境的渲染差异当成基线提交，导致 CI 反而报红。
 //
-// 运行：
-//   生成 / 更新基线： npx playwright test tests/e2e/visual.spec.mjs --update-snapshots
-//   比对（CI 默认）：  npx playwright test tests/e2e/visual.spec.mjs
+// 这条是踩过坑才写下的：基线最初由本地沙箱生成，本地一直 16 passed，
+// 但 CI 因环境渲染差异大面积报红。根治办法就是让基线诞生在 CI 环境。
 //
-// 收到「快照不符」时：先肉眼在 playwright-report 里看 diff，确认是
-// 「预期内的设计改动」才更新基线，不要无脑 --update-snapshots。
+// ⚠️ CI 字体：test.yml 与 update-snapshots.yml 都先装 `fonts-noto-cjk`，
+// 保证「生成基线」与「比对基线」的字体环境完全相同。
 
 import { test, expect } from '@playwright/test';
 

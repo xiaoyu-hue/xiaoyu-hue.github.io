@@ -36,7 +36,7 @@ def rel(p):
 # 正文片段）。单独看一个 src/pages/*.body.html,它本来就不构成完整的 HTML 页面,
 # 拿本文件的标准去要求它没有意义。源码和成品是否一致,由 `python3 build.py` 负责
 # 校验（逐字节比对）。这里只管"最终要发布出去的那些页面"。
-EXCLUDED_DIRS = {"node_modules", "playwright-report", "test-results", ".git", "src"}
+EXCLUDED_DIRS = {"node_modules", "playwright-report", "test-results", ".git", "src", ".lighthouseci"}
 
 
 def is_excluded(path):

@@ -1,0 +1,56 @@
+name: 更新视觉基线
+
+# 视觉基线必须由「CI 环境」生成 —— 因为像素比对对渲染环境极其敏感：
+# 本地沙箱 / macOS / Windows 的字体、抗锯齿、Chromium 构建与 GitHub 运行器
+# 都可能存在细微差异，导致「本地绿、CI 红」这种最耗时的假阳性。
+#
+# 因此本仓库约定的唯一基线来源是：在 GitHub Actions 环境里跑本 workflow，
+# 由它重建全部快照并提交回 main。之后 test.yml 的视觉回归就用这份基线比对，
+# 环境同源，稳定可靠。
+#
+# 使用：仓库 Actions 页 → 左侧「更新视觉基线」→ Run workflow。
+# 需要权限：workflow 需 contents:write（已在下方声明）。
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-snapshots:
+    name: 在 CI 环境重建视觉基线
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 用内置 token 即可提交（contents:write 已授权）
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      # 与 test.yml 的 e2e job 保持完全一致的字体环境，确保基线可复现
+      - name: 安装中文字体（与 test.yml 一致）
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+
+      - name: 重建基线
+        run: npx playwright test tests/e2e/visual.spec.mjs --project=chromium --update-snapshots
+
+      - name: 提交并推送新基线
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/e2e/visual.spec.mjs-snapshots
+          if git diff --staged --quiet; then
+            echo "基线无变化，无需提交"
+          else
+            git commit -m "chore(test): 在 CI 环境重建视觉回归基线（环境同源，消除跨环境假阳性）"
+            git push origin HEAD:main
+          fi
