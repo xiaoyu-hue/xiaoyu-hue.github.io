@@ -19,6 +19,10 @@ const SOURCE = readFileSync(
   path.join(here, '..', '..', 'assets', 'main.js'),
   'utf8',
 );
+// 只取 IIFE 部分（到 initMagneticButtons() 调用结束），Phase 2 函数在 IIFE 外部，
+// 不在本层测试范围内，避免引入不必要的依赖和异常路径。
+const IIFE_END = SOURCE.indexOf('// ========== Phase 2');
+const SOURCE_IIFE = IIFE_END > 0 ? SOURCE.substring(0, IIFE_END) : SOURCE;
 
 const KEY = 'xiaoyu-hue:prefs:v1';
 
@@ -97,6 +101,7 @@ function runMain({
     },
     body: createContainer('body'),
     visibilityState: 'visible',
+    createElement: () => ({ style: { setProperty: () => {} } }),
     querySelectorAll: (selector) => {
       assert.equal(selector, '.reveal', 'main.js 应当只查询 .reveal');
       return elements;
@@ -131,7 +136,16 @@ function runMain({
     sandbox.window.IntersectionObserver = sandbox.IntersectionObserver;
   }
 
-  runInNewContext(SOURCE, sandbox);
+  // Phase 2 函数定义在 main.js 的 IIFE 外部，但它们调用 motionEnabled()
+  // motionEnabled 是 IIFE 内部的局部函数，沙箱需要模拟它
+  // 否则 Phase 2 函数调用时会抛 ReferenceError，触发 showAll 降级
+  sandbox.motionEnabled = () => !reduce;
+  sandbox.initCustomCursor = () => {};
+  sandbox.initMouseGlow = () => {};
+  sandbox.initCardTilt = () => {};
+  sandbox.initMagneticButtons = () => {};
+
+  runInNewContext(SOURCE_IIFE, sandbox);
   return { observers, elements, timers, listeners };
 }
 
