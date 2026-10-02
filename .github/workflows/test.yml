@@ -50,6 +50,11 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
+      # 视觉回归基线在 Linux + Noto CJK 下生成；ubuntu-latest 运行器默认无中文字体，
+      # 中文会渲染成豆腐块导致像素比对失败。先装同款字体再跑测试。
+      - name: 安装中文字体（视觉回归比对需要）
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+
       - run: npx playwright test
 
       - uses: actions/upload-artifact@v4
