@@ -111,20 +111,50 @@ body{
   line-height:1.7;
   overflow-x:hidden;
 }
-/* 海洋氛围背景(创新层) */
+/* 海洋氛围背景(创新层) - 升级：极光渐变 + 噪点质感 + 多层光晕 */
+@property --aurora-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
 .ocean-bg{
   position:fixed;inset:0;z-index:-2;
   background:
-    radial-gradient(circle at 20% 15%, rgba(14,74,110,.55), transparent 55%),
-    radial-gradient(circle at 80% 85%, rgba(10,110,122,.45), transparent 50%),
-    linear-gradient(160deg, #04111d 0%, #07273d 45%, #0a3a52 100%);
+    /* 极光层：旋转的径向渐变 */
+    radial-gradient(ellipse 80% 50% at 50% -20%, 
+      color-mix(in srgb, var(--accent) 30%, transparent),
+      transparent 50%
+    ),
+    /* 深海光晕 */
+    radial-gradient(circle at 20% 15%, color-mix(in srgb, var(--deep) 60%, transparent), transparent 55%),
+    radial-gradient(circle at 80% 85%, color-mix(in srgb, var(--ocean) 50%, transparent), transparent 50%),
+    /* 基底渐变 */
+    linear-gradient(160deg, var(--abyss) 0%, var(--deep) 45%, var(--ocean) 100%);
   background-size:200% 200%;
-  animation:drift 22s ease-in-out infinite;
+  animation:
+    drift 22s ease-in-out infinite,
+    aurora-rotate 12s linear infinite;
+  /* 胶片噪点质感 */
+  position:relative;
 }
 @keyframes drift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-.orb{position:fixed;border-radius:50%;filter:blur(60px);z-index:-1;opacity:.5;pointer-events:none}
-.orb.a{width:420px;height:420px;background:radial-gradient(circle,rgba(72,202,228,.22),transparent 70%);top:-120px;right:-80px}
-.orb.b{width:360px;height:360px;background:radial-gradient(circle,rgba(2,62,138,.30),transparent 70%);bottom:-100px;left:-60px}
+@keyframes aurora-rotate{to{--aurora-angle:360deg}}
+/* 噪点纹理：SVG filter 叠加 */
+.ocean-bg::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:.03;
+  mix-blend-mode:overlay;
+  pointer-events:none;
+}
+/* 光晕系统：4个浮动光球 + 视差 */
+.orb{position:fixed;border-radius:50%;filter:blur(60px);z-index:-1;opacity:.5;pointer-events:none;will-change:transform}
+.orb.a{width:420px;height:420px;background:radial-gradient(circle,color-mix(in srgb, var(--accent) 45%, transparent),transparent 70%);top:-120px;right:-80px;animation:orb-drift-a 18s ease-in-out infinite}
+.orb.b{width:360px;height:360px;background:radial-gradient(circle,color-mix(in srgb, var(--accent-2) 35%, transparent),transparent 70%);bottom:-100px;left:-60px;animation:orb-drift-b 22s ease-in-out infinite}
+.orb.c{width:280px;height:280px;background:radial-gradient(circle,color-mix(in srgb, var(--ocean) 40%, transparent),transparent 70%);top:35%;left:5%;animation:orb-drift-c 15s ease-in-out infinite}
+.orb.d{width:320px;height:320px;background:radial-gradient(circle,color-mix(in srgb, var(--accent) 30%, transparent),transparent 70%);bottom:20%;right:8%;animation:orb-drift-d 20s ease-in-out infinite}
+@keyframes orb-drift-a{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-40px)}}
+@keyframes orb-drift-b{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,30px)}}
+@keyframes orb-drift-c{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-25px)}}
+@keyframes orb-drift-d{0%,100%{transform:translate(0,0)}50%{transform:translate(-25px,20px)}}
 
 /* 液态玻璃(主力语言) */
 .glass{
@@ -381,6 +411,8 @@ html[data-theme="light"] .ocean-bg{
 }
 html[data-theme="light"] .orb.a{background:radial-gradient(circle,rgba(72,202,228,.30),transparent 70%)}
 html[data-theme="light"] .orb.b{background:radial-gradient(circle,rgba(2,62,138,.10),transparent 70%)}
+html[data-theme="light"] .orb.c{background:rgba(2,62,138,.08)}
+html[data-theme="light"] .orb.d{background:rgba(72,202,228,.20)}
 html[data-theme="light"] .nav{
   background:rgba(234,244,250,.78);
   border-bottom-color:rgba(3,110,145,.14);

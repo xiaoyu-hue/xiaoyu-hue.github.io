@@ -27,9 +27,9 @@ const CACHE_PREFIX = 'xiaoyu-hue';
 // 不改版本号的话,已安装 PWA 的用户会继续从旧缓存里拿到没有结构化数据的页面。
 // v4:修掉「导航请求把 404 也缓存进去」的问题。仅改代码不够 ——
 // 已经被写进缓存的错误响应,只有靠换缓存名才能在 activate 时被清掉。
-// v7:视觉冲击增强（流光标题/波浪分隔/视差背景/光边/模糊入场/进度条/跟手水波纹）
-//    纯原生 CSS + 极少量 JS，零依赖；换缓存名让已装 PWA 清缓存拿新样式。
-const CACHE_VERSION = 'v7';
+// v8:双主题个性化升级（极光背景/胶片噪点/4光球系统/流光增强）
+//    纯原生 CSS 零依赖；换缓存名让已装 PWA 清缓存拿新样式。
+const CACHE_VERSION = 'v8';
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const OFFLINE_URL = '/offline.html';
