@@ -35,7 +35,8 @@ export default defineConfig({
   webServer: {
     // 用 ThreadingHTTPServer 而非单线程 http.server：chromium + firefox 两个项目
     // 并行时并发连接数翻倍，单线程服务器会出现偶发连接重置导致测试红。
-    command: `python3 -c "from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler; ThreadingHTTPServer(('127.0.0.1', ${PORT}), SimpleHTTPRequestHandler).serve_forever()"`,
+    // daemon_threads=True 让进程退出时不再抛 BrokenPipeError。
+    command: `python3 -c "from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler; h=ThreadingHTTPServer(('127.0.0.1', ${PORT}), SimpleHTTPRequestHandler); h.daemon_threads=True; h.serve_forever()"`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
