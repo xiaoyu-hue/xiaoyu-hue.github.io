@@ -183,6 +183,34 @@
     }, { passive: true });
   }
 
+  // ---------- 跟手水波纹（⑩ 微动效新增） ----------
+  // 在指针落点注入一个 .ripple__dot，由 CSS 负责「炸开 + 消散」动画。
+  // 全程守 CSP：用 el.style.setProperty 写坐标，不写 style 属性（后者会触发 CSP）。
+  // 门禁：motionEnabled() 已含 reduced-motion 与 data-motion=off 的双重否决，
+  //       关动效时监听器根本不装，CSS 里 .ripple__dot 也另有 display:none 兜底。
+  function initRipple() {
+    if (!motionEnabled()) return;
+    if (!document.addEventListener || !document.createElement) return;
+    document.addEventListener('pointerdown', function (e) {
+      var t = (e.target && e.target.closest)
+        ? e.target.closest('.btn, .card, .post-card')
+        : null;
+      if (!t) return;
+      var r = t.getBoundingClientRect();
+      var d = Math.max(r.width, r.height) * 2;
+      var span = document.createElement('span');
+      span.className = 'ripple__dot';
+      span.style.setProperty('width', d + 'px');
+      span.style.setProperty('height', d + 'px');
+      span.style.setProperty('left', (e.clientX - r.left - d / 2) + 'px');
+      span.style.setProperty('top', (e.clientY - r.top - d / 2) + 'px');
+      span.addEventListener('animationend', function () {
+        if (span.parentNode) span.parentNode.removeChild(span);
+      });
+      t.appendChild(span);
+    }, { passive: true });
+  }
+
   // ---------- 启动 ----------
   // 整段包在 try/catch 里：这是第 2 层「降级路径 4」的落点。
   // 任何一处抛异常（老浏览器缺 API、扩展脚本污染了原型链…），
@@ -191,6 +219,7 @@
     assignStaggerIndex();
     initReveal();
     initNav();
+    initRipple();
   } catch (e) {
     showAll('动效脚本异常：' + (e && e.message ? e.message : e));
   }
