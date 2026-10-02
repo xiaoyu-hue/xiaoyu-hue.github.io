@@ -61,7 +61,7 @@ xiaoyu-hue.github.io/
 ├── docs/                   # 实测记录：结论怎么来的、边界在哪
 │   └── csp-jsonld.md       #   CSP 会不会拦掉 JSON-LD 结构化数据（附可复现脚本）
 ├── assets/
-│   ├── style.css           # 液态玻璃 × 海洋风格样式（深/浅双主题 + 微动效系统四层令牌）
+│   ├── style.css           # 液态玻璃 × 海洋风格样式（深/浅双主题 + 微动效系统五层令牌）
 │   ├── theme-boot.js       # <head> 内同步应用主题与动效偏好，防刷新时闪色
 │   ├── pwa.js              # 注册 Service Worker、更新提示、安装引导
 │   ├── prefs.js            # 主题切换 + 动效开关 + 阅读进度 + 导入导出
@@ -382,7 +382,7 @@ axe 只装在 devDependencies，**站点本身依旧零运行时依赖**。它�
 
 | 包 | 版本 | 许可证 | 用在哪 |
 |------|------|--------|--------|
-| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑 220 个用例（含跨浏览器降级） |
+| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑 139 个用例（含跨浏览器降级） |
 | `playwright` / `playwright-core` | ^1.63.0 | Apache-2.0 | 上面那个的底层，不需要单独装 |
 | [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | ^4.13.0 | MPL-2.0 | 可访问性基线：把 axe 注入页面跑 WCAG 规则 |
 | `axe-core` | ^4.13.0 | MPL-2.0 | 上面那个的规则引擎，不需要单独装 |
@@ -411,9 +411,7 @@ CI 上跑的是 Node 20。
 
 ## 更新站点
 
-成品 HTML 一律不再手改（改了也会被下次构建覆盖），正确顺序是：
-
-1. 在 `src/pages/` 加正文片段，例如 `blog-post-9.body.html`
+成品 HTML 一律不再手改（改了也会被下次构建覆盖），正确顺序�会被下次构建覆盖），正确顺序�例如 `blog-post-9.body.html`
 2. 在 `src/data/pages.json` 加一条元数据，`body` 指向刚才的片段，并填好 `title` / `description` / `og_type` / `date`：
 
    ```json
@@ -518,4 +516,6 @@ v7 新增效果的技术来源同样全部来自 Web 标准，另有一处交互
 ```
 代码        MIT              © 2026 xiaoyu-hue
 文章/文案   CC BY-NC-SA 4.0  © 2026 xiaoyu-hue
+```
+�   CC BY-NC-SA 4.0  © 2026 xiaoyu-hue
 ```
