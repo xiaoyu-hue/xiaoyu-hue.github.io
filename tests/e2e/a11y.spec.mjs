@@ -33,7 +33,7 @@ const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 // 页面底色上，会被 axe 误判为 WCAG 对比度不达标。真实站点里整页能通过，
 // 所以这是「把构建源当成品页扫」产生的假阳性，不是线上缺陷。
 // 排除 src/ 后，所有对外服务的页面（根目录 + /blog/）依旧全覆盖。
-const SKIP_DIRS = new Set(['node_modules', '.git', 'src', 'test-results', 'playwright-report', '.lighthouseci']);
+const SKIP_DIRS = new Set(['node_modules', '.git', '.git.corrupt', 'src', 'test-results', 'playwright-report', '.lighthouseci']);
 
 // 页面清单不手写死：新增页面自动纳入扫描。
 // site.spec.mjs 里那份是手写的数组，这里刻意不抄 —— 手写清单的问题是
