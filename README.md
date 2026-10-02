@@ -187,6 +187,22 @@ v6 把视觉 / 微动效体系做了一次大升级，但**仍然零第三方库
 
 > 参考实践：Andy Bell 的 [piccalil.li](https://piccalil.li) / "Build Excellent Websites" 方法论——用原生 CSS + View Transitions 做顶级静态站，与本站理念一致（CSS 优先、reduced-motion 优先、只用 `transform`/`opacity` 防布局抖动）。
 
+### 视觉冲击增强（v7 大升级）
+
+v7 在 v6 的原生 CSS 引擎之上**新增七项视觉冲击效果**，仍零库、零运行时依赖、不改 CSP，并全部接入五层降级（reduced-motion / prefers-contrast / scripting:none / data-motion=off）。纯 CSS 四件套移动桌面通吃，跟手水波纹只需 `main.js` 加约 15 行：
+
+| 效果 | 原生技术 | 解决什么 | 降级 |
+|------|----------|----------|------|
+| 流光渐变标题 | `background-clip: text` + 渐变流动 | 主标题表面有流光跑动，一眼看出升级 | reduced-motion 定格 / contrast 转实色 |
+| 焦散水光描边 | `@property` + `conic-gradient` + `mask` | 玻璃卡片边框流动光边（保留圆角） | reduced-motion 关 |
+| 滚动视差海洋背景 | `animation-timeline: scroll()` | 背景/光球随滚动纵深位移，像在下潜 | reduced-motion 停 |
+| 波浪分隔带 | 纯 CSS SVG 波浪双层横移 | 章节间海水涌动签名感 | reduced-motion 定格 |
+| 模糊聚焦入场 | `.reveal` 加 `filter: blur` 收束 | 比淡入多一层"镜头聚焦" | reduced-motion 关 blur |
+| 阅读进度条 | `body::after` + `scroll()` 时间线 | 顶部液态光带随阅读生长 | reduced-motion 隐藏 |
+| 跟手水波纹 | `main.js` `pointerdown` 落点注入 | 点按在手指落点涌开水花（海洋主题绝配） | reduced-motion / data-motion 不生成 |
+
+> 写法同 v6：仍只用 `transform`/`opacity`/`filter` 防布局抖动；动画优先级低于 `prefers-reduced-motion`，保证"动效可无、内容不可无"。五层降级中对无障碍偏好统一用 `!important` 压过装饰动画。
+
 ---
 
 ## 离线与安装（PWA）
@@ -219,12 +235,12 @@ v6 把视觉 / 微动效体系做了一次大升级，但**仍然零第三方库
 `sw.js` 顶部有一个版本号：
 
 ```js
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 ```
 
-**发布新内容后，把这个数字加一**（`v5` → `v6`），用户下次访问时 Service Worker 会丢掉旧缓存、重新抓取，并弹出「有新版本可用」的提示条。
+**发布新内容后，把这个数字加一**（`v6` → `v7`），用户下次访问时 Service Worker 会丢掉旧缓存、重新抓取，并弹出「有新版本可用」的提示条。
 
-不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。本站历经模板化、机器可读层、微动效系统、原生 CSS 动效大升级等多次大改，缓存版本已累计升到 `v6`，每次大改都靠升版本号让老用户尽快拿到新样式与脚本。
+不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。本站历经模板化、机器可读层、微动效系统、原生 CSS 动效大升级（v6）、视觉冲击增强（v7）等多次大改，缓存版本已累计升到 `v7`，每次大改都靠升版本号让老用户尽快拿到新样式与脚本。
 
 ### 为什么 Service Worker 必须在根目录
 
@@ -454,6 +470,8 @@ node scripts/build-icons.mjs
 **现代 CSS 能力与规范**
 
 本站 v6 的动效升级（View Transitions、滚动驱动动画、容器查询、`:has()`、`color-mix()`、`@starting-style` 等）全部来自 W3C CSS 工作组的标准，由浏览器原生实现 —— 无需任何库。值得单独致谢的还有 Andy Bell 的 [piccalil.li](https://piccalil.li) / "Build Excellent Websites" 方法论：它把"原生 CSS 优先、reduced-motion 优先、只用 `transform`/`opacity` 防布局抖动"做成可复制的实践，本站动效系统的理念与之高度一致。
+
+v7 新增效果的技术来源同样全部来自 Web 标准，另有一处交互范式值得点名：跟手水波纹受 **Material Design 的 Ripple** 启发——把"在指针落点涌开"做成标准点按反馈；`@property`（CSS Houdini Properties and Values API）与 `scroll()` 滚动时间线（Scroll-driven Animations 规范）由 W3C CSS 工作组标准化、Chrome 团队的 Bramus Van Damme 等人持续推广，本站直接复用其原生实现。
 
 **刻意的"不引入"**
 
