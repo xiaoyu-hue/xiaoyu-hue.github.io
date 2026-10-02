@@ -112,11 +112,12 @@ xiaoyu-hue.github.io/
 
 ## 设置
 
-导航栏右侧的齿轮图标打开设置面板，提供三项内容：
+导航栏右侧的齿轮图标打开设置面板，提供四项内容：
 
 | 项 | 说明 |
 |------|------|
 | **外观** | 三档切换：跟随系统 / 深色 / 浅色。显式选择优先于系统设置，刷新后保持 |
+| **动效** | 开启 / 关闭微动效。关闭后全部入场动画与装饰动画归零，内容照常可见 |
 | **阅读记录** | 打开过的文章会自动记录，面板里可跳回 |
 | **数据** | 导出 / 导入 JSON（换设备时迁移），一键清空（需二次确认） |
 
@@ -135,7 +136,7 @@ xiaoyu-hue.github.io/
 
 设置面板的「**外观**」下面还有一组「**动效**」开关（开启 / 关闭）。它不控制"有没有动画"那么简单——背后的设计目标是"动效是状态变化的说明书，不是装饰"：每一次位移、渐显、延迟，都要让用户看清"什么东西变了、从哪里来、到哪里去"。
 
-### 四层结构
+### 五层结构（第 0 层到第 4 层）
 
 | 层 | 职责 | 文件 |
 |----|------|------|
@@ -189,7 +190,7 @@ v6 把视觉 / 微动效体系做了一次大升级，但**仍然零第三方库
 
 ### 视觉冲击增强（v7 大升级）
 
-v7 在 v6 的原生 CSS 引擎之上**新增七项视觉冲击效果**，仍零库、零运行时依赖、不改 CSP，并全部接入五层降级（reduced-motion / prefers-contrast / scripting:none / data-motion=off）。纯 CSS 四件套移动桌面通吃，跟手水波纹只需 `main.js` 加约 15 行：
+v7 在 v6 的原生 CSS 引擎之上**新增七项视觉冲击效果**，仍零库、零运行时依赖、不改 CSP，并全部接入既有降级网络（reduced-motion / prefers-contrast / scripting:none / data-motion=off）。纯 CSS 四件套移动桌面通吃，跟手水波纹只需 `main.js` 加约 15 行：
 
 | 效果 | 原生技术 | 解决什么 | 降级 |
 |------|----------|----------|------|
@@ -201,7 +202,7 @@ v7 在 v6 的原生 CSS 引擎之上**新增七项视觉冲击效果**，仍零�
 | 阅读进度条 | `body::after` + `scroll()` 时间线 | 顶部液态光带随阅读生长 | reduced-motion 隐藏 |
 | 跟手水波纹 | `main.js` `pointerdown` 落点注入 | 点按在手指落点涌开水花（海洋主题绝配） | reduced-motion / data-motion 不生成 |
 
-> 写法同 v6：仍只用 `transform`/`opacity`/`filter` 防布局抖动；动画优先级低于 `prefers-reduced-motion`，保证"动效可无、内容不可无"。五层降级中对无障碍偏好统一用 `!important` 压过装饰动画。
+> 写法同 v6：仍只用 `transform`/`opacity`/`filter` 防布局抖动；动画优先级低于 `prefers-reduced-motion`，保证"动效可无、内容不可无"。降级网络中对无障碍偏好统一用 `!important` 压过装饰动画。
 
 ---
 
@@ -381,10 +382,11 @@ axe 只装在 devDependencies，**站点本身依旧零运行时依赖**。它�
 
 | 包 | 版本 | 许可证 | 用在哪 |
 |------|------|--------|--------|
-| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑 92 个用例 |
+| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑 220 个用例（含跨浏览器降级） |
 | `playwright` / `playwright-core` | ^1.63.0 | Apache-2.0 | 上面那个的底层，不需要单独装 |
 | [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | ^4.13.0 | MPL-2.0 | 可访问性基线：把 axe 注入页面跑 WCAG 规则 |
 | `axe-core` | ^4.13.0 | MPL-2.0 | 上面那个的规则引擎，不需要单独装 |
+| [`@lhci/cli`](https://github.com/GoogleChrome/lighthouse-ci) | ^0.15.1 | Apache-2.0 | Lighthouse CI：CI 上跑性能 / 可访问性 / 最佳实践基线 |
 
 MPL-2.0 是文件级 copyleft，但它只约束"你把这份代码的源文件改了再分发"；这里全部只作开发期工具，不进站点、不随页面分发，所以对本站的 MIT 许可没有影响。
 
@@ -394,16 +396,16 @@ MPL-2.0 是文件级 copyleft，但它只约束"你把这份代码的源文件�
 |------|----------|
 | 契约层（84 例） | `python3` —— 只用标准库，一个 pip 包都不装 |
 | 逻辑层（63 例） | Node 18+ |
-| 真浏览器层（92 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
+| 真浏览器层（220 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
 | CSP/JSON-LD 实测 | Python 3 + `playwright` —— **可选**，不装也能构建和部署站点，只是没法亲自复现 [`docs/csp-jsonld.md`](docs/csp-jsonld.md) 里的结论 |
 
 CI 上跑的是 Node 20。
 
 **CI 用到的 GitHub Actions**
 
-`actions/checkout@v4`、`actions/setup-node@v4`、`actions/cache@v4`、`actions/upload-artifact@v4`。
+`actions/checkout@v4`、`actions/setup-node@v7`（`update-snapshots.yml` 仍用 `@v4`）、`actions/setup-python@v7`、`actions/cache@v4`、`actions/upload-artifact@v7`、`github/codeql-action/init@v4`、`github/codeql-action/analyze@v4`、`gitleaks/gitleaks-action@v3`。
 
-它们目前按**版本标签**引用，没有钉到具体的 commit SHA。理论上标签是可以被移动的，但本仓库**没有任何 secrets**，两个 workflow 也都把 `permissions` 收敛到了 `contents: read`，权衡后认为风险可以接受 —— 记在这里，是因为这是个主动选择，不是没注意到。
+它们目前按**版本标签**引用，没有钉到具体的 commit SHA。理论上标签是可以被移动的。仓库共 6 个 workflow，其中 5 个把 `permissions` 收敛到了 `contents: read`；唯一例外是 `update-snapshots.yml`（手动触发的视觉基线重建），它需要 `contents: write` 才能把新基线提交回 `main`，这是该功能所必需、且只由仓库维护者手动触发的。本仓库**没有任何 secrets**，权衡后认为风险可以接受 —— 记在这里，是因为这是个主动选择，不是没注意到。
 
 ---
 
@@ -451,9 +453,11 @@ node scripts/build-icons.mjs
 
 ---
 
-## 开源致敬
+## 开源致敬与依赖
 
 这个站点能长期保持"看起来简单、改起来放心"，靠的是下面这些项目。先说清一个事实：线上站点**不含任何第三方代码**，所以真正值得致谢的只有开发期工具、Web 标准与托管平台——下面这些。
+
+许可范围上，本项目并非"整体一个许可证"：**代码用 MIT，博客文章与站点文案用 CC BY-NC-SA 4.0，参考借鉴的第三方思路不属于任何一方**。完整划分见 [`NOTICE`](NOTICE)。
 
 **[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft（当前 ^1.63.0）
 
@@ -473,6 +477,19 @@ node scripts/build-icons.mjs
 
 v7 新增效果的技术来源同样全部来自 Web 标准，另有一处交互范式值得点名：跟手水波纹受 **Material Design 的 Ripple** 启发——把"在指针落点涌开"做成标准点按反馈；`@property`（CSS Houdini Properties and Values API）与 `scroll()` 滚动时间线（Scroll-driven Animations 规范）由 W3C CSS 工作组标准化、Chrome 团队的 Bramus Van Damme 等人持续推广，本站直接复用其原生实现。
 
+**参考借鉴案例**
+
+上面是"用到的工具"，这里是"借鉴的思路"——两者性质不同：工具是拿来就跑，思路是读懂之后自己重写。列在这里是为了说清来源，**本项目没有复制其中任何一方的源代码**。
+
+| 来源 | 借鉴的是什么 | 本项目的实现 |
+|------|--------------|--------------|
+| **W3C CSS 规范** | View Transitions、滚动驱动动画、容器查询、`:has()`、`color-mix()`、`@starting-style`、`@property`、`text-wrap: balance` | 全部直接使用浏览器原生实现。规范本身不受版权保护，任何人都可自由实现 |
+| **Material Design Ripple** | "在指针落点涌开"这一水波纹点按反馈范式 | `.ripple__dot` 由本项目自行编写（`main.js` + `style.css`），且在 CSP 约束下用 `style.setProperty` 写坐标，不照搬任何官方实现 |
+| **Andy Bell · piccalil.li** | "原生 CSS 优先、reduced-motion 优先、只用 `transform`/`opacity` 防布局抖动"的实践方法论 | 动效系统的设计理念与之高度一致，代码为自行编写。本站的 CSS reset 是朴素的三行 `*{box-sizing:border-box;margin:0;padding:0}`，与任何第三方 reset 骨架都不同 |
+| **Bramus Van Damme** | 对 `@property`（CSS Houdini）与 `scroll()` 滚动时间线的推广与讲解 | 直接复用其推广的 Web 标准原生实现，未引入其代码 |
+
+> **为什么"思路借鉴"不需要许可证动作**：版权只保护「表达」（具体的代码文字），不保护「思想、方法、系统」。读懂一个思路后用自己的代码重写，成果归自己所有。上表中每一条都经过逐文件核查，确认本项目不存在对第三方源码的复制。
+
 **刻意的"不引入"**
 
 也记一下调研后**没有**采用的东西，免得以后重复一遍调研：
@@ -486,4 +503,19 @@ v7 新增效果的技术来源同样全部来自 Web 标准，另有一处交互
 
 ## 许可证
 
-[MIT](LICENSE) © 2026 xiaoyu-hue
+本项目**按部分分别许可**，不是"整体一个许可证"：
+
+| 部分 | 许可证 | 说明 |
+|------|--------|------|
+| **源代码**（`build.py`、`sw.js`、`assets/`、`scripts/`、`tests/`、模板与配置） | [**MIT**](LICENSE) | 可自由使用、修改、商用，只需保留版权声明 |
+| **博客文章正文、站点文案、原创插图** | [**CC BY-NC-SA 4.0**](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.zh-Hans) | 可转载，但须署名、禁止商用、衍生作品须同许可 |
+| **参考借鉴的第三方思路** | 不适用 | 属思想借鉴，见「[参考借鉴案例](#参考借鉴案例)」 |
+
+**为什么分开**：MIT 是为软件设计的协议，它默认允许他人自由商用、且不要求署名——这对代码是合适的，对个人撰写的文章则不符合作者意愿。分开许可后，代码保持最大可复用性，文章则保留署名与禁止商用的保护。
+
+完整划分、第三方依赖的许可证遵守情况、商标说明与免责声明，见 [`NOTICE`](NOTICE)。
+
+```
+代码        MIT              © 2026 xiaoyu-hue
+文章/文案   CC BY-NC-SA 4.0  © 2026 xiaoyu-hue
+```

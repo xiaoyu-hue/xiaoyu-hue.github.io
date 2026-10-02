@@ -95,20 +95,22 @@ problems.append(...)
 
 关键在用了**显式白名单**（只放行 `application/ld+json`、`application/json`），而不是"凡有 `type` 属性就放行"。这么写是为了避免将来某个新 type 被静默放过。
 
-规则改完做了 10 条用例的负向测试，确认没把真漏洞一起放过：
+规则改完在 `tests/test_checker.py` 里补了 **10 条负向测试**（`test_data_block_*` 系列），确认没把真漏洞一起放过：
 
-| 用例 | 判定 |
-|---|---|
-| `<script>alert(1)</script>` | 拦截 |
-| `<script type="text/javascript">` | 拦截 |
-| `<script type="module">` | 拦截 |
-| 带 nonce 的 classic 脚本 | 拦截 |
-| `<script type="application/x-weird">` | 拦截 |
-| 单引号 `type='application/ld+json'` | 拦截（偏严，宁可让人确认一次） |
-| 大小写混淆 `TYPE="APPLICATION/LD+JSON"` | 拦截（同上） |
-| `<script type="application/ld+json">` | 放行 |
-| `<script type="application/json">` | 放行 |
-| `<script src="./x.js">` | 放行 |
+| 用例 | 判定 | 对应测试 |
+|---|---|---|
+| `<script>alert(1)</script>` | 拦截 | `test_data_block_classic_script_is_blocked` |
+| `<script type="text/javascript">` | 拦截 | `test_data_block_text_javascript_is_blocked` |
+| `<script type="module">` | 拦截 | `test_data_block_module_is_blocked` |
+| 带 nonce 的 classic 脚本 | 拦截 | `test_data_block_nonce_classic_is_blocked` |
+| `<script type="application/x-weird">` | 拦截 | `test_data_block_unknown_type_is_blocked` |
+| 单引号 `type='application/ld+json'` | 拦截（偏严，宁可让人确认一次） | `test_data_block_single_quoted_type_is_blocked` |
+| 大小写混淆 `TYPE="APPLICATION/LD+JSON"` | 拦截（同上） | `test_data_block_case_confused_type_is_blocked` |
+| `<script type="application/ld+json">` | 放行 | `test_data_block_ld_json_is_allowed` |
+| `<script type="application/json">` | 放行 | `test_data_block_json_is_allowed` |
+| `<script src="./x.js">` | 放行 | `test_data_block_external_src_is_allowed` |
+
+这 10 条测试已用**破坏性验证**确认是真护栏：把白名单改成"凡有 `type` 属性就放行"后，其中 3 条（未知 type、单引号、大小写混淆）立即变红，证明它们确实在守护边界，而不是恒真。
 
 另外在 `tests/test_pages.py` 里加了一条**正向契约**：每个页面都必须有 JSON-LD、必须是合法 JSON、必须声明正确的 `@type`、里面的 URL 必须是绝对地址。理由是 JSON-LD 写错时肉眼完全看不出来，只有搜索引擎静默失效。
 

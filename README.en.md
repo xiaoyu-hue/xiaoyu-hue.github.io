@@ -106,11 +106,12 @@ xiaoyu-hue.github.io/
 
 ## Settings
 
-The gear icon at the right of the nav bar opens a settings panel with three things:
+The gear icon at the right of the nav bar opens a settings panel with four things:
 
 | Item | What it does |
 |------|--------------|
 | **Appearance** | Three-way switch: follow system / dark / light. An explicit choice overrides the system setting and survives reload |
+| **Motion** | Turns the micro-motion system on or off. When off, all entrance and decorative animations are zeroed while content stays visible |
 | **Reading log** | Articles you open are recorded automatically; the panel links back to them |
 | **Data** | Export / import JSON (to move between devices), and a reset button (requires a second click) |
 
@@ -322,10 +323,11 @@ Everything below is only needed when you want to change code and verify it:
 
 | Package | Version | License | Used for |
 |---------|---------|---------|----------|
-| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | Real-browser layer: serves the site locally and drives real Chromium across 92 cases |
+| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | Real-browser layer: serves the site locally and drives real Chromium across 220 cases (including cross-browser fallbacks) |
 | `playwright` / `playwright-core` | ^1.63.0 | Apache-2.0 | Underlying the above; not installed separately |
 | [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | ^4.13.0 | MPL-2.0 | Accessibility baseline: injects axe and runs WCAG rules |
 | `axe-core` | ^4.13.0 | MPL-2.0 | Rules engine behind the above; not installed separately |
+| [`@lhci/cli`](https://github.com/GoogleChrome/lighthouse-ci) | ^0.15.1 | Apache-2.0 | Lighthouse CI: performance / accessibility / best-practice baselines in CI |
 
 MPL-2.0 is file-level copyleft, but it only bites if you modify and redistribute that project's own source. Here everything is a build-time tool: it never reaches the site and is never served to visitors, so it does not affect this repository's MIT license.
 
@@ -335,16 +337,16 @@ MPL-2.0 is file-level copyleft, but it only bites if you modify and redistribute
 |-------|-------|
 | Contract (84 cases) | `python3` — standard library only, no pip packages |
 | Logic (63 cases) | Node 18+ |
-| Real browser (92 cases) | Node 18+; Chromium is downloaded by Playwright (not committed) |
+| Real browser (220 cases) | Node 18+; Chromium is downloaded by Playwright (not committed) |
 | CSP/JSON-LD check | Python 3 + `playwright` — **optional**. You can build and deploy the site without it; you just cannot reproduce the conclusion in [`docs/csp-jsonld.md`](docs/csp-jsonld.md) yourself |
 
 CI runs on Node 20.
 
 **GitHub Actions used**
 
-`actions/checkout@v4`, `actions/setup-node@v4`, `actions/cache@v4`, `actions/upload-artifact@v4`.
+`actions/checkout@v4`, `actions/setup-node@v7` (`update-snapshots.yml` still uses `@v4`), `actions/setup-python@v7`, `actions/cache@v4`, `actions/upload-artifact@v7`, `github/codeql-action/init@v4`, `github/codeql-action/analyze@v4`, `gitleaks/gitleaks-action@v3`.
 
-These are referenced by **version tag**, not pinned to a commit SHA. Tags are movable in principle, but this repository holds **no secrets** and both workflows narrow `permissions` to `contents: read`. That trade-off was looked at and accepted — noted here because it is a deliberate choice, not an oversight.
+These are referenced by **version tag**, not pinned to a commit SHA. Tags are movable in principle. The repository has 6 workflows, 5 of which narrow `permissions` to `contents: read`; the one exception is `update-snapshots.yml` (a manually triggered visual-baseline rebuild), which needs `contents: write` to commit the new baseline back to `main` — required for that feature, and triggered only by the maintainer by hand. This repository holds **no secrets**. That trade-off was looked at and accepted — noted here because it is a deliberate choice, not an oversight.
 
 ---
 
@@ -392,9 +394,11 @@ No programming background; all code was produced with AI agent assistance. The c
 
 ---
 
-## Credits
+## Credits and dependencies
 
 This site stays simple to look at and safe to change largely because of these projects. One fact up front: the live site contains **no third-party code at all**, so what is genuinely worth crediting is only build-time tooling, web standards and hosting — listed below.
+
+On licensing, this project is not covered by a single license end to end: **code is MIT, blog posts and site copy are CC BY-NC-SA 4.0, and borrowed third-party ideas belong to neither**. The full breakdown is in [`NOTICE`](NOTICE).
 
 **[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft (currently ^1.63.0)
 
@@ -414,6 +418,19 @@ The v6 motion upgrade (View Transitions, scroll-driven animations, container que
 
 The v7 effects draw on the same web standards, plus one interaction pattern worth naming: the pointer-following ripple is inspired by **Material Design's Ripple** — blooming at the pointer location as standard tap feedback. `@property` (CSS Houdini Properties and Values API) and the `scroll()` timeline (Scroll-driven Animations spec) are standardized by the W3C CSS Working Group and actively championed by Chrome's Bramus Van Damme; this site reuses their native implementations directly.
 
+**Borrowed ideas (cases)**
+
+Above is what is *used*; here is what is *borrowed* — a different thing entirely. Tools you run; ideas you read and then rewrite yourself. This list is here to state provenance: **this project copies no source code from any of them.**
+
+| Source | What was borrowed | How this project implements it |
+|--------|-------------------|--------------------------------|
+| **W3C CSS specs** | View Transitions, scroll-driven animations, container queries, `:has()`, `color-mix()`, `@starting-style`, `@property`, `text-wrap: balance` | Uses the native browser implementations directly. Specs themselves are not copyrightable; anyone may implement them freely |
+| **Material Design Ripple** | The "bloom at the pointer location" tap-feedback pattern | `.ripple__dot` is written here (`main.js` + `style.css`) and works around CSP by positioning via `style.setProperty` — no official implementation is copied |
+| **Andy Bell · piccalil.li** | The "native CSS first, reduced-motion first, only `transform`/`opacity` to avoid layout jank" methodology | The motion system's philosophy aligns with it; all code is written here. This site's CSS reset is a plain three-line `*{box-sizing:border-box;margin:0;padding:0}` — unlike any third-party reset skeleton |
+| **Bramus Van Damme** | Championing `@property` (CSS Houdini) and the `scroll()` timeline | Reuses the native web-standard implementations he champions; none of his code is included |
+
+> **Why borrowed ideas need no license action**: copyright protects *expression* (the specific code text), not *ideas, methods or systems*. Reading an idea and rewriting it in your own code means the result is yours. Every row above was verified file by file — no third-party source was copied into this project.
+
 **Deliberately not used**
 
 Recording what research ruled out, so nobody repeats it:
@@ -427,4 +444,19 @@ Recording what research ruled out, so nobody repeats it:
 
 ## License
 
-[MIT](LICENSE) © 2026 xiaoyu-hue
+This project is **licensed in parts**, not under a single license throughout:
+
+| Part | License | Notes |
+|------|---------|-------|
+| **Source code** (`build.py`, `sw.js`, `assets/`, `scripts/`, `tests/`, templates and config) | [**MIT**](LICENSE) | Free to use, modify and use commercially; just keep the copyright notice |
+| **Blog posts, site copy, original illustrations** | [**CC BY-NC-SA 4.0**](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.en) | Redistribution allowed with attribution; no commercial use; derivatives under the same license |
+| **Borrowed third-party ideas** | N/A | Ideas, not code — see [Borrowed ideas](#borrowed-ideas-cases) |
+
+**Why split**: MIT is designed for software — it allows commercial use and does not require attribution, which suits code but not personal writing. Splitting keeps the code maximally reusable while preserving attribution and a non-commercial restriction for the writing.
+
+The full breakdown, third-party dependency compliance, trademark notes and disclaimer are in [`NOTICE`](NOTICE).
+
+```
+Code          MIT              © 2026 xiaoyu-hue
+Writing/copy  CC BY-NC-SA 4.0  © 2026 xiaoyu-hue
+```
