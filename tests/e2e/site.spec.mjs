@@ -446,6 +446,77 @@ test.describe('设置面板', () => {
     await expect(panel).toBeHidden();
   });
 
+  test('面板声明 aria-modal 后，Tab 焦点确实被锁在面板内', async ({ page }) => {
+    // 回归测试：面板有 role="dialog" aria-modal="true"，
+    // 但仅有属性不会锁住焦点 —— 实测按 Tab 到第 10 下焦点就逃到面板外，
+    // 用户会在不知情中操作到背后的页面。这条用例盯住 focus trap。
+    await page.goto('/');
+    await page.locator('.prefs-toggle').click();
+    await expect(page.locator('.prefs-panel')).toBeVisible();
+
+    // 连按 20 次 Tab，每一次焦点都必须仍在面板内
+    for (let i = 0; i < 20; i++) {
+      await page.keyboard.press('Tab');
+      const inside = await page.evaluate(() => {
+        const panel = document.querySelector('.prefs-panel');
+        return panel.contains(document.activeElement);
+      });
+      expect(inside, `第 ${i + 1} 次 Tab 后焦点逃出了面板`).toBe(true);
+    }
+
+    // Shift+Tab 反向同样不应逃出
+    for (let i = 0; i < 10; i++) {
+      await page.keyboard.press('Shift+Tab');
+      const inside = await page.evaluate(() => {
+        const panel = document.querySelector('.prefs-panel');
+        return panel.contains(document.activeElement);
+      });
+      expect(inside, `第 ${i + 1} 次 Shift+Tab 后焦点逃出了面板`).toBe(true);
+    }
+  });
+
+  test('阅读记录很多时，面板可滚动且底部按钮可达', async ({ page }) => {
+    // 回归测试：面板绝对定位、不随页面滚动，20 条阅读记录时高 1355px、
+    // 视口仅 900px，底部「数据」区按钮永远点不到。
+    // 修复后面板有 max-height + overflow-y:auto。
+    await page.setViewportSize({ width: 1280, height: 600 });
+    await page.goto('/');
+
+    // 预置 25 条阅读记录，撑高面板内容
+    await page.evaluate(() => {
+      const reading = {};
+      for (let i = 1; i <= 25; i++) {
+        reading[`post-${i}`] = { at: '2026-01-01T00:00:00.000Z' };
+      }
+      localStorage.setItem('xiaoyu-hue:prefs:v1', JSON.stringify({
+        schema: 1, theme: 'dark', motion: 'on', reading,
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      }));
+    });
+    await page.reload();
+    await page.locator('.prefs-toggle').click();
+
+    const panel = page.locator('.prefs-panel');
+    await expect(panel).toBeVisible();
+
+    // 面板高度不应超过视口
+    const box = await panel.boundingBox();
+    expect(box.height, '面板高度不应超过视口高度').toBeLessThanOrEqual(600);
+
+    // 面板内部应当可以滚动（scrollHeight 大于 clientHeight）
+    const scrollable = await page.evaluate(() => {
+      const p = document.querySelector('.prefs-panel');
+      return { overflowY: getComputedStyle(p).overflowY, canScroll: p.scrollHeight > p.clientHeight };
+    });
+    expect(scrollable.overflowY).toBe('auto');
+    expect(scrollable.canScroll, '内容超出时面板应可滚动').toBe(true);
+
+    // 滚到底后，最底部的清空按钮应当可点击
+    const clearBtn = page.locator('.prefs-reset');
+    await clearBtn.scrollIntoViewIfNeeded();
+    await expect(clearBtn).toBeInViewport();
+  });
+
   test('导出后的面板不会因程序触发的下载点击而关闭', async ({ page }) => {
     // 回归测试：导出时插入的 <a> 的 click 会冒泡到 document，
     // 曾被「点击外部关闭」逻辑误判，导致用户看不到导出提示。

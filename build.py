@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """站点构建脚本 —— 零依赖，只用 Python 标准库。
 
 为什么存在：
@@ -89,7 +88,7 @@ class Layout:
 
         self.head = text[:i_nav]              # <!DOCTYPE> ... </head><body>装饰 div、跳转链接、空行
         self.nav = text[i_nav:i_main]         # <nav>...</nav> + 空行
-        # main 的开闭标签：block_open 含 main 起始标签，block_close 含 </main> 与后续空行
+        # main 的开闭标签：main_open 是 main 起始标签，main_close 是 </main> 与后续空行
         self.main_open = self.A_MAIN_OPEN
         self.main_close = self.A_MAIN_CLOSE
         self.footer_open = text[i_mclose + len(self.A_MAIN_CLOSE):i_foot + len(self.A_FOOTER_OPEN)]
@@ -200,9 +199,6 @@ def build(site, pages):
     for rel_path, meta in pages.items():
         bodies[rel_path] = read(os.path.join(PAGES_DIR, meta["body"]))
 
-    global BASE_URL_HOLDER
-    BASE_URL_HOLDER = site["base_url"]
-
     for rel_path, meta in pages.items():
         body_file = os.path.join(PAGES_DIR, meta["body"])
         content = read(body_file)
@@ -270,11 +266,6 @@ def render_headers(site):
 # 在此之前它们全部缺失——内容写得再好，通道是断的。
 
 
-def strip_tags(s):
-    """去掉 HTML 标签并压缩空白，用于给纯文本字段（JSON-LD、RSS 描述）取值。"""
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", s)).strip()
-
-
 def extract_body_date(body):
     """从正文第一处 <div class="date"> 里取出 YYYY-MM-DD。
 
@@ -297,15 +288,19 @@ def rfc822_date(iso_date):
     return datetime.strptime(iso_date, "%Y-%m-%d").strftime("%a, %d %b %Y 00:00:00 GMT")
 
 
-def absolutize_links(body, url_path):
+def absolutize_links(body, url_path, base_url):
     """把正文里的相对链接换成绝对地址。
 
     只在生成 RSS 时调用，不改动站点本身的 HTML。必要性在于：RSS 阅读器拿到的是
     一段脱离了页面上下文的 HTML，'post-8.html' 这种相对路径在它那里指向的是
     阅读器自己的域名，会全部变成死链。
+
+    base_url 显式传入而不是读全局：此前它依赖模块级 BASE_URL_HOLDER，
+    只有当 build() 先跑过才非空；否则静默产出 'None/blog/x.html' 这种
+    坏链接 —— 不报错、不崩溃，坏了也看不见。
     """
     base_dir = url_path.rsplit("/", 1)[0] if "/" in url_path else ""
-    base = ("%s/%s" % (BASE_URL_HOLDER, base_dir)) if base_dir else BASE_URL_HOLDER
+    base = ("%s/%s" % (base_url, base_dir)) if base_dir else base_url
 
     def fix(m):
         href = m.group(1)
@@ -314,9 +309,6 @@ def absolutize_links(body, url_path):
         return 'href="%s/%s"' % (base, href)
 
     return re.sub(r'href="([^"]+)"', fix, body)
-
-
-BASE_URL_HOLDER = None  # 由 build() 在调用前填入主站地址
 
 
 def json_ld_for(rel_path, meta, site):
@@ -352,6 +344,22 @@ def json_ld_for(rel_path, meta, site):
     return [item]
 
 
+def json_ld_script(blob):
+    """把结构化数据序列化成可以安全内联在 HTML 里的 <script> 内容。
+
+    为什么不能直接用 json.dumps：JSON 允许字符串里出现 "<" 与 "/"，
+    json.dumps 也不会转义它们，所以一个标题里只要含 "</script>"，
+    序列化结果就会**提前闭合脚本块**，后面的内容被浏览器当成真正的
+    HTML 解析 —— 攻击者可以在标题里夹带 <script> 执行任意脚本。
+
+    标准做法是把 "<" 转义成 JSON 的 \\u003c：值仍然逐字节相等
+    （json.loads 后与原文完全一致），但源码里再也出现不了 "</script>"。
+    只转义 "<" 就够：脚本块只能被 "</script" 结束，而它必然含 "<"。
+    """
+    return json.dumps(blob, ensure_ascii=False,
+                      separators=(",", ":")).replace("<", "\\u003c")
+
+
 def render_head_extra(site, rel_path, meta):
     """塞进 </head> 之前的那几行：JSON-LD 脚本 + RSS 自动发现链接。"""
     out = []
@@ -362,7 +370,7 @@ def render_head_extra(site, rel_path, meta):
                       site["base_url"]))
     for blob in json_ld_for(rel_path, meta, site):
         out.append('<script type="application/ld+json">%s</script>'
-                   % json.dumps(blob, ensure_ascii=False, separators=(",", ":")))
+                   % json_ld_script(blob))
     return "\n".join(out)
 
 
@@ -418,7 +426,7 @@ def render_feed(site, pages, bodies):
     # 只收录文章页；首页和列表不是"条目"
     posts = [(r, m) for r, m in pages.items() if m.get("date")]
     for rel_path, meta in sorted(posts, key=lambda kv: kv[1]["date"], reverse=True):
-        body = absolutize_links(bodies[rel_path], meta["url_path"])
+        body = absolutize_links(bodies[rel_path], meta["url_path"], site["base_url"])
         out.append("    <item>")
         out.append("      <title>%s</title>" % xml_escape(meta["title"]))
         out.append("      <link>%s</link>" % xml_escape(
@@ -453,7 +461,10 @@ def render_404(layout, site, pages):
         "csp": site["csp_meta"],
         # 404 页刻意不放 JSON-LD：它不是有效内容，给它结构化数据等于邀请搜索引擎
         # 把它收录进去。留一行注释说明是有意为之，免得以后被当成遗漏。
-        "head_extra": "<!-- 404：不输出结构化数据，此页不应被索引 -->",
+        # noindex 是必须的：托管平台会在任意未知路径返回这一页，
+        # 不加的话搜索引擎会把每个失效 URL 都当成一个可索引页面收进去。
+        "head_extra": ('<meta name="robots" content="noindex">\n'
+                       '<!-- 404：不输出结构化数据，此页不应被索引 -->'),
     })
     body = (
         '<section><div class="wrap">\n'

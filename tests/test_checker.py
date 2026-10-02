@@ -220,12 +220,114 @@ class TestCheckerCatchesProblems(unittest.TestCase):
         self.assertEqual(proc.returncode, 1)
         self.assertIn("[事件属性]", proc.stdout)
 
+    # ---------- data block 白名单的负向测试 ----------
+    # docs/csp-jsonld.md 承诺「10 条用例的负向测试」，覆盖 data block 白名单
+    # 放行的每一种边界。下面按该文档的表格逐条落地 —— 文档写了什么，
+    # 这里就必须真的测什么，否则文档就是在描述一个不存在的测试套件。
+
+    def _swap_script(self, new_tag, with_other=True):
+        """把样本页里的合法外链脚本换成给定标签，其余保持不变。
+
+        with_other=True 时一并给出 other.html —— CLEAN_PAGE 里有指向它的链接，
+        否则「应当通过」的用例会被无关的 [死链] 干扰，
+        掩盖真正想验证的结论（data block 有没有被放行）。
+        """
+        page = CLEAN_PAGE.replace(
+            '<script src="assets/main.js"></script>', new_tag)
+        pages = {"index.html": page}
+        if with_other:
+            pages["other.html"] = OTHER_PAGE
+        return pages
+
+    def test_data_block_classic_script_is_blocked(self):
+        """1. 无 type 的 classic 内联脚本 —— 必须拦截。"""
+        proc = self.run_case(self._swap_script('<script>alert(1)</script>'))
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("[内联脚本]", proc.stdout)
+
+    def test_data_block_text_javascript_is_blocked(self):
+        """2. type="text/javascript" 的内联脚本 —— 仍然可执行，必须拦截。"""
+        proc = self.run_case(self._swap_script('<script type="text/javascript">alert(1)</script>'))
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("[内联脚本]", proc.stdout)
+
+    def test_data_block_module_is_blocked(self):
+        """3. type="module" 的内联脚本 —— 可执行，必须拦截。"""
+        proc = self.run_case(self._swap_script('<script type="module">alert(1)</script>'))
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("[内联脚本]", proc.stdout)
+
+    def test_data_block_nonce_classic_is_blocked(self):
+        """4. 带 nonce 的 classic 内联脚本 —— 本站 CSP 不下发 nonce，必须拦截。"""
+        proc = self.run_case(self._swap_script('<script nonce="abc">alert(1)</script>'))
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("[内联脚本]", proc.stdout)
+
+    def test_data_block_unknown_type_is_blocked(self):
+        """5. 自造的未知 type —— 不在白名单里，宁可让人确认一次，必须拦截。"""
+        proc = self.run_case(self._swap_script('<script type="application/x-weird">x</script>'))
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("[内联脚本]", proc.stdout)
+
+    def test_data_block_single_quoted_type_is_blocked(self):
+        """6. 单引号写的 ld+json —— 偏严拦截（白名单只认双引号）。
+
+        这是刻意的：漏报（放过可执行脚本）的代价远高于误报
+        （让人确认一次），所以这里选择"认不出就拦"。
+        """
+        proc = self.run_case(self._swap_script("<script type='application/ld+json'>{}</script>"))
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("[内联脚本]", proc.stdout)
+
+    def test_data_block_case_confused_type_is_blocked(self):
+        """7. 大小写混淆的 type —— 同样偏严拦截（MIME 匹配区分大小写）。"""
+        proc = self.run_case(self._swap_script('<script TYPE="APPLICATION/LD+JSON">{}</script>'))
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("[内联脚本]", proc.stdout)
+
+    def test_data_block_ld_json_is_allowed(self):
+        """8. type="application/ld+json" —— 不可执行的 data block，必须放行。"""
+        proc = self.run_case(self._swap_script(
+            '<script type="application/ld+json">{"@type":"WebSite"}</script>'))
+        self.assertEqual(proc.returncode, 0, "JSON-LD data block 不应被当成内联脚本:\n" + proc.stdout)
+
+    def test_data_block_json_is_allowed(self):
+        """9. type="application/json" —— 同样是 data block，必须放行。"""
+        proc = self.run_case(self._swap_script(
+            '<script type="application/json">{"a":1}</script>'))
+        self.assertEqual(proc.returncode, 0, "application/json data block 不应被拦:\n" + proc.stdout)
+
+    def test_data_block_external_src_is_allowed(self):
+        """10. 带 src 的外链脚本 —— 'self' 下合法，必须放行。
+
+        指向样本站点真实存在的 assets/main.js，避免撞上 [死链] 而掩盖结论。
+        """
+        proc = self.run_case(self._swap_script('<script src="assets/main.js"></script>'))
+        self.assertEqual(proc.returncode, 0, "同源外链脚本不应被拦:\n" + proc.stdout)
+
     def test_detects_ignored_csp_directive(self):
         """frame-ancestors 通过 <meta> 下发会被浏览器忽略,检查器必须拦住它。"""
         pages = {"index.html": CLEAN_PAGE.replace(CSP, CSP + "; frame-ancestors 'none'")}
         proc = self.run_case(pages)
         self.assertEqual(proc.returncode, 1)
         self.assertIn("[无效指令]", proc.stdout)
+
+    def test_detects_jsonld_script_escape(self):
+        """JSON-LD 里未转义的 </script> 会提前闭合脚本块,必须拦住。
+
+        这比"内联脚本被 CSP 拦下"更隐蔽:CSP 拦不住标签闭合之后的 HTML 注入。
+        """
+        evil = '<script type="application/ld+json">{"name":"x</script><script>alert(1)</script>"}</script>'
+        proc = self.run_case(self._swap_script(evil))
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("[JSON-LD 逃逸]", proc.stdout)
+
+    def test_accepts_properly_escaped_jsonld(self):
+        """已正确转义(< → \\u003c)的 JSON-LD 不应被误报。"""
+        good = '<script type="application/ld+json">{"name":"x\\u003c/script>\\u003cscript>alert(1)"}</script>'
+        proc = self.run_case(self._swap_script(good))
+        self.assertEqual(proc.returncode, 0,
+                         "正常转义的 JSON-LD 被误报为逃逸:\n" + proc.stdout)
 
 
 class TestCheckerCatchesPwaProblems(unittest.TestCase):

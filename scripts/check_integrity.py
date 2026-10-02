@@ -144,6 +144,34 @@ for f in html_files:
     if re.search(r'\sstyle\s*=\s*"', text):
         problems.append(f"[内联样式] {rel(f)} 含 style= 内联属性，会被 CSP 拦截（请改用 class）")
 
+    # data block 内部的 </script> 逃逸：
+    # <script type="application/ld+json"> 的内容若是未经转义的 JSON，
+    # 一个含 "</script>" 的字段（标题、描述…）就能提前闭合脚本块，
+    # 其后的内容被当成 HTML 解析 —— 这是比"内联脚本被 CSP 拦下"
+    # 更隐蔽的一条路：CSP 拦不住已经闭合标签之后的 HTML 注入。
+    #
+    # 判据：build.py 的 json_ld_script() 会把所有 "<" 转义成 \u003c，
+    # 合法的 data block 内容必然是**完整合法的 JSON**。
+    # 一旦字段里含未转义的 "</script>"，脚本块被提前闭合，
+    # 取到第一个 </script> 之前的内容就是被截断的半个 JSON —— 解析必然失败。
+    #
+    # 为什么不用 r'...>(.*?)</script>' 抓内容再判断含不含 "<"：
+    # 非贪婪匹配在第一个 </script> 就停下，逃逸串正好是那个分隔符本身，
+    # 永远落不进捕获组，检查会恒假（本项目实测踩过这个坑）。
+    ld_open = re.compile(
+        r'<script(?=[^>]*\stype\s*=\s*"(?:%s)")[^>]*>' % "|".join(
+            map(re.escape, DATA_BLOCK_TYPES)))
+    for m in ld_open.finditer(text):
+        rest = text[m.end():]
+        inner = rest.split("</script>", 1)[0]
+        try:
+            json.loads(inner)
+        except ValueError:
+            problems.append(
+                f"[JSON-LD 逃逸] {rel(f)} 的 data block 内容不是完整合法 JSON，"
+                f"疑似字段含未转义的 '</script>' 提前闭合了脚本块"
+                f"（应把 '<' 转义为 \\u003c）")
+
 # ---------- 5. PWA 资产完整性 ----------
 # 这几项的故障表现都很隐蔽：manifest 写错时浏览器仍然"装得上"，
 # 只是图标 404 或列表里显示成默认图标，控制台不报错。

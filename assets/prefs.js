@@ -32,6 +32,34 @@
     }
   }
 
+  // 阅读记录的键固定是 'post-<数字>'（文章 id）。
+  // 这条白名单不只是"防脏数据"：渲染时会把 id 直接拼进 a.href，
+  // 放任任意键进来等于让 localStorage/导入文件决定链接指向哪里。
+  var POST_ID_RE = /^post-\d+$/;
+
+  /**
+   * 把任意外来值收敛成合法的阅读记录：{ "post-1": { at: "ISO 时间" } }。
+   *
+   * 只校验"是个对象"是不够的 —— null 也是对象，但渲染时
+   * state.reading[id].at 会直接抛 TypeError，整个面板渲染中断。
+   * 这里逐项校验键名与 at 字段，非法的项直接丢弃（而不是报错），
+   * 因为阅读记录是"锦上添花"的数据，坏一条不该毁掉整份设置。
+   */
+  function sanitizeReading(value) {
+    var out = {};
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return out;
+    Object.keys(value).forEach(function (id) {
+      if (!POST_ID_RE.test(id)) return;              // 键名不符白名单，丢弃
+      var entry = value[id];
+      if (!entry || typeof entry !== 'object') return;  // null / 字符串 / 数组，丢弃
+      var at = entry.at;
+      // at 必须是能解析成有效日期的字符串；否则视为缺失（渲染时显示空）
+      if (typeof at !== 'string' || isNaN(Date.parse(at))) return;
+      out[id] = { at: at };
+    });
+    return out;
+  }
+
   function write(data) {
     try {
       window.localStorage.setItem(KEY, JSON.stringify(data));
@@ -51,6 +79,11 @@
     };
   }
 
+  // 读入时若发现阅读记录里有被丢弃的脏项，标记一下，
+  // 稍后回写一次，把存储里的脏数据真正清掉（否则它会一直躺着，
+  // 并在下次导出时被原样带走）。用标志位而不是在这里直接写：
+  // save() 在下面才定义，且初始化期写存储不如等启动流程走完再写更安全。
+  var needsReadingRepair = false;
   var state = (function () {
     var d = defaults();
     var saved = read();
@@ -60,7 +93,13 @@
     // 老数据没有 motion 字段（PWA 版本升级上来的用户），
     // 缺省保持 'on' —— 不能因为字段缺失就静默关掉他们的动效
     if (MOTIONS.indexOf(saved.motion) >= 0) d.motion = saved.motion;
-    if (saved.reading && typeof saved.reading === 'object') d.reading = saved.reading;
+    if (saved.reading) {
+      d.reading = sanitizeReading(saved.reading);
+      // 只要读写前后条目数不同，就说明有脏项被丢弃，需要回写修复
+      if (Object.keys(d.reading).length !== Object.keys(saved.reading).length) {
+        needsReadingRepair = true;
+      }
+    }
     if (typeof saved.updatedAt === 'string') d.updatedAt = saved.updatedAt;
     return d;
   })();
@@ -69,6 +108,11 @@
     state.updatedAt = new Date().toISOString();
     return write(state);
   }
+
+  // 把初始化期发现的脏阅读记录回写掉，做一次自愈。
+  // 放在这里而不是 IIFE 末尾：save() 此刻已定义，且启动阶段的 DOM 操作
+  // 都已经跑完，不会和面板渲染抢时序。
+  if (needsReadingRepair) save();
 
   // ---------- 主题 ----------
   function effectiveTheme() {
@@ -188,7 +232,10 @@
       a.href = prefix + id + '.html';
       a.textContent = id;
       var time = document.createElement('time');
-      var at = state.reading[id].at || '';
+      // 双保险：正常路径下 reading 已经过 sanitizeReading，
+      // 但这里再兜一次 —— 渲染中断会让整个面板不可用，代价不对称。
+      var entry = state.reading[id];
+      var at = (entry && typeof entry.at === 'string') ? entry.at : '';
       time.textContent = at ? at.slice(0, 10) : '';
       li.appendChild(a);
       li.appendChild(time);
@@ -278,7 +325,7 @@
     }
     state.theme = d.theme;
     if (MOTIONS.indexOf(d.motion) >= 0) state.motion = d.motion;
-    state.reading = (d.reading && typeof d.reading === 'object') ? d.reading : {};
+    state.reading = sanitizeReading(d.reading);
     applyTheme();
     applyMotion();
     save();
@@ -329,9 +376,45 @@
       if (isOpen()) { close(); } else { open(); }
     });
 
-    // Esc 关闭
+    // Esc 关闭 + Tab 循环（focus trap）
+    //
+    // 面板声明了 role="dialog" aria-modal="true"，这等于向读屏软件承诺
+    // "焦点只在面板内"。但仅加属性不会真的锁住焦点 —— 实测按 Tab 到第 10 下
+    // 焦点就跑到面板外的页面元素上了，用户会在不知情中操作到背后的页面。
+    // 这里手动把 Tab 的首尾接起来，让焦点在面板内循环。
+    var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), ' +
+                    'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    function focusables() {
+      var list = panel.querySelectorAll(FOCUSABLE);
+      // 只保留真正可见的（含 offsetParent 判定），避免把隐藏元素算进循环
+      return Array.prototype.filter.call(list, function (el) {
+        return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+      });
+    }
+
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && isOpen()) close();
+      if (!isOpen()) return;
+      if (e.key === 'Escape') { close(); return; }
+      if (e.key !== 'Tab') return;
+      var items = focusables();
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      var active = document.activeElement;
+      // 焦点在面板外（或已逃逸）时，下一次 Tab 直接拉回面板首/尾
+      if (!panel.contains(active)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+        return;
+      }
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     });
 
     // 点击面板外部关闭

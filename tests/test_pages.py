@@ -297,6 +297,43 @@ class TestBodyContract(unittest.TestCase):
                 self.assertEqual(brand.attrs.get("href"),
                                  "index.html" if page == "index.html" else "../index.html")
 
+    def test_aria_current_marks_current_section(self):
+        """博客区页面必须给「博客」导航项加 aria-current="page"，首页不加。
+
+        这条属性此前是零测试覆盖：把它从模板里删掉，全部测试仍然通过
+        （实测确认）。对读屏用户来说，少了它就无法知道"我在哪一节"，
+        而视觉上完全看不出来 —— 正是最该有回归测试的那类问题。
+
+        注意导航里「博客」项的 href 随层级变化（首页是 blog/index.html、
+        博客页是 index.html），所以按链接文字定位，而不是匹配某个固定 href。
+        """
+        for page in PAGES:
+            with self.subTest(page=page):
+                links = parse(page).find(cls="nav-links")
+                self.assertIsNotNone(links, f"{page} 没有 nav-links")
+                blog_link = next((a for a in links.find_all("a")
+                                  if a.text.strip() == "博客"), None)
+                self.assertIsNotNone(blog_link, f"{page} 导航里没有「博客」链接")
+                if page.startswith("blog/"):
+                    self.assertEqual(
+                        blog_link.attrs.get("aria-current"), "page",
+                        f'{page} 在博客区，博客导航项应带 aria-current="page"')
+                else:
+                    self.assertIsNone(
+                        blog_link.attrs.get("aria-current"),
+                        f"{page} 不在博客区，博客导航项不该带 aria-current")
+
+    def test_aria_current_appears_exactly_once_per_page(self):
+        """每页最多只有一处 aria-current —— 多个"当前项"会让读屏用户困惑。"""
+        for page in PAGES:
+            with self.subTest(page=page):
+                doc = parse(page)
+                marked = [n for n in doc.walk()
+                          if n.attrs.get("aria-current") == "page"]
+                self.assertLessEqual(
+                    len(marked), 1,
+                    f'{page} 出现了 {len(marked)} 处 aria-current="page"，至多允许 1 处')
+
     def test_reveal_element_count(self):
         """滚动淡入元素数量写死,防止误删或误加导致动效不一致。"""
         for page, expected in EXPECTED_REVEAL_COUNT.items():
@@ -778,6 +815,83 @@ class TestOfflinePage(unittest.TestCase):
         sign = parse(OFFLINE_PAGE).find(cls="sign")
         self.assertIsNotNone(sign, "offline.html 没有签名")
         self.assertEqual(sign.text, SIGNATURE)
+
+
+class Test404Page(unittest.TestCase):
+    """404 页的专属契约。
+
+    此前 404.html 完全不在测试覆盖里（既不在 PAGES，也没有专属测试类）——
+    改坏它没有任何测试会响。它是被托管平台在所有未知路径上返回的页面，
+    出问题时用户看到的是一张白页，而本地访问任何真实文件都发现不了。
+    """
+
+    PAGE = "404.html"
+
+    def test_exists(self):
+        self.assertTrue(exists(self.PAGE), "仓库应包含 404.html")
+
+    def test_has_csp(self):
+        csp = next(
+            (m for m in parse(self.PAGE).find_all("meta")
+             if (m.attrs.get("http-equiv") or "").lower() == "content-security-policy"),
+            None,
+        )
+        self.assertIsNotNone(csp, "404.html 缺少 meta CSP")
+        expected = headers_csp()
+        self.assertEqual(csp.attrs.get("content"),
+                         expected[: -len("; frame-ancestors 'none'")])
+
+    def test_uses_root_relative_asset_paths(self):
+        """404 会在任意深度被返回，资源路径必须相对站点根，不能是 ../。
+
+        写成 "../assets/..." 时，/blog/x/y 这类深层路径下会解析到错误位置，
+        页面直接失去样式。这是 404 页最容易踩、又最难在本地复现的坑。
+        """
+        text = read(self.PAGE)
+        for ref in re.findall(r'(?:src|href)="([^"]+\.(?:css|js))"', text):
+            self.assertFalse(ref.startswith(".."),
+                             f"404.html 的资源路径 {ref!r} 用了 ../，深层路径下会失效")
+            self.assertFalse(ref.startswith("/"),
+                             f"404.html 的资源路径 {ref!r} 用了绝对路径，"
+                             f"GitHub Pages 子路径部署下会失效")
+
+    def test_canonical_points_to_404(self):
+        """模板里 canonical 是固定行，404 页保留它并指向 /404.html。
+
+        这里锁住它的取值，避免哪天 rel 前缀改动时把 404 的 canonical
+        拼成了别的东西（比如带 ../ 的错误路径）。
+        """
+        canon = [m for m in parse(self.PAGE).find_all("link")
+                 if (m.attrs.get("rel") or "").lower() == "canonical"]
+        self.assertEqual(len(canon), 1, "404.html 应恰好有一个 canonical")
+        self.assertTrue(canon[0].attrs.get("href", "").endswith("/404.html"),
+                        f"404 的 canonical 应指向 /404.html，实际 {canon[0].attrs.get('href')!r}")
+
+    def test_does_not_declare_jsonld(self):
+        """404 不是有效内容，给它结构化数据等于邀请搜索引擎收录。"""
+        self.assertNotIn("application/ld+json", read(self.PAGE),
+                         "404.html 不应包含 JSON-LD")
+
+    def test_gives_way_back(self):
+        """必须给出回到首页与博客的出口，否则用户被卡在死路上。"""
+        hrefs = [a.attrs.get("href", "") for a in parse(self.PAGE).find_all("a")]
+        self.assertIn("index.html", hrefs, "404.html 应给出回首页的链接")
+        self.assertIn("blog/index.html", hrefs, "404.html 应给出回博客的链接")
+
+    def test_carries_noindex(self):
+        """404 必须带 noindex。
+
+        托管平台会在任意未知路径返回这一页，不加 noindex 的话
+        搜索引擎会把每一个失效 URL 都当成可索引页面收进去。
+        """
+        metas = parse(self.PAGE).find_all("meta")
+        robots = next(
+            (m for m in metas if (m.attrs.get("name") or "").lower() == "robots"),
+            None,
+        )
+        self.assertIsNotNone(robots, "404.html 缺少 meta robots")
+        self.assertIn("noindex", (robots.attrs.get("content") or "").lower(),
+                      "404.html 的 robots 应含 noindex")
 
 
 if __name__ == "__main__":

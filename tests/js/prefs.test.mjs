@@ -277,3 +277,67 @@ test('面板渲染时把当前 motion 标为选中', () => {
   assert.deepEqual(themeActive, ['dark'], '主题选中态应指向 dark');
   assert.deepEqual(motionActive, ['off'], '动效选中态应指向 off');
 });
+
+// ---------- 阅读记录的逐项校验（sanitizeReading）----------
+// 背景：此前只校验 reading "是个对象"，于是 null、字符串、非法键名都能进 state。
+// 渲染时 state.reading[id].at 会对着 null 抛 TypeError，整个设置面板渲染中断；
+// 而 id 会被直接拼进 a.href，放任任意键进来等于让导入文件决定链接指向。
+
+test('reading 里的 null 项被丢弃（此前会抛 TypeError）', () => {
+  const storage = makeStorage({
+    [KEY]: JSON.stringify({
+      schema: 1, theme: 'dark', motion: 'on',
+      reading: { 'post-1': null, 'post-9': { at: '2026-01-01T00:00:00.000Z' } },
+    }),
+  });
+  const { storage: out } = runPrefs({ storage });
+  const obj = JSON.parse(out.getItem(KEY));
+  // 自愈：脏项被丢弃后回写存储，而不是让脏数据一直躺着
+  assert.equal(obj.reading['post-1'], undefined, 'null 项应从存储里被清掉');
+  assert.ok(obj.reading['post-9'], '合法项应保留');
+});
+
+test('reading 里的字符串项被丢弃', () => {
+  const storage = makeStorage({
+    [KEY]: JSON.stringify({
+      schema: 1, theme: 'dark', motion: 'on',
+      reading: { 'post-2': 'evil' },
+    }),
+  });
+  const { storage: out } = runPrefs({ storage, pathname: '/blog/post-5.html' });
+  const obj = JSON.parse(out.getItem(KEY));
+  // 只有新读的 post-5 应存在，脏数据 post-2 应被清掉
+  assert.ok(obj.reading['post-5'], '新记录应写入');
+  assert.equal(obj.reading['post-2'], undefined, '字符串项应被丢弃');
+});
+
+test('不符合 post-<数字> 的键名被丢弃', () => {
+  const storage = makeStorage({
+    [KEY]: JSON.stringify({
+      schema: 1, theme: 'dark', motion: 'on',
+      reading: { '../../evil': { at: '2026-01-01T00:00:00.000Z' } },
+    }),
+  });
+  const { storage: out } = runPrefs({ storage, pathname: '/blog/post-1.html' });
+  const obj = JSON.parse(out.getItem(KEY));
+  assert.equal(obj.reading['../../evil'], undefined, '非法键名应被丢弃');
+  assert.ok(obj.reading['post-1'], '合法记录不受影响');
+});
+
+test('at 字段不是有效日期字符串的项被丢弃', () => {
+  const storage = makeStorage({
+    [KEY]: JSON.stringify({
+      schema: 1, theme: 'dark', motion: 'on',
+      reading: {
+        'post-1': { at: 12345 },          // 数字
+        'post-2': { at: 'not-a-date' },   // 假日期
+        'post-3': { at: '2026-01-01T00:00:00.000Z' },  // 合法
+      },
+    }),
+  });
+  const { storage: out } = runPrefs({ storage });
+  const obj = JSON.parse(out.getItem(KEY));
+  assert.equal(obj.reading['post-1'], undefined, '数字 at 应被丢弃');
+  assert.equal(obj.reading['post-2'], undefined, '假日期 at 应被丢弃');
+  assert.ok(obj.reading['post-3'], '合法项应保留');
+});
