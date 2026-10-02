@@ -50,8 +50,8 @@ jobs:
 
       - name: 提交并推送新基线
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "xiaoyu-hue"
+          git config user.email "xiaoyu-hue@users.noreply.github.com"
           git add tests/e2e/visual.spec.mjs-snapshots
           if git diff --staged --quiet; then
             echo "基线无变化，无需提交"
