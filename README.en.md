@@ -127,6 +127,22 @@ A few trade-offs, also documented in the code comments:
 
 v6 reworked the motion system using **native CSS only** — no animation library, no new runtime dependency, CSP unchanged. It adds View Transitions for smooth same-origin page transitions, scroll-driven reveal animations (pure CSS, with automatic fallback to the existing IntersectionObserver path), container queries + `:has()` for container-aware cards, `color-mix()`-derived colors, and `text-wrap: balance`. Everything plugs into the existing `prefers-reduced-motion` / `data-motion=off` degradation network.
 
+### Visual impact enhancement (v7 upgrade)
+
+v7 layers **seven new visual-impact effects** on top of the v6 native-CSS engine — still no library, no new runtime dependency, CSP unchanged, all plugged into the same five-layer degradation network. The four pure-CSS effects work identically on mobile and desktop; the pointer-following ripple needs only ~15 lines in `main.js`:
+
+| Effect | Native technique | What it adds | Degradation |
+|--------|-----------------|--------------|-------------|
+| Flowing gradient title | `background-clip: text` + animated gradient | Light runs across the hero title — visibly "upgraded" | reduced-motion freezes / contrast → solid |
+| Caustic glow border | `@property` + `conic-gradient` + `mask` | Flowing light edge on glass cards (keeps rounded corners) | reduced-motion off |
+| Scroll parallax ocean | `animation-timeline: scroll()` | Background/orbs drift with scroll depth, like descending | reduced-motion stops |
+| Wave divider | Pure-CSS SVG waves, two-layer drift | Signature "sea swell" between sections | reduced-motion freezes |
+| Blur focus-in | `.reveal` adds `filter: blur` easing out | A "lens focus" layer beyond fade-in | reduced-motion drops blur |
+| Reading progress bar | `body::after` + `scroll()` timeline | Liquid light bar at top grows with reading | reduced-motion hides |
+| Pointer-following ripple | `main.js` `pointerdown` injects at touch point | Tap blooms a water ripple at the finger (fits the ocean theme) | reduced-motion / data-motion skip |
+
+> Same practice as v6: only `transform`/`opacity`/`filter`, no layout thrash; animations yield to `prefers-reduced-motion`, keeping "motion optional, content mandatory". The five-layer degradation uses `!important` on accessibility preferences to override decorative animation.
+
 ---
 
 ## Offline & install (PWA)
@@ -159,10 +175,10 @@ Visiting a page that was **never cached** shows an offline notice listing the ar
 `sw.js` starts with a version constant:
 
 ```js
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 ```
 
-**After publishing new content, bump this number** (`v5` → `v6`). On the user's next visit the Service Worker drops the old cache, re-fetches, and shows a "new version available" bar.
+**After publishing new content, bump this number** (`v6` → `v7`). On the user's next visit the Service Worker drops the old cache, re-fetches, and shows a "new version available" bar.
 
 If you don't bump it, the HTML itself still updates (it is network-first), but styles and scripts may stay on the old version — so change it whenever you publish.
 
@@ -395,6 +411,8 @@ Rules engine behind the accessibility baseline. It caught two things I could nev
 **Modern CSS capabilities & specs**
 
 The v6 motion upgrade (View Transitions, scroll-driven animations, container queries, `:has()`, `color-mix()`, `@starting-style`) all come from W3C CSS Working Group specs, implemented natively by browsers — no library needed. Special credit also goes to Andy Bell's [piccalil.li](https://piccalil.li) / "Build Excellent Websites" methodology, which turned "native CSS first, reduced-motion first, only `transform`/`opacity` to avoid layout jank" into a repeatable practice; this site's motion philosophy aligns with it closely.
+
+The v7 effects draw on the same web standards, plus one interaction pattern worth naming: the pointer-following ripple is inspired by **Material Design's Ripple** — blooming at the pointer location as standard tap feedback. `@property` (CSS Houdini Properties and Values API) and the `scroll()` timeline (Scroll-driven Animations spec) are standardized by the W3C CSS Working Group and actively championed by Chrome's Bramus Van Damme; this site reuses their native implementations directly.
 
 **Deliberately not used**
 
