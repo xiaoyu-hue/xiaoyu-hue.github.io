@@ -5,6 +5,9 @@
 
 import { test, expect } from '@playwright/test';
 
+// 本文件仅 chromium 项目运行；firefox 项目跳过（cross-browser.spec 才覆盖 Firefox）
+test.skip(({ browserName }) => browserName === 'firefox', '仅 chromium 项目运行');
+
 const PAGES = [
   { path: '/', name: '首页' },
   { path: '/blog/index.html', name: '博客列表' },
