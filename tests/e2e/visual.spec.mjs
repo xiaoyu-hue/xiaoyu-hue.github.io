@@ -20,6 +20,11 @@
 // 本地 macOS / Windows 只跑流程、不要用 --update-snapshots，否则会把
 // 跨平台字形差异当成「回归」误提交。
 //
+// ⚠️ CI 字体：基线在本沙箱用 Noto Sans/Serif CJK SC 生成，而 GitHub
+// ubuntu-latest 运行器默认**不装中文字体**，中文会渲染成豆腐块导致比对
+// 失败。因此 test.yml 的 e2e job 会先 `apt-get install fonts-noto-cjk`，
+// 让 CI 用同款字体渲染；下面 0.03 容差再吸收 jammy/noble 字体版本的小差异。
+//
 // 运行：
 //   生成 / 更新基线： npx playwright test tests/e2e/visual.spec.mjs --update-snapshots
 //   比对（CI 默认）：  npx playwright test tests/e2e/visual.spec.mjs
@@ -67,7 +72,7 @@ for (const path of PAGES) {
         await freeze(page);
         const name = `${path.replace(/[\/.]/g, '_')}_${scheme}_${vp}`;
         await expect(page).toHaveScreenshot(name + '.png', {
-          maxDiffPixelRatio: 0.02,
+          maxDiffPixelRatio: 0.03,
         });
       });
     }
