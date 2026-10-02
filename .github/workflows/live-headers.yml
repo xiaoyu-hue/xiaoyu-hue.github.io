@@ -1,0 +1,30 @@
+name: Live Headers
+
+# 线上安全头校验。
+# 仓库里的 `_headers` 是"声明"，这个 workflow 验证的是"部署后是否真的生效"。
+# 两者可能不一致（平台解析规则变、换了部署平台、CDN 改写响应头），
+# 且失效时页面看不出任何异常 —— 属于必须靠自动检查兜底的那类静默故障。
+#
+# 排期说明：站点部署在 Cloudflare Pages，push 到 main 后需要等部署完成
+# 才可能拿到新头，所以这里不绑 push 触发（会和部署抢跑产生假阳性），
+# 改为定时巡检 + 手动触发。
+on:
+  schedule:
+    # 每天 05:41 UTC（北京时间 13:41）巡检一次
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: 校验安全头
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 对线上站点校验安全头
+        run: python3 scripts/check_live_headers.py
