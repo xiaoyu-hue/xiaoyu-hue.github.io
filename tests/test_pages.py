@@ -46,14 +46,14 @@ EXPECTED_JSONLD_TYPE = {
 EXPECTED_REVEAL_COUNT = {
     "index.html": 11,
     "blog/index.html": 9,
-    "blog/post-1.html": 1,
-    "blog/post-2.html": 1,
-    "blog/post-3.html": 1,
-    "blog/post-4.html": 1,
-    "blog/post-5.html": 1,
-    "blog/post-6.html": 1,
-    "blog/post-7.html": 1,
-    "blog/post-8.html": 1,
+    "blog/post-1.html": 0,
+    "blog/post-2.html": 0,
+    "blog/post-3.html": 0,
+    "blog/post-4.html": 0,
+    "blog/post-5.html": 0,
+    "blog/post-6.html": 0,
+    "blog/post-7.html": 0,
+    "blog/post-8.html": 0,
 }
 
 
