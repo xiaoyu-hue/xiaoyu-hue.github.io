@@ -8,3 +8,4 @@ playwright-report/
 .lighthouseci/
 __pycache__/
 *.pyc
+.git.corrupt/

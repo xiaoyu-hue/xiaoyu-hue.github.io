@@ -1,3 +1,74 @@
+/* 本地字体 — SIL OFL 授权，免费商用 */
+@font-face {
+  font-family: 'Syne';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/syne/syne-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Syne';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('fonts/syne/syne-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Syne';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('fonts/syne/syne-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Syne';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('fonts/syne/syne-latin-800-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('fonts/inter/inter-latin-300-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/inter/inter-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('fonts/inter/inter-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('fonts/inter/inter-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/jetbrains-mono/jetbrains-mono-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('fonts/jetbrains-mono/jetbrains-mono-latin-500-normal.woff2') format('woff2');
+}
 :root{
   /* 海洋底色 */
   --abyss:#04111d;
@@ -34,7 +105,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
-  font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Hiragino Sans GB",sans-serif;
+  font-family:'Inter',system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Hiragino Sans GB",sans-serif;
   color:var(--text);
   background:var(--abyss);
   line-height:1.7;
@@ -98,22 +169,22 @@ main:focus{outline:none}
    让"我在哪一页"对键盘/读屏用户和普通用户都同样清晰。 */
 .nav-links a[aria-current="page"]{color:var(--text);background:var(--glass-bg-strong)}
 
-.hero{min-height:88vh;min-height:88dvh;display:flex;align-items:center;justify-content:center;padding:var(--space-7) 24px}
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:80px 24px;position:relative;overflow:hidden}
 .hero-card{max-width:680px;text-align:center;padding:48px 40px;animation:float 7s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .eyebrow{font-size:0.8125rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:18px;font-weight:600}
-.hero h1{font-size:clamp(26px,5vw,40px);line-height:1.35;font-weight:700;margin-bottom:18px;text-wrap:balance}
-.hero p.sub{color:var(--text-dim);font-size:1rem;margin-bottom:30px}
+.hero h1{font-size:clamp(48px,9vw,112px);line-height:1.05;font-weight:800;margin-bottom:28px;text-wrap:balance;font-family:'Syne',sans-serif;letter-spacing:-.03em}
+.hero p.sub{color:var(--text-dim);font-size:clamp(18px,2.8vw,24px);margin-bottom:36px;line-height:1.7;font-weight:400}
 .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.btn{padding:12px 26px;border-radius:999px;font-weight:600;font-size:0.9375rem;text-decoration:none;transition:.2s;border:1px solid transparent}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:18px 36px;border-radius:999px;font-weight:600;font-size:1rem;text-decoration:none;transition:.25s cubic-bezier(.25,.46,.45,.94);border:1px solid transparent;font-family:'Inter',sans-serif}
 .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04161f;box-shadow:0 6px 22px rgba(72,202,228,.35)}
 .btn-primary:hover{transform:translateY(-2px)}
 .btn:active{transform:translateY(0) scale(.97);transition-duration:.08s}
 .btn-ghost{background:var(--glass-bg);border-color:var(--glass-border);color:var(--text)}
 .btn-ghost:hover{background:var(--glass-bg-strong)}
 
-section{padding:80px 0}
-.section-title{font-size:clamp(22px,3.5vw,30px);text-align:center;margin-bottom:40px;font-weight:700}
+section{padding:140px 0}
+.section-title{font-size:clamp(28px,5vw,56px);text-align:center;margin-bottom:56px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:-.02em}
 .section-title small{display:block;color:var(--text-faint);font-size:0.875rem;font-weight:400;margin-top:8px;letter-spacing:.1em}
 
 .about{max-width:760px;margin:0 auto;text-align:center}
@@ -126,9 +197,9 @@ section{padding:80px 0}
 .quote::before{content:"“";color:var(--accent);margin-right:4px}
 .quote::after{content:"”";color:var(--accent);margin-left:4px}
 
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
-.card{padding:28px;transition:.25s}
-.card:hover{transform:translateY(-4px);border-color:rgba(72,202,228,.4)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:48px}
+.card{padding:36px;border-radius:32px;transition:.25s}
+.card:hover{transform:translateY(-8px) scale(1.02);border-color:rgba(72,202,228,.5);box-shadow:0 32px 64px rgba(0,0,0,.3)}
 .card .ico{width:52px;height:52px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:var(--glass-bg-strong);border:1px solid var(--glass-border)}
 .card .ico svg{width:26px;height:26px;stroke:var(--accent);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .card h3{font-size:1.1875rem;margin-bottom:8px}
@@ -1060,3 +1131,13 @@ body::after {
   animation: ripple-out .6s var(--ease-out) forwards;
 }
 @keyframes ripple-out { to { transform: scale(1); opacity: 0; } }
+: 0; } }
+
+/* ========== Phase 2: 微交互 ========== */
+.custom-cursor,.custom-cursor-dot{display:none !important;position:fixed;width:20px;height:20px;border:2px solid rgba(72,202,228,0.8);border-radius:50%;pointer-events:none;z-index:9999;transition:transform .1s ease-out,width .2s,height .2s,border-color .2s,background .2s;transform:translate(-50%,-50%)}
+.mouse-glow{display:none !important;position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(72,202,228,.08) 0%,transparent 70%);pointer-events:none;z-index:1;transform:translate(-50%,-50%);transition:left .3s ease-out,top .3s ease-out}
+@media (prefers-reduced-motion: no-preference){
+  .custom-cursor,.custom-cursor-dot{display:block !important}
+  .mouse-glow{display:block !important}
+}
+[data-motion="off"] .custom-cursor,[data-motion="off"] .custom-cursor-dot,[data-motion="off"] .mouse-glow{display:none !important}

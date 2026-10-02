@@ -220,7 +220,136 @@
     initReveal();
     initNav();
     initRipple();
+    initCustomCursor();
+    initMouseGlow();
+    initCardTilt();
+    initMagneticButtons();
   } catch (e) {
     showAll('动效脚本异常：' + (e && e.message ? e.message : e));
   }
 })();
+
+// ========== Phase 2 微交互 ==========
+
+// ⑪ 自定义光标 — 深海气泡跟随
+// 守 CSP：全用 setProperty，不写 style 属性。
+function initCustomCursor() {
+  if (!motionEnabled()) return;
+  var cursor = document.createElement('div');
+  cursor.className = 'custom-cursor';
+  cursor.style.setProperty('position', 'fixed');
+  cursor.style.setProperty('width', '20px');
+  cursor.style.setProperty('height', '20px');
+  cursor.style.setProperty('border', '2px solid rgba(72,202,228,0.8)');
+  cursor.style.setProperty('border-radius', '50%');
+  cursor.style.setProperty('pointer-events', 'none');
+  cursor.style.setProperty('z-index', '9999');
+  cursor.style.setProperty('transition', 'transform 0.1s ease-out, width 0.2s, height 0.2s, border-color 0.2s');
+  cursor.style.setProperty('transform', 'translate(-50%, -50%)');
+  document.body.appendChild(cursor);
+
+  var cursorDot = document.createElement('div');
+  cursorDot.className = 'custom-cursor-dot';
+  cursorDot.style.setProperty('position', 'fixed');
+  cursorDot.style.setProperty('width', '6px');
+  cursorDot.style.setProperty('height', '6px');
+  cursorDot.style.setProperty('background', 'rgba(72,202,228,0.9)');
+  cursorDot.style.setProperty('border-radius', '50%');
+  cursorDot.style.setProperty('pointer-events', 'none');
+  cursorDot.style.setProperty('z-index', '9999');
+  cursorDot.style.setProperty('transition', 'transform 0.05s ease-out');
+  cursorDot.style.setProperty('transform', 'translate(-50%, -50%)');
+  document.body.appendChild(cursorDot);
+
+  var isHoveringLink = false;
+  document.addEventListener('mousemove', function(e) {
+    cursor.style.setProperty('left', e.clientX + 'px');
+    cursor.style.setProperty('top', e.clientY + 'px');
+    cursorDot.style.setProperty('left', e.clientX + 'px');
+    cursorDot.style.setProperty('top', e.clientY + 'px');
+  }, { passive: true });
+
+  document.addEventListener('mouseover', function(e) {
+    var target = e.target.closest('a, button, .card, .btn, .tag');
+    if (target) {
+      isHoveringLink = true;
+      cursor.style.setProperty('width', '40px');
+      cursor.style.setProperty('height', '40px');
+      cursor.style.setProperty('border-color', 'rgba(72,202,228,0.4)');
+      cursor.style.setProperty('background', 'rgba(72,202,228,0.05)');
+    }
+  }, { passive: true });
+
+  document.addEventListener('mouseout', function(e) {
+    var target = e.target.closest('a, button, .card, .btn, .tag');
+    if (target) {
+      isHoveringLink = false;
+      cursor.style.setProperty('width', '20px');
+      cursor.style.setProperty('height', '20px');
+      cursor.style.setProperty('border-color', 'rgba(72,202,228,0.8)');
+      cursor.style.setProperty('background', 'transparent');
+    }
+  }, { passive: true });
+}
+
+// ⑫ 鼠标跟随光晕 — 深海氛围
+function initMouseGlow() {
+  if (!motionEnabled()) return;
+  var glow = document.createElement('div');
+  glow.className = 'mouse-glow';
+  glow.style.setProperty('position', 'fixed');
+  glow.style.setProperty('width', '400px');
+  glow.style.setProperty('height', '400px');
+  glow.style.setProperty('background', 'radial-gradient(circle, rgba(72,202,228,0.08) 0%, transparent 70%)');
+  glow.style.setProperty('pointer-events', 'none');
+  glow.style.setProperty('z-index', '1');
+  glow.style.setProperty('transform', 'translate(-50%, -50%)');
+  glow.style.setProperty('transition', 'left 0.3s ease-out, top 0.3s ease-out');
+  document.body.appendChild(glow);
+
+  document.addEventListener('mousemove', function(e) {
+    glow.style.setProperty('left', e.clientX + 'px');
+    glow.style.setProperty('top', e.clientY + 'px');
+  }, { passive: true });
+}
+
+// ⑬ 卡片 3D 倾斜效果
+function initCardTilt() {
+  if (!motionEnabled()) return;
+  var cards = document.querySelectorAll('.card, .post-card');
+  cards.forEach(function(card) {
+    card.style.setProperty('transform-style', 'preserve-3d');
+    card.style.setProperty('perspective', '1000px');
+
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width - 0.5;
+      var y = (e.clientY - rect.top) / rect.height - 0.5;
+      var tiltX = y * -8;
+      var tiltY = x * 8;
+      card.style.setProperty('transform', 'perspective(1000px) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) translateY(-8px) scale(1.02)');
+    }, { passive: true });
+
+    card.addEventListener('mouseleave', function() {
+      card.style.setProperty('transform', 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px) scale(1)');
+    }, { passive: true });
+  });
+}
+
+// ⑭ 磁吸按钮效果
+function initMagneticButtons() {
+  if (!motionEnabled()) return;
+  var buttons = document.querySelectorAll('.btn');
+  buttons.forEach(function(btn) {
+    btn.addEventListener('mousemove', function(e) {
+      var rect = btn.getBoundingClientRect();
+      var x = e.clientX - rect.left - rect.width / 2;
+      var y = e.clientY - rect.top - rect.height / 2;
+      btn.style.setProperty('transform', 'translate(' + (x * 0.15) + 'px, ' + (y * 0.15) + 'px)');
+    }, { passive: true });
+
+    btn.addEventListener('mouseleave', function() {
+      btn.style.setProperty('transform', 'translate(0px, 0px)');
+    }, { passive: true });
+  });
+}
