@@ -1,0 +1,36 @@
+name: Gitleaks
+
+# 密钥泄漏扫描。
+# 这是本项目最实际的一道防线：仓库是公开的，一旦误把 PAT / API Key
+# 提交进来，全世界立刻可见且会被自动爬虫抓走。
+# 这里扫的是「全历史」（fetch-depth: 0），因为旧提交里的密钥同样危险——
+# 即使后来删掉了文件，历史记录里依然还在。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 每天 04:23 UTC 兜底扫一次（捕捉"新规则库能识别出的旧密钥"）
+    - cron: '23 4 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: 扫描密钥
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 拉取完整历史
+        uses: actions/checkout@v4
+        with:
+          # 必须是 0，否则只扫到最近一次提交，历史里的密钥会漏掉
+          fetch-depth: 0
+
+      - name: 运行 Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          # 公共仓库不需要 GITHUB_TOKEN 也能跑，但传上更稳妥（用于 PR 评论）
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

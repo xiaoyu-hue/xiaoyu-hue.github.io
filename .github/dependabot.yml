@@ -1,0 +1,44 @@
+# Dependabot：自动更新依赖与 Actions 版本。
+# 本项目的特殊性：
+#   - 站点运行时零依赖（dependencies 为 null），所以 npm 那边只有 3 个 devDeps，
+#     它们只在跑测试时用到，不进生产 —— 但仍值得更新，避免本地/CI 跑在带漏洞的旧版上。
+#   - github-actions 生态更关键：GitHub Actions 的版本是「可被篡改的执行体」，
+#     第三方 action 被入侵时常见做法就是劫持旧 tag。定期升到新版本是基本卫生习惯。
+version: 2
+updates:
+  # 1) GitHub Actions 自身
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(actions)"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # 2) npm 测试依赖（devDependencies）
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+    # 只更新测试工具链；主站本身没有运行时依赖，无需 --production 分组
+    groups:
+      test-tooling:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

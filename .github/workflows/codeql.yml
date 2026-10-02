@@ -1,0 +1,50 @@
+name: CodeQL
+
+# 静态代码分析（SAST）。
+# 本项目站点本身零依赖、无后端，所以 CodeQL 的主要价值在于：
+#   1. 扫描 workflow / 脚本里的命令注入、路径穿越、不安全的 eval 等
+#   2. 防止后续新增构建脚本时引入危险写法
+# 语言选 javascript-typescript：覆盖 build.py 生成的 JS、sw.js、main.js 以及
+# .github 下的 Node 测试脚本。Python 部分（build.py / scripts）不启用，
+# 因为它们是本地构建工具、不进生产运行时，噪声大于收益。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 每周一 03:17 UTC 全量扫描一次，捕捉"规则库更新后发现的新问题"
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: 分析 JavaScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      # 上传扫描结果到 Security 标签页所必需
+      security-events: write
+      # 私有仓库需要 packages: read；公共仓库非必需但无害
+      packages: read
+      actions: read
+      contents: read
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 初始化 CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # security-extended 比默认规则集更严，但对本项目噪声可控
+          queries: security-extended
+
+      - name: 执行分析
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
