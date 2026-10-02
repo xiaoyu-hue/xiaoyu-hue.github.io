@@ -1,0 +1,40 @@
+name: Lighthouse Performance CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lighthouse:
+    name: Lighthouse 性能审查
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 启动本地服务器
+        run: |
+          python3 -m http.server 8765 &
+          sleep 2
+
+      - name: Lighthouse 审计
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://localhost:8765/
+            http://localhost:8765/blog/
+          uploadArtifacts: true
+          temporaryPublicStorage: false
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: 上传结果
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: .lighthouseci/
+          retention-days: 30
