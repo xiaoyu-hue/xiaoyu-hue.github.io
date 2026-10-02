@@ -98,8 +98,10 @@ def fetch_headers(url):
                 resp.close()
                 return result
         raise
-    except Exception:
-        # 网络类异常统一走 GET 再试一次
+    except (urllib.error.URLError, TimeoutError, OSError):
+        # 网络类异常（DNS / 连接被拒 / 超时 / 代理干扰）统一走 GET 再试一次。
+        # 这里刻意只捕获网络异常，不写 except Exception —— 若是代码本身的
+        # 错误（如 TypeError），应当直接崩出来暴露，而不是被当成网络问题重试。
         req = urllib.request.Request(url, headers={"User-Agent": "header-check/1.0"})
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = (resp.status, dict(resp.headers), resp.url)

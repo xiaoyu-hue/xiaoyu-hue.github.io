@@ -109,7 +109,7 @@ def serve_once(port_holder, ready, directory):
 
 def probe(engine_name, url):
     """在指定引擎里跑一次，返回 (结果 dict, 引擎版本)。失败抛异常。"""
-    from playwright.sync_api import sync_playwright
+    from playwright.sync_api import Error, sync_playwright
 
     with sync_playwright() as p:
         browser = getattr(p, engine_name).launch()
@@ -117,9 +117,11 @@ def probe(engine_name, url):
             page = browser.new_page()
             try:
                 page.add_init_script(INIT_JS)
-            except Exception:
-                # 少数引擎版本不支持 init script；此刻 __violations 为空会让
-                # 对照组判据失效，下面的校验会把这种情况如实判为「装置无效」
+            except Error:
+                # 少数引擎版本不支持 init script。这里只捕获 Playwright 自己的
+                # Error（见本函数开头的 import），其它异常应当暴露，避免把代码
+                # bug 误当作「引擎不支持」而静默放行。此刻 __violations 为空会让
+                # 对照组判据失效，下面的校验会把这种情况如实判为「装置无效」。
                 pass
             page.goto(url)
             page.wait_for_load_state("networkidle")
@@ -159,7 +161,11 @@ def main():
     for engine in ("chromium", "firefox", "webkit"):
         try:
             result, version = probe(engine, url)
-        except Exception as exc:            # 引擎缺失 / 依赖不全 / 启动失败
+        except Exception as exc:            # noqa: BLE001
+            # probe 是个整体封装：引擎缺失、依赖不全、浏览器起不来、页面加载
+            # 超时等任何一种都意味着「这个引擎本次没测成」，一律跳过继续测别的。
+            # 此处保留宽捕获是刻意的 —— 逐个枚举异常类型反而会漏掉某些引擎的
+            # 超时/协议异常，让脚本因为一个可选引擎不可用而整个崩掉。
             skipped.append((engine, str(exc).split("\n")[0].strip()[:100] or "启动失败"))
             continue
 
