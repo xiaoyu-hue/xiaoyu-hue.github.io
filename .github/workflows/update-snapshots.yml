@@ -8,17 +8,16 @@ name: 更新视觉基线
 # 由它重建全部快照并提交回 main。之后 test.yml 的视觉回归就用这份基线比对，
 # 环境同源，稳定可靠。
 #
-# 使用：
-#   · 手动：仓库 Actions 页 → 左侧「更新视觉基线」→ Run workflow。
-#   · 自动：向 `refresh-visual-baseline` 分支 push 时触发（便于用 git 触发，
-#     无需 workflow_dispatch 的 token 权限）。
+# 使用：仓库 Actions 页 → 左侧「更新视觉基线」→ Run workflow（仅手动触发）。
+#
+# 变更说明：曾额外支持「向 refresh-visual-baseline 分支 push 触发」，
+# 用于绕开 workflow_dispatch 的 token 权限限制。该分支已完成使命并删除，
+# 对应的触发条件一并移除，避免留下一个永远等不到 push 的死配置。
+#
 # 需要权限：workflow 需 contents:write（已在下方声明）。
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - refresh-visual-baseline
 
 permissions:
   contents: write
@@ -33,7 +32,7 @@ jobs:
           # 用内置 token 即可提交（contents:write 已授权）
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
