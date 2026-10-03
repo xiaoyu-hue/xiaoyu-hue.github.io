@@ -436,10 +436,33 @@ footer a{color:var(--accent);text-decoration:none}
   section{padding:68px 0}
   .hero{padding:var(--space-6) 24px}
 }
+
+/* 首屏在手机上的呼吸节奏（max-width:720px 起生效，不影响桌面）。
+   起因是一组实测：390px 宽、844px 高的机器上，导航栏 65px 之下要到
+   243px 才出现卡片，中间空了 178px；而卡片（含两个按钮）高 489px，
+   底边落在 732px —— 加上浏览器地址栏实际占位，用户滚动前根本看不到
+   那两个按钮。手机上首屏最该出现的是「我是谁 + 能点哪儿」，
+   留白再多也不如让按钮进屏。
+   桌面端留白维持原样：大屏上空白本身是构图的一部分，不压缩。 */
 @media(max-width:720px){
   .grid,.contact-grid{grid-template-columns:1fr}
   .hero-card{padding:36px 22px}
   section{padding:60px 0}
+
+  /* min-height 由 100vh 降到 auto：手机视口小，100vh 会把过度阅读的
+     垂直居中硬撑出来，正是那 178px 空白的来源。 */
+  .hero{min-height:auto;padding:28px 20px 40px}
+
+  /* 字号从 48px 降到 42px。实测 360px 宽时 48px 会把标题折成 4 行、
+     吃掉 25% 首屏（320px 小屏更到 35%）；42px 落到 3 行、约占 18%。
+     用 min() 而不是写死：更窄的屏幕上继续收，避免折行数反弹。 */
+  .hero h1{font-size:min(42px,11.5vw);line-height:1.25;margin-bottom:20px}
+
+  /* 大标题 1.05 的行高是给 112px 桌面字号配的；中文在 40px 上下
+     行与行会糊到一起（汉字没有西文那种上下留白），所以松到 1.25。 */
+  .eyebrow{margin-bottom:12px}
+  .hero p.sub{line-height:1.62;margin-bottom:24px;font-size:var(--fs-base)}
+  .btns{gap:var(--space-1)}
 
   /* 导航栏：加了设置按钮后，窄屏必须防止换行挤压 */
   .nav .wrap{gap:var(--space-1)}
@@ -459,15 +482,33 @@ footer a{color:var(--accent);text-decoration:none}
     padding:6px 8px;font-size:13px;white-space:nowrap;flex-shrink:0;
   }
   .prefs{flex-shrink:0}
+
+  /* 触控目标：WCAG 2.5.5 建议至少 44×44px。
+     实测四个导航项原本只有 37×33px，宽和高都不够，手指容易点偏或点空。
+     上下内边距补到 44px 高；横向不再加宽（横向本来就够，加宽会让
+     四个链接在窄屏放不下）。上面那条 13px 字号是为「放得下」做的取舍，
+     这里用 padding 补高度，两者不冲突。 */
+  .nav-links a{padding-top:12px;padding-bottom:12px;display:inline-flex;align-items:center;min-height:44px}
+
+  /* 下面两处同样按 44px 触控目标补齐 —— 原来只有 39px 和 32px。
+     手机上「点不中」比「看着小」更影响使用，所以统一拉到 44px。 */
+  .card .links a,
+  .article .links a{min-height:44px;display:inline-flex;align-items:center}
+  /* 项目名本身是可点链接（22px 高）。它是卡片标题，直接撑高会顶开排版，
+     用上下 padding 把它抬到 44px —— 卡片里项目名本身就独占一行，
+     多一点上下间距不影响观感，比只扩大点击区更实在（后者对读屏和
+     键盘用户没有帮助，只是让手指好点一点）。 */
+  .card h3 a{display:inline-block;padding:11px 0}
 }
 
-/* 极窄屏（<420px）：四个导航项确实放不下，隐藏纯文字链接，
-   设置按钮里已包含「外观」等入口，站点主要入口仍在首屏按钮上。
+/* 极窄屏（≤430px）：四个导航项确实放不下。
    字号再降一档（12.5px = --fs-xs 的值，此处写裸值是因为它属于
    「窄屏压缩序列」的一环，跟上面 13px 配对阅读更清楚，
-   单独引用令牌反而看不出 13 → 12.5 这个递进关系）。 */
+   单独引用令牌反而看不出 13 → 12.5 这个递进关系）。
+   注意这里不能再用 padding:6px，否则会盖掉上一条补齐的 44px 触控高度
+   （同样权重、写在后面者胜）—— 只收横向内边距。 */
 @media(max-width:430px){
-  .nav-links a{padding:6px 6px;font-size:12.5px}
+  .nav-links a{padding-left:6px;padding-right:6px;font-size:12.5px}
 }
 
 @media(prefers-reduced-motion:reduce){
@@ -785,7 +826,10 @@ html[data-theme="light"] .prefs-seg button.is-active{color:#fff}
 .prefs-storage.is-warn{color:#AA6262}
 
 @media(max-width:720px){
-  .prefs-toggle{width:32px;height:32px;margin-left:4px}
+  /* 这里原本把设置按钮压到 32×32（为了给导航省宽度），但 32px 低于
+     WCAG 2.5.5 的 44px 触控目标，手机上很难点准。改为只收外边距，
+     尺寸保持 44px —— 宽度实测够用（四个导航项用 padding 补高而非加宽）。 */
+  .prefs-toggle{margin-left:4px}
   .prefs-panel{width:min(300px,calc(100vw - 24px));padding:16px}
 }
 
