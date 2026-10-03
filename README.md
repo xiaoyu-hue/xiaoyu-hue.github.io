@@ -399,7 +399,7 @@ Syne / Inter / JetBrains Mono（woff2 同域放在 `assets/fonts/`，不向任�
 
 | 包 | 版本 | 许可证 | 用在哪 |
 |------|------|--------|--------|
-| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑测试（源码 117 个测试用例；跨浏览器降级在 Firefox 项目下测） |
+| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑测试（源码 118 个测试用例；跨浏览器降级在 Firefox 项目下测） |
 | `playwright` / `playwright-core` | ^1.63.0 | Apache-2.0 | 上面那个的底层，不需要单独装 |
 | [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | ^4.13.0 | MPL-2.0 | 可访问性基线：把 axe 注入页面跑 WCAG 规则 |
 | `axe-core` | ^4.13.0 | MPL-2.0 | 上面那个的规则引擎，不需要单独装 |
@@ -413,7 +413,7 @@ MPL-2.0 是文件级 copyleft，但它只约束"你把这份代码的源文件�
 |------|----------|
 | 契约层（120 例） | `python3` —— 只用标准库，一个 pip 包都不装 |
 | 逻辑层（67 例） | Node 18+ |
-| 真浏览器层（117 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
+| 真浏览器层（118 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
 | CSP/JSON-LD 实测 | Python 3 + `playwright` —— **可选**，不装也能构建和部署站点，只是没法亲自复现 [`docs/csp-jsonld.md`](docs/csp-jsonld.md) 里的结论 |
 
 CI 上跑的是 Node 20。

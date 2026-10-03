@@ -45,6 +45,17 @@
     }
   }
 
+  // 统一的媒体查询封装：matchMedia 不可用时返回 false（按"不额外限制"处理），
+  // 与 motionEnabled() 的降级策略一致 —— 缺 API 的老环境不应抛错，
+  // 否则会连累同一 try 块里后续的初始化。
+  function mq(query) {
+    try {
+      return !!(window.matchMedia && window.matchMedia(query).matches);
+    } catch (e) {
+      return false;
+    }
+  }
+
   function motionEnabled() {
     // 优先级最高：用户在设置面板里关掉了动效
     var root = document.documentElement;
@@ -238,7 +249,7 @@ function initCustomCursor() {
   // 触屏设备（无精确指针）不创建光标/光晕：它们永不触发 mousemove，
   // 否则留下静止装饰元素卡在视口某处（真实 UI 缺陷）。
   // 与 style.css 的 (hover:none),(pointer:coarse) 隐藏双保险。
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  if (!mq('(hover: hover) and (pointer: fine)')) return;
   var cursor = document.createElement('div');
   cursor.className = 'custom-cursor';
   cursor.style.setProperty('position', 'fixed');
@@ -297,7 +308,7 @@ function initCustomCursor() {
 function initMouseGlow() {
   if (!motionEnabled()) return;
   // 同上：触屏设备不创建鼠标光晕
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  if (!mq('(hover: hover) and (pointer: fine)')) return;
   var glow = document.createElement('div');
   glow.className = 'mouse-glow';
   glow.style.setProperty('position', 'fixed');

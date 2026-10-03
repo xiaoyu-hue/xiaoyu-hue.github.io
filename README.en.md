@@ -347,7 +347,7 @@ Everything below is only needed when you want to change code and verify it:
 
 | Package | Version | License | Used for |
 |---------|---------|---------|----------|
-| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | Real-browser layer: serves the site locally and drives real Chromium across 117 cases (including cross-browser fallbacks) |
+| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | Real-browser layer: serves the site locally and drives real Chromium across 118 cases (including cross-browser fallbacks) |
 | `playwright` / `playwright-core` | ^1.63.0 | Apache-2.0 | Underlying the above; not installed separately |
 | [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | ^4.13.0 | MPL-2.0 | Accessibility baseline: injects axe and runs WCAG rules |
 | `axe-core` | ^4.13.0 | MPL-2.0 | Rules engine behind the above; not installed separately |
@@ -362,7 +362,7 @@ Here everything is a build-time tool: it never reaches the site and is never ser
 |-------|-------|
 | Contract (120 cases) | `python3` — standard library only, no pip packages |
 | Logic (67 cases) | Node 18+ |
-| Real browser (117 cases) | Node 18+; Chromium is downloaded by Playwright (not committed) |
+| Real browser (118 cases) | Node 18+; Chromium is downloaded by Playwright (not committed) |
 | CSP/JSON-LD check | Python 3 + `playwright` — **optional**. You can build and deploy the site without it; you just cannot reproduce the conclusion in [`docs/csp-jsonld.md`](docs/csp-jsonld.md) yourself |
 
 CI runs on Node 20.

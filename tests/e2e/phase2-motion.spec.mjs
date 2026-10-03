@@ -81,4 +81,28 @@ test.describe('Phase-2 微交互（作用域 bug 防回归）', () => {
     expect(await page.locator('.mouse-glow').count(), '触屏设备不应注入鼠标光晕').toBe(0);
     await context.close();
   });
+
+  test('matchMedia 缺失时不抛错，后续微交互仍正常初始化', async ({ page }) => {
+    // 防回归：早前的触屏判断直接调用 window.matchMedia(...)，
+    // 缺 API 的老环境会抛 TypeError，并被同一个 try 块吞掉，
+    // 连累 initMouseGlow / initCardTilt / initMagneticButtons 全部不执行。
+    // 现在统一走 mq() 封装，缺 API 时返回 false 而非抛错。
+    await page.addInitScript(() => {
+      delete window.matchMedia;
+    });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+
+    // 光标因 mq() 返回 false 而不注入（正确降级，不崩）
+    expect(await page.locator('.custom-cursor').count(), 'matchMedia 缺失时不应注入光标').toBe(0);
+
+    // 关键：卡片的倾斜监听必须仍挂上（证明后面的初始化没被连累）
+    const card = page.locator('.card').first();
+    await card.scrollIntoViewIfNeeded();
+    const box = await card.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect
+      .poll(async () => (await card.evaluate((el) => el.style.transform)) || '', { timeout: 5000 })
+      .toMatch(/perspective|rotate/i);
+  });
 });
