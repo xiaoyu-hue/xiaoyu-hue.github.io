@@ -587,9 +587,9 @@ html[data-theme="light"] .prefs-seg button.is-active{color:#fff}
   background:var(--glass-bg);color:var(--text);cursor:pointer;transition:.18s;
 }
 .prefs-actions button:hover{background:var(--glass-bg-strong)}
-.prefs-actions .prefs-reset{color:#e07a7a;border-color:rgba(224,122,122,.35)}
+.prefs-actions .prefs-reset{color:#AA6262;border-color:rgba(224,122,122,.35)}
 .prefs-actions .prefs-reset.is-armed{
-  background:#e07a7a;color:#fff;border-color:transparent;font-weight:600;
+  background:#AA6262;color:#fff;border-color:transparent;font-weight:600;
 }
 /* 屏幕阅读器专用（隐藏 file input） */
 .visually-hidden{
@@ -601,12 +601,12 @@ html[data-theme="light"] .prefs-seg button.is-active{color:#fff}
   display:none;
 }
 .prefs-msg.is-visible{display:block}
-.prefs-msg.is-warn{color:#e07a7a}
+.prefs-msg.is-warn{color:#AA6262}
 .prefs-storage{
   margin-top:14px;padding-top:12px;font-size:0.78125rem;color:var(--text-faint);
   border-top:1px solid var(--glass-border);line-height:1.6;
 }
-.prefs-storage.is-warn{color:#e07a7a}
+.prefs-storage.is-warn{color:#AA6262}
 
 @media(max-width:720px){
   .prefs-toggle{width:32px;height:32px;margin-left:4px}
