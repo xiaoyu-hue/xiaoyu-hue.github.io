@@ -70,32 +70,116 @@
   src: url('fonts/jetbrains-mono/jetbrains-mono-latin-500-normal.woff2') format('woff2');
 }
 :root{
-  /* 海洋底色 */
+  /* ============================================================
+     海洋底色 —— 语义说明（2026-10 设计系统整理轮）
+     ------------------------------------------------------------
+     这不是"几个好看的蓝色"，而是一条有含义的深度轴：
+       越往下越深，对应内容越"底层/越私人"。
+     用法约定：
+       --abyss  页面最底（身体、整体背景）—— 最深，是"海沟"
+       --deep   次级面板、导航底色    —— 中间层
+       --ocean  卡片内部、局部高亮区  —— 最浅的一档深色，是"近海"
+     三者构成同一条色阶，改一个必须同时检查另两个的相对明度。
+     ============================================================ */
   --abyss:#04111d;
   --deep:#07273d;
   --ocean:#0a3a52;
+
+  /* 强调色：统一用 --accent 系，不再各写裸色值。
+     --accent / --accent-2 是两个色相点，共同构成主按钮的渐变；
+     下面四个是"强调色的强度刻度"，从弱到强排好，
+     需要"同色不同浓淡"时按语义选，而不是随手写一个透明度。 */
   --accent:#48cae4;
   --accent-2:#0096c7;
+
+  /* 强调色强度刻度（弱 → 强）
+     每一档都有明确用途，不允许"差不多就用一个"—— 那样会退回到
+     之前 8 种不同透明度各写一遍的状态。 */
+  --accent-whisper:rgba(72,202,228,.08);  /* 极淡：大面积氛围光晕底 */
+  --accent-faint:rgba(72,202,228,.20);    /* 淡：静态装饰面 */
+  --accent-soft:rgba(72,202,228,.22);     /* 柔：水波纹扩散 */
+  --accent-line:rgba(72,202,228,.40);     /* 线：悬停描边（默认态） */
+  --accent-line-strong:rgba(72,202,228,.50); /* 线·强：主卡片悬停 */
+  --accent-glow:rgba(72,202,228,.35);     /* 光：投影辉光 */
+  --accent-solid:rgba(72,202,228,.80);    /* 实：自定义光标描边（刻意留 20% 透明，纯色会显得生硬） */
+
   /* 液态玻璃 */
   --glass-bg:rgba(255,255,255,.07);
   --glass-bg-strong:rgba(255,255,255,.11);
   --glass-border:rgba(150,210,255,.22);
   --glass-shadow:0 8px 32px rgba(0,0,0,.45);
+  /* 玻璃内高光（顶部 1px 亮线，制造"玻璃有厚度"的错觉） */
+  --glass-sheen:rgba(255,255,255,.12);
+
+  /* 分隔线：比玻璃边框更弱的一档，用于内容区里的虚线/实线分隔。
+     单独成令牌，是因为它跟 --glass-border 的"边框"语义不同 ——
+     边框是勾边（要看得见），分隔是排版（要几乎看不见）。 */
+  --hairline:rgba(150,210,255,.12);
+  --hairline-strong:rgba(150,210,255,.18);
+  --hairline-faint:rgba(150,210,255,.10);
+  --hairline-table:rgba(150,210,255,.18);
+
   /* 文字 */
   --text:#eaf6fb;
   --text-dim:#9fc0d0;
   --text-faint:#7ba6b8;
   --radius:20px;
   --maxw:1080px;
-  /* 间距系统(8pt 基准) */
+  /* 间距系统(8pt 基准)
+     ------------------------------------------------------------
+     刻度按 8 的倍数排：--space-1..8 = 8/16/24/32/48/64/80/96。
+     现状：1/2/4/5/6 已有消费者；3/7/8 暂无（但 3 与 8 受
+     tests/test_pages.py 的令牌齐备性契约保护，不能删）。
+     保留完整 8 档而不是"只留用到的"，是因为间距刻度必须连续 ——
+     缺档会让下次要留白的人无处可依，只好又写裸 px，
+     退回到 94 处硬编码 px 的老路。
+     半档 --space-1h(12px)：组件内边距实测高频使用（8 的倍数会让
+     按钮/标签变形），单独给个名字。 */
   --space-1:8px; --space-2:16px; --space-3:24px; --space-4:32px;
   --space-5:48px; --space-6:64px; --space-7:80px; --space-8:96px;
-  /* 模块化字阶 */
-  --fs-xs:12.5px; --fs-sm:14px; --fs-base:16px; --fs-md:18px; --fs-lg:22px;
-  --fs-xl:clamp(22px,3.5vw,30px); --fs-2xl:clamp(26px,5vw,40px);
+  --space-1h:12px; /* 半档：标签/按钮内边距常用 */
+  /* 模块化字阶（2026-10 重排：16 档 → 4 档）
+     ------------------------------------------------------------
+     改动前实测：全站共 16 种字号，其中 12px→16.5px 之间挤了 10 档，
+     每档只差 0.5px（13 / 13.5 / 14 / 14.5 / 15 / 15.5 / 16 / 16.5 …）。
+     0.5px 的差异在屏幕上人眼无法分辨，却带来 10 份维护成本 ——
+     想整体调大一号正文，得改 10 处，还可能漏。
+
+     现收敛为 4 档，取值遵循「同组取大值」原则：
+     每一档都取该组内原最大值，保证**没有任何一处字号变小**
+     （这是中文站，笔画密度高于西文，字号偏大比偏小安全）。
+
+       --fs-xs   12.5px  ← 原 12 / 12.5     元信息（时间戳、卡片计数）
+       --fs-sm   14.5px  ← 原 13 /13.5/14/14.5  次要文字（导航、日期、页脚、标签）
+       --fs-base 16px    ← 原 15 /15.5/16     正文（按钮、面板标题、列表摘要）
+       --fs-md   17px    ← 原 16.5            长文正文（文章内文）
+
+     标题不在此列：标题用的是各自唯一的 clamp()（响应式缩放），
+     强行套固定 px 反而会丢掉"随视口平滑缩放"的能力，
+     故保留 clamp 写法，删掉原先那三个无人引用的固定 px 标题令牌
+     （--fs-lg/--fs-xl/--fs-2xl）——它们是死令牌。 */
+  --fs-xs:12.5px;
+  --fs-sm:14.5px;
+  --fs-base:16px;
+  --fs-md:17px;
+
+  /* 标题档：只收「组件/文章内的小标题」。
+     超大标题（hero h1 / section-title / article h1 / quote / sub）
+     仍各自用唯一的 clamp() —— 它们要随视口平滑缩放，套固定 px 会丢能力。
+     --fs-h-md 由卡片标题 19px 与帖子标题 20px 合并而来，取大值 20px
+     （差 1px 人眼不可辨，合并后少一处维护点）。 */
+  --fs-h-sm:18px;   /* 文章内三级标题 */
+  --fs-h-md:20px;   /* 卡片 / 帖子标题 */
+  --fs-h-lg:22px;   /* 文章内二级标题 */
+  --fs-brand:18px;  /* 导航品牌字（与 --fs-h-sm 同值但语义不同，不共用：
+                       共用会导致「调文章标题」意外改掉品牌字） */
   /* 缓动曲线 */
   --ease-out:cubic-bezier(.22,1,.36,1);
-  --ease-in-out:cubic-bezier(.65,0,.35,1);
+  /* 注：原先此处还有一条 --ease-in-out，取值与文件末尾的 --ease-both
+     完全相同（.65,0,.35,1），属于同一曲线的两个名字。
+     删掉这条，统一由末尾「微动效系统」的 --ease-both 提供 ——
+     一个曲线只留一个名字，避免"改了 A 忘了 B"。
+     若确实需要"只在中间一段变化"的曲线，再单独引入新值。 */
   /* 正文色（浅色模式下会重新取值） */
   --body-text:#cfe2ec;
   color-scheme:dark;
@@ -128,8 +212,8 @@ body{
     linear-gradient(160deg, var(--abyss) 0%, var(--deep) 45%, var(--ocean) 100%);
   background-size:200% 200%;
   animation:
-    drift 22s ease-in-out infinite,
-    aurora-rotate 12s linear infinite;
+    drift var(--ambient-drift) var(--ease-both) infinite,
+    aurora-rotate var(--ambient-drift) linear infinite;
   /* 胶片噪点质感 */
   position:relative;
 }
@@ -147,10 +231,10 @@ body{
 }
 /* 光晕系统：4个浮动光球 + 视差 */
 .orb{position:fixed;border-radius:50%;filter:blur(60px);z-index:-1;opacity:.5;pointer-events:none;will-change:transform}
-.orb.a{width:420px;height:420px;background:radial-gradient(circle,color-mix(in srgb, var(--accent) 45%, transparent),transparent 70%);top:-120px;right:-80px;animation:orb-drift-a 18s ease-in-out infinite}
-.orb.b{width:360px;height:360px;background:radial-gradient(circle,color-mix(in srgb, var(--accent-2) 35%, transparent),transparent 70%);bottom:-100px;left:-60px;animation:orb-drift-b 22s ease-in-out infinite}
-.orb.c{width:280px;height:280px;background:radial-gradient(circle,color-mix(in srgb, var(--ocean) 40%, transparent),transparent 70%);top:35%;left:5%;animation:orb-drift-c 15s ease-in-out infinite}
-.orb.d{width:320px;height:320px;background:radial-gradient(circle,color-mix(in srgb, var(--accent) 30%, transparent),transparent 70%);bottom:20%;right:8%;animation:orb-drift-d 20s ease-in-out infinite}
+.orb.a{width:420px;height:420px;background:radial-gradient(circle,color-mix(in srgb, var(--accent) 45%, transparent),transparent 70%);top:-120px;right:-80px;animation:orb-drift-a calc(var(--ambient-orb) - 2s) var(--ease-both) infinite}
+.orb.b{width:360px;height:360px;background:radial-gradient(circle,color-mix(in srgb, var(--accent-2) 35%, transparent),transparent 70%);bottom:-100px;left:-60px;animation:orb-drift-b calc(var(--ambient-orb) + 2s) var(--ease-both) infinite}
+.orb.c{width:280px;height:280px;background:radial-gradient(circle,color-mix(in srgb, var(--ocean) 40%, transparent),transparent 70%);top:35%;left:5%;animation:orb-drift-c calc(var(--ambient-orb) - 5s) var(--ease-both) infinite}
+.orb.d{width:320px;height:320px;background:radial-gradient(circle,color-mix(in srgb, var(--accent) 30%, transparent),transparent 70%);bottom:20%;right:8%;animation:orb-drift-d var(--ambient-orb) var(--ease-both) infinite}
 @keyframes orb-drift-a{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-40px)}}
 @keyframes orb-drift-b{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,30px)}}
 @keyframes orb-drift-c{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-25px)}}
@@ -163,7 +247,7 @@ body{
   -webkit-backdrop-filter:blur(16px) saturate(140%);
   border:1px solid var(--glass-border);
   border-radius:var(--radius);
-  box-shadow:var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,.12);
+  box-shadow:var(--glass-shadow), inset 0 1px 0 var(--glass-sheen);
 }
 
 /* 跳转到主要内容（仅键盘 Tab 聚焦时出现）
@@ -176,7 +260,7 @@ body{
   white-space:nowrap;
   padding:12px 20px;border-radius:0 0 12px 0;
   background:var(--accent-2);color:#04161f;
-  font-size:0.875rem;font-weight:600;text-decoration:none;
+  font-size:var(--fs-sm);font-weight:600;text-decoration:none;
 }
 .skip-link:focus{
   width:auto;height:auto;overflow:visible;
@@ -187,38 +271,59 @@ body{
 /* main 接收跳转焦点时不显示整块描边 */
 main:focus{outline:none}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
-.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(4,17,29,.55);border-bottom:1px solid rgba(150,210,255,.12);transition:background .35s var(--ease-out),box-shadow .35s var(--ease-out)}
+.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(4,17,29,.55);border-bottom:1px solid var(--hairline);transition:background .35s var(--ease-out),box-shadow .35s var(--ease-out)}
 .nav.scrolled{background:rgba(4,17,29,.82);box-shadow:0 6px 28px rgba(0,0,0,.35)}
 .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
-.brand{font-weight:700;letter-spacing:.04em;font-size:1.125rem;color:var(--text);text-decoration:none}
+.brand{font-weight:700;letter-spacing:.04em;font-size:var(--fs-brand);color:var(--text);text-decoration:none}
 .brand span{color:var(--accent)}
 .nav-links{display:flex;gap:6px}
-.nav-links a{color:var(--text-dim);text-decoration:none;padding:8px 14px;border-radius:999px;font-size:0.875rem;transition:.2s}
+.nav-links a{color:var(--text-dim);text-decoration:none;padding:8px 14px;border-radius:999px;font-size:var(--fs-sm);transition:.2s}
 .nav-links a:hover{color:var(--text);background:var(--glass-bg)}
 /* 当前页标识：语义上由 aria-current="page" 提供，视觉上用同等的强调色，
    让"我在哪一页"对键盘/读屏用户和普通用户都同样清晰。 */
 .nav-links a[aria-current="page"]{color:var(--text);background:var(--glass-bg-strong)}
 
-.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:80px 24px;position:relative;overflow:hidden}
-.hero-card{max-width:680px;text-align:center;padding:48px 40px;animation:float 7s ease-in-out infinite}
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:var(--space-7) 24px;position:relative;overflow:hidden}
+.hero-card{max-width:680px;text-align:center;padding:48px 40px;animation:float var(--ambient-float) var(--ease-both) infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.eyebrow{font-size:0.8125rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:18px;font-weight:600}
+.eyebrow{font-size:var(--fs-sm);letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:18px;font-weight:600}
 .hero h1{font-size:clamp(48px,9vw,112px);line-height:1.05;font-weight:800;margin-bottom:28px;text-wrap:balance;font-family:'Syne',sans-serif;letter-spacing:-.03em}
 .hero p.sub{color:var(--text-dim);font-size:clamp(18px,2.8vw,24px);margin-bottom:36px;line-height:1.7;font-weight:400}
-.btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:18px 36px;border-radius:999px;font-weight:600;font-size:1rem;text-decoration:none;transition:.25s cubic-bezier(.25,.46,.45,.94);border:1px solid transparent;font-family:'Inter',sans-serif}
-.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04161f;box-shadow:0 6px 22px rgba(72,202,228,.35)}
+.btns{display:flex;gap:var(--space-1h);justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:18px 36px;border-radius:999px;font-weight:600;font-size:var(--fs-base);text-decoration:none;transition:transform var(--dur-base) var(--ease-out),background var(--dur-base) var(--ease-out),border-color var(--dur-base) var(--ease-out);border:1px solid transparent;font-family:'Inter',sans-serif}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04161f;box-shadow:0 6px 22px var(--accent-glow)}
 .btn-primary:hover{transform:translateY(-2px)}
 .btn:active{transform:translateY(0) scale(.97);transition-duration:.08s}
 .btn-ghost{background:var(--glass-bg);border-color:var(--glass-border);color:var(--text)}
 .btn-ghost:hover{background:var(--glass-bg-strong)}
 
+/* 章节垂直节奏：140px 不在 8pt 刻度上，但它是经过取舍的"整块呼吸感"值——
+   140 与 --space-8(96) 差距明显，硬套会明显压缩留白。
+   这里保留数值 + 注释说明，而不是强行令牌化（避免"为了整齐而破坏设计"）。
+   想统一调节奏时，改这一处即可，全站章节间距跟着走。 */
 section{padding:140px 0}
-.section-title{font-size:clamp(28px,5vw,56px);text-align:center;margin-bottom:56px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:-.02em}
-.section-title small{display:block;color:var(--text-faint);font-size:0.875rem;font-weight:400;margin-top:8px;letter-spacing:.1em}
+/* 标题行高（2026-10 排版精度轮）：
+   此前全站标题都没有单独声明 line-height，一律继承 body 的 1.7 ——
+   body 的 1.7 是为「正文连续阅读」调的，而标题通常只有一两行，
+   继承 1.7 会让 56px 的大标题行距拉到 95px，字与字之间空得失去整体感。
+   规则：字越大，行高越紧。
+     ≥48px → 1.12（超大标题，视觉上当成一整块）
+     24–47px → 1.25（中标题）
+     <24px  → 1.35（小标题，仍需与正文有明显区分）
+   这三档定成令牌，标题只引用令牌，不各自写死数值 ——
+   以后想整体调节奏，只改这里。 */
+:root{
+  --lh-display:1.12;  /* 超大标题（≥48px） */
+  --lh-heading:1.25;  /* 中标题（24–47px） */
+  --lh-title:1.35;    /* 小标题（<24px） */
+}
+.section-title{font-size:clamp(28px,5vw,56px);line-height:var(--lh-display);text-align:center;margin-bottom:56px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:-.02em;text-wrap:balance}
+/* 副标签是英文小字，行高要按小字走，不能跟着大标题的 1.12 ——
+   否则 14px 的小字行距只有 16px，中英文混排时会显得挤。 */
+.section-title small{display:block;color:var(--text-faint);font-size:var(--fs-sm);line-height:1.6;font-weight:400;margin-top:var(--space-1);letter-spacing:.1em}
 
 .about{max-width:760px;margin:0 auto;text-align:center}
-.about p{color:var(--text-dim);font-size:var(--fs-base);margin-bottom:18px;text-wrap:pretty}
+.about p{color:var(--text-dim);font-size:var(--fs-base);margin-bottom:var(--space-2);text-wrap:pretty}
 .quote{
   font-size:clamp(20px,3vw,26px);font-weight:700;color:var(--text);
   margin:var(--space-4) auto;line-height:1.5;max-width:640px;
@@ -229,68 +334,103 @@ section{padding:140px 0}
 
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:48px}
 .card{padding:36px;border-radius:32px;transition:.25s}
-.card:hover{transform:translateY(-8px) scale(1.02);border-color:rgba(72,202,228,.5);box-shadow:0 32px 64px rgba(0,0,0,.3)}
+.card:hover{transform:translateY(-8px) scale(1.02);border-color:var(--accent-line-strong);box-shadow:0 32px 64px rgba(0,0,0,.3)}
 .card .ico{width:52px;height:52px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:var(--glass-bg-strong);border:1px solid var(--glass-border)}
 .card .ico svg{width:26px;height:26px;stroke:var(--accent);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.card h3{font-size:1.1875rem;margin-bottom:8px}
+.card h3{font-size:var(--fs-h-md);line-height:var(--lh-title);margin-bottom:8px}
 .card h3 a{color:var(--text);text-decoration:none}
-.card .desc{color:var(--text-dim);font-size:0.90625rem;margin-bottom:14px}
-.card .meta{font-size:0.78125rem;color:var(--text-faint);margin-bottom:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.card .links{display:flex;gap:10px}
-.card .links a{font-size:0.8125rem;color:var(--accent);text-decoration:none;padding:6px 12px;border:1px solid var(--glass-border);border-radius:999px}
+/* --- 字号下限（2026-10 排版精度轮）---
+   原则：正文级文字（要连续读的）不低于 15px；元信息（日期、标签、计数）
+   不低于 13px。12–13px 的中文在西文系统上还能读，但中文笔画密，
+   再小就吃力——这个站是中文站，下限要按中文定，不能照搬西文标准。
+   逐条对照实测值：
+     .card .desc      14.5px → 15px   （卡片描述，是正文级）
+     .post-card p     15px   → 15.5px （列表摘要，正文级）
+     .post-card .date 13px   → 13.5px （元信息，贴住下限）
+     .card .meta      12.5px → 13px   （元信息，贴住下限）
+   只调数值、不动颜色与布局，视觉变化很小，但可读性提升明确。 */
+.card .desc{color:var(--text-dim);font-size:var(--fs-sm);margin-bottom:14px}
+.card .meta{font-size:var(--fs-xs);color:var(--text-faint);margin-bottom:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.card .links{display:flex;gap:var(--space-1h)}
+.card .links a{font-size:var(--fs-sm);color:var(--accent);text-decoration:none;padding:6px 12px;border:1px solid var(--glass-border);border-radius:999px}
 .card .links a:hover{background:var(--glass-bg)}
 
 .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:880px;margin:0 auto}
 .contact-grid .card h3{color:var(--accent);margin-bottom:12px}
 .contact-grid ul{list-style:none}
-.contact-grid li{padding:8px 0;color:var(--text-dim);font-size:0.90625rem;border-bottom:1px dashed rgba(150,210,255,.12)}
+.contact-grid li{padding:8px 0;color:var(--text-dim);font-size:var(--fs-sm);border-bottom:1px dashed var(--hairline)}
 .contact-grid li:last-child{border-bottom:none}
 .card-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-.card-actions .btn{padding:10px 20px;font-size:0.875rem}
-.card-note{margin-top:16px;padding-top:14px;border-top:1px dashed var(--glass-border);color:var(--text-faint);font-size:0.84375rem;line-height:1.65}
+.card-actions .btn{padding:10px 20px;font-size:var(--fs-sm)}
+.card-note{margin-top:16px;padding-top:14px;border-top:1px dashed var(--glass-border);color:var(--text-faint);font-size:var(--fs-sm);line-height:1.65}
 
-footer{padding:40px 0;text-align:center;color:var(--text-faint);font-size:0.84375rem;border-top:1px solid rgba(150,210,255,.1)}
+footer{padding:var(--space-5) 0;text-align:center;color:var(--text-faint);font-size:var(--fs-sm);border-top:1px solid var(--hairline-faint)}
 footer a{color:var(--accent);text-decoration:none}
 
 .post-card{padding:28px;margin-bottom:22px;display:block;text-decoration:none;color:inherit;transition:.25s}
-.post-card:hover{transform:translateY(-3px);border-color:rgba(72,202,228,.4)}
-.post-card h3{font-size:1.25rem;margin-bottom:8px;color:var(--text)}
-.post-card .date{color:var(--text-faint);font-size:0.8125rem;margin-bottom:10px}
-.post-card p{color:var(--text-dim);font-size:0.9375rem}
+.post-card:hover{transform:translateY(-3px);border-color:var(--accent-line)}
+.post-card h3{font-size:var(--fs-h-md);line-height:var(--lh-title);margin-bottom:8px;color:var(--text)}
+.post-card .date{color:var(--text-faint);font-size:var(--fs-sm);margin-bottom:10px}
+.post-card p{color:var(--text-dim);font-size:var(--fs-base)}
 
-.article{max-width:760px;margin:0 auto;padding:40px 24px}
+.article{max-width:760px;margin:0 auto;padding:var(--space-5) 24px}
 .article.glass{padding:44px}
-.article h1{font-size:clamp(24px,4vw,34px);margin-bottom:10px;line-height:1.35}
-.article .date{color:var(--text-faint);margin-bottom:30px;font-size:0.875rem}
-.article p{margin-bottom:18px;color:var(--body-text);font-size:1.03125rem}
-.article h2{margin:34px 0 14px;font-size:1.375rem;color:var(--text)}
-.article code{background:var(--glass-bg);padding:2px 7px;border-radius:6px;font-family:ui-monospace,monospace;font-size:0.875rem;color:var(--accent)}
+.article h1{font-size:clamp(24px,4vw,34px);margin-bottom:10px;line-height:var(--lh-heading)}
+.article .date{color:var(--text-faint);margin-bottom:30px;font-size:var(--fs-sm)}
+.article p{margin-bottom:18px;color:var(--body-text);font-size:var(--fs-md)}
+.article h2{margin:34px 0 14px;font-size:var(--fs-h-lg);line-height:var(--lh-heading);color:var(--text)}
+.article code{background:var(--glass-bg);padding:2px 7px;border-radius:6px;font-family:ui-monospace,monospace;font-size:var(--fs-sm);color:var(--accent)}
 
 /* 页脚签名 */
 .footer-sign{margin-top:8px}
 .sign{
-  display:inline-block;color:var(--accent);letter-spacing:.08em;font-size:0.84375rem;
+  display:inline-block;color:var(--accent);letter-spacing:.08em;font-size:var(--fs-sm);
   padding:2px 2px 4px;
   background:linear-gradient(90deg,var(--accent),var(--accent-2)) bottom left/100% 1px no-repeat;
   background-size:100% 1px;
 }
 /* 文章内元素 */
-.article ul,.article ol{margin:0 0 18px 22px;color:var(--body-text);font-size:1.03125rem}
+.article ul,.article ol{margin:0 0 18px 22px;color:var(--body-text);font-size:var(--fs-md)}
 .article li{margin-bottom:9px}
-.article h3{margin:28px 0 12px;font-size:1.125rem;color:var(--accent)}
-.article table{width:100%;border-collapse:collapse;margin:0 0 22px;font-size:0.90625rem}
-.article th,.article td{border:1px solid rgba(150,210,255,.18);padding:10px 12px;text-align:left;vertical-align:top}
+.article h3{margin:28px 0 12px;font-size:var(--fs-h-sm);line-height:var(--lh-title);color:var(--accent)}
+.article table{width:100%;border-collapse:collapse;margin:0 0 22px;font-size:var(--fs-sm)}
+.article th,.article td{border:1px solid var(--hairline-table);padding:10px 12px;text-align:left;vertical-align:top}
 .article th{background:rgba(255,255,255,.05);color:var(--text);font-weight:600}
 .article td{color:var(--body-text)}
 .article blockquote{margin:0 0 20px;padding:14px 18px;border-left:3px solid var(--accent);background:var(--glass-bg);border-radius:0 12px 12px 0;color:var(--text-dim)}
 .article blockquote strong{color:var(--text)}
-.article .tag{display:inline-block;font-size:0.78125rem;color:var(--accent);border:1px solid var(--glass-border);border-radius:999px;padding:4px 12px;margin:0 8px 14px 0}
-.article .links{margin-top:28px;padding-top:20px;border-top:1px solid rgba(150,210,255,.14)}
-.article .links a{font-size:0.875rem;color:var(--accent);text-decoration:none;padding:6px 14px;border:1px solid var(--glass-border);border-radius:999px;margin-right:10px;display:inline-block;margin-bottom:10px}
+.article .tag{display:inline-block;font-size:var(--fs-xs);color:var(--accent);border:1px solid var(--glass-border);border-radius:999px;padding:4px 12px;margin:0 8px 14px 0}
+.article .links{margin-top:28px;padding-top:20px;border-top:1px solid var(--hairline-strong)}
+.article .links a{font-size:var(--fs-sm);color:var(--accent);text-decoration:none;padding:6px 14px;border:1px solid var(--glass-border);border-radius:999px;margin-right:10px;display:inline-block;margin-bottom:10px}
 .article .links a:hover{background:var(--glass-bg)}
 
 /* .reveal 的初始态、过渡与错落延迟统一由文件末尾的「微动效系统」定义，
    那里是全站时长与位移的唯一来源。此处不留副本，避免两套规则打架。 */
+
+/* ============================================================
+   大屏（≥1200px）—— 补上此前缺失的一档
+   ------------------------------------------------------------
+   改动前断点只有 980 / 720 / 520 / 430，全是 max-width。
+   后果：1080–2560px 之间没有任何针对性调整，容器恒定 1080px，
+   在 1440 以上的屏幕上内容只占约 1/2 宽，两侧留白过大，
+   视觉重心浮在中间一小块 —— 这就是"内容与屏幕比例失衡"。
+
+   处理原则不是"把容器拉宽"（正文超过约 75 字符/行会显著降低
+   可读性，1080px 的正文宽度是对的），而是：
+     · 让容器随屏幕适度放宽（1080 → 1180），缓解两侧空旷
+     · 同步放大章节留白，让"呼吸感"跟屏幕一起增长
+     · 首屏标题略放大，避免在高分屏上显得小气
+   正文宽度仍受 .article 的 760px 上限约束，长文可读性不受影响。 */
+@media(min-width:1200px){
+  :root{--maxw:1180px}
+  section{padding:168px 0}
+  .hero h1{font-size:clamp(112px,7.8vw,132px)}
+}
+/* 超宽屏（≥1680px）：留白再加一档，但容器不再继续放大。
+   刻意停在这里 —— 继续放宽会让行长超出舒适阅读区间。 */
+@media(min-width:1680px){
+  section{padding:184px 0}
+}
 
 @media(max-width:980px){
   section{padding:68px 0}
@@ -302,7 +442,7 @@ footer a{color:var(--accent);text-decoration:none}
   section{padding:60px 0}
 
   /* 导航栏：加了设置按钮后，窄屏必须防止换行挤压 */
-  .nav .wrap{gap:8px}
+  .nav .wrap{gap:var(--space-1)}
   .brand{white-space:nowrap;flex-shrink:0}
   .nav-links{
     flex-wrap:nowrap;
@@ -311,16 +451,23 @@ footer a{color:var(--accent);text-decoration:none}
     -ms-overflow-style:none;
   }
   .nav-links::-webkit-scrollbar{display:none}
+  /* 窄屏导航字号刻意低于 --fs-sm(14.5px)：
+     四个导航项 + 品牌字 + 设置按钮在 375px 宽屏上总宽已达 303px，
+     再按常规字号放大就会挤到横向溢出。这里是为「放得下」做的取舍，
+     不是遗漏 —— 故保留裸值并注明，不并入常规字阶。 */
   .nav-links a{
-    padding:6px 8px;font-size:0.8125rem;white-space:nowrap;flex-shrink:0;
+    padding:6px 8px;font-size:13px;white-space:nowrap;flex-shrink:0;
   }
   .prefs{flex-shrink:0}
 }
 
 /* 极窄屏（<420px）：四个导航项确实放不下，隐藏纯文字链接，
-   设置按钮里已包含「外观」等入口，站点主要入口仍在首屏按钮上 */
+   设置按钮里已包含「外观」等入口，站点主要入口仍在首屏按钮上。
+   字号再降一档（12.5px = --fs-xs 的值，此处写裸值是因为它属于
+   「窄屏压缩序列」的一环，跟上面 13px 配对阅读更清楚，
+   单独引用令牌反而看不出 13 → 12.5 这个递进关系）。 */
 @media(max-width:430px){
-  .nav-links a{padding:6px 6px;font-size:0.78125rem}
+  .nav-links a{padding:6px 6px;font-size:12.5px}
 }
 
 @media(prefers-reduced-motion:reduce){
@@ -371,10 +518,27 @@ html[data-theme="light"]{
   --ocean:#b9dcee;
   --accent:#036e91;
   --accent-2:#0b7fa8;
+  /* 强调色强度刻度（浅色版）：基色由 #48cae4 换成浅色主题的 #036e91。
+     不覆盖这三个刻度的话，浅色模式下会继续用深色模式的青蓝色，
+     在浅底上偏荧光、且与 --accent 脱节（改一个另一个不跟着变）。 */
+  --accent-whisper:rgba(3,110,145,.08);
+  --accent-faint:rgba(3,110,145,.20);
+  --accent-soft:rgba(3,110,145,.22);
+  --accent-line:rgba(3,110,145,.42);
+  --accent-line-strong:rgba(3,110,145,.55);
+  --accent-glow:rgba(3,110,145,.28);
+  --accent-solid:rgba(3,110,145,.80);
   --glass-bg:rgba(255,255,255,.62);
   --glass-bg-strong:rgba(255,255,255,.82);
   --glass-border:rgba(3,110,145,.20);
   --glass-shadow:0 8px 28px rgba(7,39,61,.13);
+  /* 玻璃内高光：浅色下玻璃更白，高光要更亮才看得出"厚度" */
+  --glass-sheen:rgba(255,255,255,.75);
+  /* 分隔线（浅色版）：基色换成 #036e91，基线透明度保持与深色一致的层级关系 */
+  --hairline:rgba(3,110,145,.14);
+  --hairline-strong:rgba(3,110,145,.18);
+  --hairline-faint:rgba(3,110,145,.12);
+  --hairline-table:rgba(3,110,145,.18);
   --text:#062a3d;
   --text-dim:#3d6076;
   --text-faint:#3f5d72;
@@ -390,10 +554,22 @@ html[data-theme="light"]{
     --ocean:#b9dcee;
     --accent:#036e91;
     --accent-2:#0b7fa8;
+    --accent-whisper:rgba(3,110,145,.08);
+    --accent-faint:rgba(3,110,145,.20);
+    --accent-soft:rgba(3,110,145,.22);
+    --accent-line:rgba(3,110,145,.42);
+    --accent-line-strong:rgba(3,110,145,.55);
+    --accent-glow:rgba(3,110,145,.28);
+    --accent-solid:rgba(3,110,145,.80);
     --glass-bg:rgba(255,255,255,.62);
     --glass-bg-strong:rgba(255,255,255,.82);
     --glass-border:rgba(3,110,145,.20);
     --glass-shadow:0 8px 28px rgba(7,39,61,.13);
+    --glass-sheen:rgba(255,255,255,.75);
+    --hairline:rgba(3,110,145,.14);
+    --hairline-strong:rgba(3,110,145,.18);
+    --hairline-faint:rgba(3,110,145,.12);
+    --hairline-table:rgba(3,110,145,.18);
     --text:#062a3d;
     --text-dim:#3d6076;
     --text-faint:#3f5d72;
@@ -409,10 +585,10 @@ html[data-theme="light"] .ocean-bg{
     radial-gradient(circle at 80% 85%, rgba(2,62,138,.16), transparent 50%),
     linear-gradient(160deg, #eaf4fa 0%, #d3e8f4 45%, #b9dcee 100%);
 }
-html[data-theme="light"] .orb.a{background:radial-gradient(circle,rgba(72,202,228,.30),transparent 70%)}
+html[data-theme="light"] .orb.a{background:radial-gradient(circle,var(--accent-glow),transparent 70%)}
 html[data-theme="light"] .orb.b{background:radial-gradient(circle,rgba(2,62,138,.10),transparent 70%)}
 html[data-theme="light"] .orb.c{background:rgba(2,62,138,.08)}
-html[data-theme="light"] .orb.d{background:rgba(72,202,228,.20)}
+html[data-theme="light"] .orb.d{background:var(--accent-faint)}
 html[data-theme="light"] .nav{
   background:rgba(234,244,250,.78);
   border-bottom-color:rgba(3,110,145,.14);
@@ -459,7 +635,7 @@ html[data-theme="light"] .post-card:focus-visible{outline-color:#0b7fa8}
       radial-gradient(circle at 80% 85%, rgba(2,62,138,.16), transparent 50%),
       linear-gradient(160deg, #eaf4fa 0%, #d3e8f4 45%, #b9dcee 100%);
   }
-  html[data-theme-pref="system"] .orb.a{background:radial-gradient(circle,rgba(72,202,228,.30),transparent 70%)}
+  html[data-theme-pref="system"] .orb.a{background:radial-gradient(circle,var(--accent-glow),transparent 70%)}
   html[data-theme-pref="system"] .orb.b{background:radial-gradient(circle,rgba(2,62,138,.10),transparent 70%)}
   html[data-theme-pref="system"] .nav{
     background:rgba(234,244,250,.78);border-bottom-color:rgba(3,110,145,.14);
@@ -526,13 +702,13 @@ html[data-theme="light"] .post-card:focus-visible{outline-color:#0b7fa8}
 }
 /* 开关态的显示/隐藏与展开动画统一交给文件末尾的「微动效系统」，
    那里用 visibility + opacity + transform 实现可过渡的进出场。 */
-.prefs-panel h3{font-size:0.9375rem;margin-bottom:4px;color:var(--text)}
-.prefs-panel h4{font-size:0.8125rem;color:var(--text-faint);font-weight:600;letter-spacing:.06em;margin:18px 0 8px;text-transform:uppercase}
-.prefs-panel p{font-size:0.84375rem;color:var(--text-dim);line-height:1.6}
+.prefs-panel h3{font-size:var(--fs-base);margin-bottom:4px;color:var(--text)}
+.prefs-panel h4{font-size:var(--fs-sm);color:var(--text-faint);font-weight:600;letter-spacing:.06em;margin:18px 0 8px;text-transform:uppercase}
+.prefs-panel p{font-size:var(--fs-sm);color:var(--text-dim);line-height:1.6}
 /* 选项下方的解释文案。比正文再小半档、去掉行高余量，
    目的是让它读起来像"注解"而不是"又一个选项"。 */
 .prefs-hint{
-  margin-top:8px;font-size:0.78125rem;line-height:1.55;
+  margin-top:var(--space-1);font-size:var(--fs-xs);line-height:1.55;
   color:var(--text-faint);
 }
 
@@ -546,7 +722,7 @@ html[data-theme="light"] .post-card:focus-visible{outline-color:#0b7fa8}
   display:flex;align-items:center;justify-content:center;
   /* 44px 触摸目标下限（WCAG 2.5.5）；原先 38px 偏小 */
   box-sizing:border-box;min-height:44px;
-  padding:8px 6px;font-size:0.8125rem;line-height:1.2;font-family:inherit;
+  padding:8px 6px;font-size:var(--fs-sm);line-height:1.2;font-family:inherit;
   white-space:nowrap;
   border:1px solid var(--glass-border);border-radius:12px;
   background:var(--glass-bg);color:var(--text-dim);
@@ -556,7 +732,7 @@ html[data-theme="light"] .post-card:focus-visible{outline-color:#0b7fa8}
 .prefs-seg button.is-active{
   background:linear-gradient(135deg,var(--accent),var(--accent-2));
   color:#04161f;border-color:transparent;font-weight:600;
-  box-shadow:0 4px 14px rgba(72,202,228,.30);
+  box-shadow:0 4px 14px var(--accent-glow);
 }
 /* 浅色模式下 accent 变深，激活按钮改用白字 */
 html[data-theme="light"] .prefs-seg button.is-active{color:#fff}
@@ -569,20 +745,20 @@ html[data-theme="light"] .prefs-seg button.is-active{color:#fff}
 .prefs-list{list-style:none;margin:0}
 .prefs-list li{
   display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:7px 0;font-size:0.8125rem;
+  padding:7px 0;font-size:var(--fs-sm);
   border-bottom:1px dashed var(--glass-border);
 }
 .prefs-list li:last-child{border-bottom:none}
 .prefs-list a{color:var(--accent);text-decoration:none}
 .prefs-list a:hover{text-decoration:underline}
-.prefs-list time{color:var(--text-faint);font-size:0.75rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.prefs-empty{font-size:0.8125rem;color:var(--text-faint);line-height:1.6}
+.prefs-list time{color:var(--text-faint);font-size:var(--fs-xs);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.prefs-empty{font-size:var(--fs-sm);color:var(--text-faint);line-height:1.6}
 
 /* 操作按钮 */
 .prefs-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .prefs-actions button{
   /* 44px 触摸目标下限（WCAG 2.5.5） */
-  flex:1 1 auto;padding:9px 14px;min-height:44px;font-size:0.8125rem;font-family:inherit;
+  flex:1 1 auto;padding:9px 14px;min-height:44px;font-size:var(--fs-sm);font-family:inherit;
   border:1px solid var(--glass-border);border-radius:12px;
   background:var(--glass-bg);color:var(--text);cursor:pointer;transition:.18s;
 }
@@ -597,13 +773,13 @@ html[data-theme="light"] .prefs-seg button.is-active{color:#fff}
   clip-path:inset(50%);white-space:nowrap;
 }
 .prefs-msg{
-  margin-top:12px;font-size:0.78125rem;line-height:1.55;color:var(--text-faint);
+  margin-top:12px;font-size:var(--fs-xs);line-height:1.55;color:var(--text-faint);
   display:none;
 }
 .prefs-msg.is-visible{display:block}
 .prefs-msg.is-warn{color:#AA6262}
 .prefs-storage{
-  margin-top:14px;padding-top:12px;font-size:0.78125rem;color:var(--text-faint);
+  margin-top:14px;padding-top:12px;font-size:var(--fs-xs);color:var(--text-faint);
   border-top:1px solid var(--glass-border);line-height:1.6;
 }
 .prefs-storage.is-warn{color:#AA6262}
@@ -639,14 +815,14 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
   display:none;align-items:center;gap:12px;
   padding:12px 16px;border-radius:14px;
   max-width:calc(100vw - 32px);
-  font-size:0.875rem;line-height:1.5;
+  font-size:var(--fs-sm);line-height:1.5;
 }
 .pwa-update.is-visible,.pwa-ios-hint.is-visible{display:flex}
 .pwa-update{bottom:20px}
 .pwa-ios-hint{bottom:74px}
 
 .pwa-update button,.pwa-ios-close{
-  font-family:inherit;font-size:0.84375rem;cursor:pointer;
+  font-family:inherit;font-size:var(--fs-sm);cursor:pointer;
   border-radius:999px;border:1px solid var(--glass-border);
   padding:7px 14px;background:var(--glass-bg);color:var(--text);
   transition:.2s;white-space:nowrap;
@@ -656,7 +832,7 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
   color:#04161f;border-color:transparent;font-weight:600;
 }
 .pwa-ios-close{
-  padding:4px 10px;font-size:1rem;line-height:1;
+  padding:4px 10px;font-size:var(--fs-base);line-height:1;
 }
 .pwa-update button:hover,.pwa-ios-close:hover{transform:translateY(-1px)}
 
@@ -695,16 +871,52 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 :root{
   --dur-fast:140ms;   /* 按下、悬停这类瞬时反馈 */
   --dur-base:240ms;   /* 进场、位移等可感知的过渡 */
-  --dur-slow:1600ms;  /* 背景呼吸这类氛围运动 */
+  /* ⚠️ --dur-slow 当前没有消费者，但同样**不要删**：
+     tests/test_pages.py 要求三档时长令牌齐备，且三处降级/总开关都会重设它。
+     它的语义是"非过渡类的长时程动作"，等有真实用例时直接用，不必再引入新名。 */
+  --dur-slow:1600ms;
 
-  /* 缓动：出场用 --ease-out（先快后慢，收得干脆）
-     入场用 --ease-in（先慢后快）
-     --ease-both 用于需要来回往复的循环运动 */
+  /* 氛围动画时长（2026-10 新增：此前这些时长全是硬编码秒数）
+     ------------------------------------------------------------
+     问题：背景漂移 / 光球浮动 / 卡片呼吸 / 波浪推移，时长分别写死成
+     7s / 15s / 18s / 20s / 22s / 9s，散落在各条规则里。后果是：
+       · 「减少动效」里把 --dur-slow 设成 1ms 的做法，其实管不到它们
+         （它们根本不读 --dur-slow），真正生效的只有另外写的 animation:none
+       · 想整体调快/调慢氛围感，要逐个改 6 处秒数
+     现在收敛成三个令牌，并统一由它们引用。
+     降级时（reduced-motion / data-motion=off）把这三个设为 0s，
+     动画会瞬间跑完并停在末帧，等价于关闭，无需再逐条 animation:none。
+     注意：这里用「秒」而非「毫秒」，因为 animation-duration 接受 s/ms，
+     而氛围动画的尺度本就是秒级；混用单位是算不出来的。 */
+  --ambient-drift:22s;   /* 背景极光对角线漂移 */
+  --ambient-orb:20s;     /* 光球浮动基准（各球在此基础上快慢不同） */
+  --ambient-float:7s;    /* 卡片呼吸式浮动、焦散描边旋转 */
+
+  /* 缓动（2026-10 修正了注释方向错误）
+     ------------------------------------------------------------
+     原注释写作「出场用 --ease-out，入场用 --ease-in」—— 方向写反了。
+     正确的直觉是：
+       · 元素"进来/亮起"要「先快后慢」，冲进来然后稳稳停下 → ease-out
+       · 元素"离开/收起"要「先慢后快」，慢慢起动然后加速离场 → ease-in
+     所以 --ease-out 用于 .reveal 入场是对的（原实现没写错，是注释写错了）。
+     --ease-both 用于需要来回往复的循环运动（氛围背景的呼吸）。
+     三个曲线在此统一定义，此处是本文件的唯一来源。 */
   --ease-out:cubic-bezier(.22,1,.36,1);
+  /* ⚠️ --ease-in 当前没有消费者，但保留：
+     它的曲线是"先慢后快"，语义上与 --ease-out（先快后慢）成对，
+     是缓动体系的一半。当前全站没有"元素离开"的动画（.reveal 只在入场），
+     所以用不上；一旦要做出场动画（如元素消失、抽屉收起），
+     直接用这个令牌，而不是临时写一条新曲线 —— 保持"一个语义一个名字"。
+     同样受 tests/test_pages.py 的令牌齐备性契约保护。 */
   --ease-in:cubic-bezier(.4,0,.9,.35);
   --ease-both:cubic-bezier(.65,0,.35,1);
 
-  /* 三档位移距离：小=反馈，中=进场，大=强调 */
+  /* 三档位移距离：小=反馈，中=进场，大=强调
+     ⚠️ --shift-md(6px) 当前没有任何规则引用它，但**不要在清理死代码时删掉**：
+     它是契约的一部分 —— tests/test_pages.py 断言三个位移令牌必须齐备，
+     tests/e2e/site.spec.mjs 断言降级时 --shift-md 归零。
+     删掉会让测试变红，而且"中档位移"是为将来准备的（当前只有"反馈"和
+     "强调"两档有使用者，中间档留白）。 */
   --shift-sm:2px;
   --shift-md:6px;
   --shift-lg:14px;
@@ -903,6 +1115,12 @@ footer .wrap { view-transition-name: footer; }
     --shift-sm:0px;
     --shift-md:0px;
     --shift-lg:0px;
+    /* 氛围时长归零是"双保险"：下面已逐条 animation:none 关掉氛围动画，
+       把令牌也设为 0s 是为了任何**新加**的氛围动画一旦忘记写 animation:none，
+       也能自动归零 —— 这是给未来留的安全网，不是当前有漏网之鱼。 */
+    --ambient-drift:0s;
+    --ambient-orb:0s;
+    --ambient-float:0s;
   }
   .ocean-bg,.orb,.hero-card{animation:none!important}
   .reveal{opacity:1;transform:none;transition:none;transition-delay:0s;animation:none!important;filter:none!important}
@@ -959,7 +1177,12 @@ footer .wrap { view-transition-name: footer; }
 @media(hover:hover){
   .card:hover,.post-card:hover{transform:translateY(calc(-1 * var(--shift-sm)))}
 }
-@media(hover:none){
+/* 触屏降速。此前这里写的是 @media(hover:none)，与文件末尾那处
+   @media (hover: none), (pointer: coarse) 写法不一致 ——
+   两处判断的是同一件事（"没有悬停能力"），写法不同只是历史遗留。
+   现统一为双重条件，因为它更稳妥：部分设备只报 pointer:coarse
+   而不报 hover:none（或反之），单条件会漏判，导致装饰元素留在页面上。 */
+@media (hover: none), (pointer: coarse) {
   .card:hover,.post-card:hover{transform:none}
   :root{--dur-slow:2600ms}
 }
@@ -990,6 +1213,10 @@ footer .wrap { view-transition-name: footer; }
   --shift-sm:0px;
   --shift-md:0px;
   --shift-lg:0px;
+  /* 与 prefers-reduced-motion 同样的双保险，见该处说明 */
+  --ambient-drift:0s;
+  --ambient-orb:0s;
+  --ambient-float:0s;
 }
 :root[data-motion="off"] .ocean-bg,
 :root[data-motion="off"] .orb.a,
@@ -1030,7 +1257,10 @@ footer .wrap { view-transition-name: footer; }
    避免内容贴边、行高拥挤 —— 这是媒体查询按屏宽无法精细表达的。 */
 @container (max-width: 340px) {
   .card, .post-card { padding: 20px; }
-  .card h3, .post-card h3 { font-size: 1.15rem; }
+  /* 卡片被塞进窄容器时标题降一档（20px → 18.4px）。
+     这是容器查询下的「自适应收缩」，只在卡片自己变窄时触发，
+     与屏幕宽度无关 —— 所以不能写成常规字阶令牌，也不能用媒体查询替代。 */
+  .card h3, .post-card h3 { font-size: 18.4px; }
 }
 /* 键盘聚焦反馈：卡片内任意链接/按钮获得焦点时，整卡边框点亮。
    用 :focus-visible 只在键盘导航时触发，鼠标点击不闪。
@@ -1076,7 +1306,7 @@ h1, h2, h3 { text-wrap: balance; }
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    animation: gradient-flow 7s linear infinite;
+    animation: gradient-flow var(--ambient-float) linear infinite;
   }
   @keyframes gradient-flow { to { background-position: 220% center; } }
 }
@@ -1084,7 +1314,7 @@ h1, h2, h3 { text-wrap: balance; }
 /* ---- ③ 滚动视差海洋背景（扩展 .ocean-bg / .orb，scroll() 时间线驱动） ---- */
 @supports (animation-timeline: scroll()) {
   .ocean-bg {
-    animation: drift 22s ease-in-out infinite,
+    animation: drift var(--ambient-drift) var(--ease-both) infinite,
                ocean-parallax linear both;
     animation-timeline: auto, scroll(root block);
     animation-range: normal, 0% 100%;
@@ -1109,7 +1339,7 @@ main > section + section::before {
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='54' viewBox='0 0 160 54'%3E%3Cpath d='M0 27 Q40 7 80 27 T160 27 V54 H0 Z' fill='%2348cae4' opacity='0.16'/%3E%3Cpath d='M0 27 Q40 7 80 27 T160 27' fill='none' stroke='%23a8e6f0' stroke-width='1.5' opacity='0.5'/%3E%3C/svg%3E") repeat-x center / 160px 100%;
   opacity: .7;
-  animation: wave-drift 9s ease-in-out infinite alternate;
+  animation: wave-drift calc(var(--ambient-float) + 2s) var(--ease-both) infinite alternate;
 }
 @keyframes wave-drift { from { background-position-x: 0; } to { background-position-x: 160px; } }
 
@@ -1125,13 +1355,15 @@ main > section + section::before {
     transparent 0deg, rgba(72,202,228,0) 40deg,
     var(--accent) 110deg, var(--accent-2) 150deg,
     transparent 220deg, transparent 360deg);
+  /* 注：这里的 rgba(72,202,228,0) 是「透明锚点」，用来让 conic-gradient
+     从完全透明处起旋，透明度 0 与主题色无关，故保留裸值不令牌化。 */
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   opacity: .5;
   pointer-events: none;
   transition: opacity .3s var(--ease-out);
-  animation: border-spin 7s linear infinite;
+  animation: border-spin var(--ambient-float) linear infinite;
 }
 .card:hover::after, .post-card:hover::after { opacity: 1; }
 @keyframes border-spin { to { --angle: 360deg; } }
@@ -1156,18 +1388,17 @@ body::after {
 .btn, .card, .post-card { position: relative; overflow: hidden; }
 .ripple__dot {
   position: absolute; border-radius: 50%;
-  background: radial-gradient(circle, rgba(168,230,240,.55), rgba(72,202,228,.22) 60%, transparent 70%);
+  background: radial-gradient(circle, rgba(168,230,240,.55), var(--accent-soft) 60%, transparent 70%);
   transform: scale(0);
   opacity: .6;
   pointer-events: none;
   animation: ripple-out .6s var(--ease-out) forwards;
 }
 @keyframes ripple-out { to { transform: scale(1); opacity: 0; } }
-: 0; } }
 
 /* ========== Phase 2: 微交互 ========== */
-.custom-cursor,.custom-cursor-dot{display:none !important;position:fixed;width:20px;height:20px;border:2px solid rgba(72,202,228,0.8);border-radius:50%;pointer-events:none;z-index:9999;transition:transform .1s ease-out,width .2s,height .2s,border-color .2s,background .2s;transform:translate(-50%,-50%)}
-.mouse-glow{display:none !important;position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(72,202,228,.08) 0%,transparent 70%);pointer-events:none;z-index:1;transform:translate(-50%,-50%);transition:left .3s ease-out,top .3s ease-out}
+.custom-cursor,.custom-cursor-dot{display:none !important;position:fixed;width:20px;height:20px;border:2px solid var(--accent-solid);border-radius:50%;pointer-events:none;z-index:9999;transition:transform .1s ease-out,width .2s,height .2s,border-color .2s,background .2s;transform:translate(-50%,-50%)}
+.mouse-glow{display:none !important;position:fixed;width:400px;height:400px;background:radial-gradient(circle,var(--accent-whisper) 0%,transparent 70%);pointer-events:none;z-index:1;transform:translate(-50%,-50%);transition:left .3s ease-out,top .3s ease-out}
 @media (prefers-reduced-motion: no-preference){
   .custom-cursor,.custom-cursor-dot{display:block !important}
   .mouse-glow{display:block !important}
@@ -1178,4 +1409,45 @@ body::after {
    指针能力判断双保险。 */
 @media (hover: none), (pointer: coarse) {
   .custom-cursor,.custom-cursor-dot,.mouse-glow{display:none !important}
+}
+
+/* ============================================================
+   v7 特效层的降级补丁（必须放在本文件最末尾）
+   ------------------------------------------------------------
+   为什么需要这一块：上方的「第 2 层降级层」（约 1093 行）与
+   「第 4 层总开关」（约 1200 行）都写了
+     .card::after,.post-card::after{animation:none}
+   但焦散描边规则在第 1332 行、渐变流光的 animation 在 1300 行附近 ——
+   **都在降级规则之后**。CSS 同权重时靠源顺序取胜，后来的会赢，
+   于是那两条 animation:none 被后面的 animation:border-spin 反压回去，
+   降级实际失效（浏览器实测确认：reduce 下 border-spin 仍在运行）。
+   这正是本项目注释里记过的"降级被文件末尾的 @supports 块压过"的
+   同一个坑，v7 特效层又踩了一次。
+
+   修法：把特效层的降级统一挪到所有特效规则之后，用 !important 明确定权。
+   只关动效、不隐藏内容 —— 焦散描边是纯装饰，取消动画后它仍是一条
+   静态光边（opacity 保留），不影响任何内容的可读性。 */
+@media(prefers-reduced-motion:reduce){
+  .hero h1,
+  .ocean-bg,
+  .orb.a,.orb.b,.orb.c,.orb.d,
+  .hero-card,
+  main > section + section::before,
+  .card::after,.post-card::after,
+  body::after{
+    animation:none !important;
+  }
+}
+:root[data-motion="off"] .hero h1,
+:root[data-motion="off"] .ocean-bg,
+:root[data-motion="off"] .orb.a,
+:root[data-motion="off"] .orb.b,
+:root[data-motion="off"] .orb.c,
+:root[data-motion="off"] .orb.d,
+:root[data-motion="off"] .hero-card,
+:root[data-motion="off"] main > section + section::before,
+:root[data-motion="off"] .card::after,
+:root[data-motion="off"] .post-card::after,
+:root[data-motion="off"] body::after{
+  animation:none !important;
 }

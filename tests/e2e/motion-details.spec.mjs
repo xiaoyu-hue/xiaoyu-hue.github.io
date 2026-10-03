@@ -74,4 +74,70 @@ test.describe('v7 视觉细节', () => {
     const count = await page.evaluate(() => document.querySelectorAll('.ripple__dot').length);
     expect(count, 'pointerdown 应生成至少 1 个水波纹元素').toBeGreaterThanOrEqual(1);
   });
+
+  // 回归护栏：v7 特效层的降级规则曾因「源顺序」而被反压失效。
+  //
+  // 背景：.card::after（焦散描边）定义在文件第 1332 行附近，而 CSS 里
+  // 写在第 1093 行「降级层」和约 1200 行「总开关」中的
+  //   .card::after{animation:none}
+  // 都在它**之前**。CSS 同权重靠源顺序取胜，后面的 animation 会赢，
+  // 于是 reduced-motion 下描边照转 —— 降级静默失效。
+  //
+  // 这类 bug 极其隐蔽：逻辑测试绿、a11y 扫描绿、像素快照也只能告诉你
+  // 「有差异」，不会说「降级没生效」。只有真浏览器里读 computed style
+  // 的 animationName 才看得出来。所以专门钉一条在这里。
+  test('reduced-motion 下焦散描边与氛围动画必须真正停下（源顺序回归护栏）', async ({
+    page,
+  }) => {
+    // 前置条件：默认媒体环境下这些动画确实在播。
+    // 没有这一步，一旦哪天特效被整体删掉，本条会「因为本来就没有」而假通过。
+    const before = await page.evaluate(() => ({
+      spin: getComputedStyle(document.querySelector('.card'), '::after').animationName,
+      bg: getComputedStyle(document.querySelector('.ocean-bg')).animationName,
+    }));
+    expect(before.spin, '前置条件失败：默认应有焦散描边动画').toBe('border-spin');
+    expect(before.bg, '前置条件失败：默认应有氛围背景动画').not.toBe('none');
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.reload({ waitUntil: 'load' });
+
+    const names = await page.evaluate(() => {
+      const spin = getComputedStyle(document.querySelector('.card'), '::after').animationName;
+      const bg = getComputedStyle(document.querySelector('.ocean-bg')).animationName;
+      return { spin, bg };
+    });
+
+    expect(
+      names.spin,
+      '焦散描边在 reduced-motion 下仍在播动画：说明降级规则被后面的特效规则按源顺序反压了，' +
+        '需要把降级补丁挪到文件最末尾'
+    ).toBe('none');
+    expect(names.bg, '氛围背景在 reduced-motion 下仍在播动画，降级失效').toBe('none');
+  });
+
+  test('data-motion=off 下同一批特效也必须停（总开关回归护栏）', async ({ page }) => {
+    // 先确认"没开开关时确实在播"——否则这条测试可能因为默认就是停的而假通过。
+    const before = await page.evaluate(
+      () => getComputedStyle(document.querySelector('.card'), '::after').animationName
+    );
+    expect(before, '前置条件失败：默认状态下焦散描边本应播放，否则本条断言无意义').toBe(
+      'border-spin'
+    );
+
+    await page.evaluate(() => {
+      document.documentElement.dataset.motion = 'off';
+    });
+    await page.waitForTimeout(50);
+
+    const names = await page.evaluate(() => {
+      const spin = getComputedStyle(document.querySelector('.card'), '::after').animationName;
+      const bg = getComputedStyle(document.querySelector('.ocean-bg')).animationName;
+      const hero = getComputedStyle(document.querySelector('.hero h1')).animationName;
+      return { spin, bg, hero };
+    });
+
+    expect(names.spin, '总开关下焦散描边仍在播').toBe('none');
+    expect(names.bg, '总开关下氛围背景仍在播').toBe('none');
+    expect(names.hero, '总开关下流光标题仍在播').toBe('none');
+  });
 });

@@ -12,7 +12,7 @@
     "body": "blog-index.body.html",
     "url_path": "blog/index.html",
     "title": "博客 · xiaoyu-hue",
-    "description": "一个非程序员和 AI Agent 协作的实验记录。",
+    "description": "一个非程序员和 AI Agent 协作的实验记录，以及随笔与摘录。",
     "og_type": "article",
     "footer": "page"
   },
@@ -20,7 +20,7 @@
     "body": "blog-post-1.body.html",
     "url_path": "blog/post-1.html",
     "title": "我和 AI 的协作方式:先把边界写清楚 · xiaoyu-hue",
-    "description": "一个非程序员和 AI Agent 协作的规则:需求确认后再开工、大任务拆小步、如实标注做不到什么。",
+    "description": "一个非程序员和 AI Agent 协作的规则:需求确认后再开工、大任务拆小步、如实标注做不到什么;以及这个博客为什么一半是项目、一半是随笔。",
     "og_type": "article",
     "footer": "page",
     "date": "2026-09-30"
