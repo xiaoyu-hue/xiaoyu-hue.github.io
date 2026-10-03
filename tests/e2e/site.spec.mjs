@@ -356,8 +356,12 @@ test.describe('移动端布局', () => {
         document.body.style.overflowX = 'visible';
         const bad = [];
         for (const el of document.querySelectorAll('body *')) {
-          // .orb / .ocean-bg 是 position:fixed 的装饰层，故意出血到视口外
-          if (el.classList.contains('orb') || el.classList.contains('ocean-bg')) continue;
+          // .orb / .ocean-bg 是 position:fixed 的装饰层，故意出血到视口外；
+          // .custom-cursor / .custom-cursor-dot / .mouse-glow 是 Phase-2 微交互的固定装饰层
+          // （pointer-events:none），同样被 body{overflow-x:hidden} 裁掉，不是真实横向溢出
+          if (el.classList.contains('orb') || el.classList.contains('ocean-bg') ||
+              el.classList.contains('custom-cursor') || el.classList.contains('custom-cursor-dot') ||
+              el.classList.contains('mouse-glow')) continue;
           const rect = el.getBoundingClientRect();
           if (rect.width === 0 && rect.height === 0) continue;
           if (rect.right > window.innerWidth + 1 || rect.left < -1) {
