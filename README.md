@@ -306,6 +306,26 @@ python3 build.py --write   # 确认无误后再写入成品 HTML 与 _headers
 > **测 PWA 功能必须用 `http://localhost:8000`，不能用 `http://127.0.0.1:8000` 之外的 IP。**
 > Service Worker 只在「安全上下文」下工作：HTTPS，或 localhost。用局域网 IP（如 `192.168.x.x`）访问时，SW 会静默注册失败，离线功能不可用——这是浏览器的安全限制，不是站点的问题。
 
+### 新增一篇博客文章
+
+**加一篇文章 = 加一个文件。**
+
+把正文写成 `src/pages/blog-post-N.body.html` 放进去，跑一次 `python3 build.py --write`
+就够了——列表页卡片、离线页入口、RSS、站点地图、手机离线缓存清单全部自动跟上，
+不需要再改第二处。
+
+标题取正文的 `<h1>`，日期取正文的 `<div class="date">`，摘要取正文第一段。
+只有当想给搜索引擎和列表卡片分别写更讲究的文案时，才去 `src/data/pages.json`
+里补 `description` 和 `card`。
+
+这件事原本要同步 8 个地方。之所以能塌缩成 1 个，是因为「有哪些文章」
+的唯一事实来源是 `src/pages/` 这个目录本身，其余全部由构建脚本算出来。
+
+完整流程、硬性要求，以及几处容易踩的坑（比如视觉基线只能由 CI 生成、
+CSP 不允许内联样式）写在
+[`.github/skills/new-blog-post/SKILL.md`](.github/skills/new-blog-post/SKILL.md)。
+那份文件遵循 Agent Skills 规范，主要交给 AI 助手执行；人照着做也一样。
+
 ---
 
 ## 部署：主站与备用站
