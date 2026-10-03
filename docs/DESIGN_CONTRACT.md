@@ -76,7 +76,18 @@ CSS 同权重时靠源码顺序取胜——主题块 / 降级块必须排在它�
   `--dur-slow` 当前无消费者但**不要删**（tests/test_pages.py 要求三档齐备）。
 - 逐条语义见 style.css 内注释（写得很全，改前必读）。
 
-## 五、本契约的边界（诚实声明）
+## 五、字体体系（2026-10 视觉改版新增）
+
+- 展示层（hero 标题 / section 标题 / 文章标题 / 引言 / 品牌字）：`var(--font-display)`
+  = LXGW WenKai GB Screen（楷体，书卷气）→ 回退 Noto Sans SC
+- 正文/按钮/小字：Noto Sans SC（可读性优先，小字号不用楷体）
+- 文楷仅常规字重，display 元素配 `font-synthesis-weight:none` 保持笔形完整
+- 切片位于 `assets/fonts/lxgw-wenkai-gb-screen/`，unicode-range 按需加载，
+  **不要手工增删切片文件**（font.css 与 woff2 必须成套替换）
+- 调整展示字号时的教训：`.hero h1` 有三条规则（基础 / ≥1200px / ≤520px），
+  改字号必须三处一起看，按源顺序后者胜出
+
+## 六、本契约的边界（诚实声明）
 
 - `--lh-display/heading/title`（标题行高）等少量令牌定义在文件中部，
   由 R3 兜底防拼写；R1 允许它们存在（它们在 `:root` 语境里，合法）。

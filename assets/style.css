@@ -173,6 +173,12 @@
   --fs-h-lg:22px;   /* 文章内二级标题 */
   --fs-brand:18px;  /* 导航品牌字（与 --fs-h-sm 同值但语义不同，不共用：
                        共用会导致「调文章标题」意外改掉品牌字） */
+  /* 展示字体（2026-10 视觉改版 · 方向二"人文诗意"）：
+     楷体书卷气用于标题层，正文保持 Noto Sans SC（小字号楷体可读性弱）。
+     切片按需加载（unicode-range），见 assets/fonts/lxgw-wenkai-gb-screen/font.css。
+     注意：该字体只有常规字重——display 元素配 font-synthesis-weight:none
+     保持笔形完整（浏览器不再合成假粗体）；若文楷加载失败，回退 Noto 仍是真粗体。 */
+  --font-display:'LXGW WenKai GB Screen','Noto Sans SC',sans-serif;
   /* 缓动曲线 */
   --ease-out:cubic-bezier(.22,1,.36,1);
   /* 注：原先此处还有一条 --ease-in-out，取值与文件末尾的 --ease-both
@@ -274,7 +280,7 @@ main:focus{outline:none}
 .nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(4,17,29,.55);border-bottom:1px solid var(--hairline);transition:background .35s var(--ease-out),box-shadow .35s var(--ease-out)}
 .nav.scrolled{background:rgba(4,17,29,.82);box-shadow:0 6px 28px rgba(0,0,0,.35)}
 .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
-.brand{font-weight:700;letter-spacing:.04em;font-size:var(--fs-brand);color:var(--text);text-decoration:none}
+.brand{font-weight:700;letter-spacing:.04em;font-size:var(--fs-brand);color:var(--text);text-decoration:none;font-family:var(--font-display);font-synthesis-weight:none}
 .brand span{color:var(--accent)}
 .nav-links{display:flex;gap:6px}
 .nav-links a{color:var(--text-dim);text-decoration:none;padding:8px 14px;border-radius:999px;font-size:var(--fs-sm);transition:.2s}
@@ -287,7 +293,7 @@ main:focus{outline:none}
 .hero-card{max-width:680px;text-align:center;padding:48px 40px;animation:float var(--ambient-float) var(--ease-both) infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .eyebrow{font-size:var(--fs-sm);letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:18px;font-weight:600}
-.hero h1{font-size:clamp(48px,9vw,112px);line-height:1.05;font-weight:800;margin-bottom:28px;text-wrap:balance;font-family:'Noto Sans SC',sans-serif;letter-spacing:-.03em}
+.hero h1{font-size:clamp(42px,6.5vw,76px);line-height:1.22;font-weight:800;margin-bottom:28px;text-wrap:balance;font-family:var(--font-display);letter-spacing:.01em;font-synthesis-weight:none}
 .hero p.sub{color:var(--text-dim);font-size:clamp(18px,2.8vw,24px);margin-bottom:36px;line-height:1.7;font-weight:400}
 .btns{display:flex;gap:var(--space-1h);justify-content:center;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:18px 36px;border-radius:999px;font-weight:600;font-size:var(--fs-base);text-decoration:none;transition:transform var(--dur-base) var(--ease-out),background var(--dur-base) var(--ease-out),border-color var(--dur-base) var(--ease-out);border:1px solid transparent;font-family:'Inter',sans-serif}
@@ -317,7 +323,7 @@ section{padding:140px 0}
   --lh-heading:1.25;  /* 中标题（24–47px） */
   --lh-title:1.35;    /* 小标题（<24px） */
 }
-.section-title{font-size:clamp(28px,5vw,56px);line-height:var(--lh-display);text-align:center;margin-bottom:56px;font-weight:700;font-family:'Noto Sans SC',sans-serif;letter-spacing:-.02em;text-wrap:balance}
+.section-title{font-size:clamp(28px,5vw,56px);line-height:var(--lh-display);text-align:center;margin-bottom:56px;font-weight:700;font-family:var(--font-display);letter-spacing:.02em;text-wrap:balance;font-synthesis-weight:none}
 /* 副标签是英文小字，行高要按小字走，不能跟着大标题的 1.12 ——
    否则 14px 的小字行距只有 16px，中英文混排时会显得挤。 */
 .section-title small{display:block;color:var(--text-faint);font-size:var(--fs-sm);line-height:1.6;font-weight:400;margin-top:var(--space-1);letter-spacing:.1em}
@@ -326,8 +332,9 @@ section{padding:140px 0}
 .about p{color:var(--text-dim);font-size:var(--fs-base);margin-bottom:var(--space-2);text-wrap:pretty}
 .quote{
   font-size:clamp(20px,3vw,26px);font-weight:700;color:var(--text);
-  margin:var(--space-4) auto;line-height:1.5;max-width:640px;
+  margin:var(--space-4) auto;line-height:1.6;max-width:640px;
   padding-left:22px;border-left:3px solid var(--accent);text-align:left;
+  font-family:var(--font-display);font-synthesis-weight:none;
 }
 .quote::before{content:"“";color:var(--accent);margin-right:4px}
 .quote::after{content:"”";color:var(--accent);margin-left:4px}
@@ -375,7 +382,7 @@ footer a{color:var(--accent);text-decoration:none}
 
 .article{max-width:760px;margin:0 auto;padding:var(--space-5) 24px}
 .article.glass{padding:44px}
-.article h1{font-size:clamp(24px,4vw,34px);margin-bottom:10px;line-height:var(--lh-heading)}
+.article h1{font-size:clamp(24px,4vw,34px);margin-bottom:10px;line-height:var(--lh-heading);font-family:var(--font-display);font-synthesis-weight:none}
 .article .date{color:var(--text-faint);margin-bottom:30px;font-size:var(--fs-sm)}
 .article p{margin-bottom:18px;color:var(--body-text);font-size:var(--fs-md)}
 .article h2{margin:34px 0 14px;font-size:var(--fs-h-lg);line-height:var(--lh-heading);color:var(--text)}
@@ -424,7 +431,10 @@ footer a{color:var(--accent);text-decoration:none}
 @media(min-width:1200px){
   :root{--maxw:1180px}
   section{padding:168px 0}
-  .hero h1{font-size:clamp(112px,7.8vw,132px)}
+  /* 2026-10 文楷改版：楷体常规字重笔画细，超大字号视觉发飘且 598px 容器只容
+     4.5 字/行（会把"代码"拆行）。112–132 收至 92 上限、行高 1.15，
+     6 字/行 × 3 行正好放下主标题，词组不再拆行。 */
+  .hero h1{font-size:clamp(72px,6.4vw,92px);line-height:1.15}
 }
 /* 超宽屏（≥1680px）：留白再加一档，但容器不再继续放大。
    刻意停在这里 —— 继续放宽会让行长超出舒适阅读区间。 */
@@ -863,7 +873,6 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 }
 .pwa-update.is-visible,.pwa-ios-hint.is-visible{display:flex}
 .pwa-update{bottom:20px}
-.pwa-ios-hint{bottom:74px}
 
 .pwa-update button,.pwa-ios-close{
   font-family:inherit;font-size:var(--fs-sm);cursor:pointer;
@@ -882,7 +891,7 @@ button.btn:disabled{opacity:.6;cursor:default;transform:none}
 
 @media(max-width:520px){
   .pwa-update{flex-wrap:wrap;justify-content:center;bottom:14px}
-  .pwa-ios-hint{flex-wrap:wrap;justify-content:center;bottom:auto;top:14px}
+  .pwa-ios-hint{flex-wrap:wrap;justify-content:center;bottom:74px}
 }
 
 /* ============================================================

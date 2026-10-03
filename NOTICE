@@ -120,3 +120,12 @@ NOTICE 中提及的第三方项目名称与商标，归其各自所有者，仅�
 
 本项目按"现状"提供，不提供任何明示或默示的担保。LICENSE 中的免责
 条款适用于全部内容。
+
+--------------------------------------------------------------------------------
+LXGW WenKai GB Screen（霞鹜文楷 GB · 屏幕优化版）
+--------------------------------------------------------------------------------
+- 来源：https://github.com/lxgw/LxgwWenKaiGB （基于 Fontworks Klee One）
+- 网页切片版：https://github.com/Konghayao/cn-font-split （中文网字计划）
+- 协议：SIL Open Font License 1.1
+- 位置：assets/fonts/lxgw-wenkai-gb-screen/
+- 说明：仅常规字重；切片按 unicode-range 按需加载

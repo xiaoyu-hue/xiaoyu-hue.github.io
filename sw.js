@@ -61,6 +61,7 @@ const PRECACHE = [
   // posts:end
   '/offline.html',
   '/manifest.webmanifest',
+  '/assets/fonts/lxgw-wenkai-gb-screen/font.css',
   '/assets/style.css',
   '/assets/theme-boot.js',
   '/assets/prefs.js',

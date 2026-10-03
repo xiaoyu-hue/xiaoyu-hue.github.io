@@ -32,7 +32,9 @@
 <meta name="twitter:image" content="{{base_url}}/assets/og-cover.png">
 <link rel="icon" href="{{rel}}assets/favicon.svg" type="image/svg+xml">
 <script src="{{rel}}assets/theme-boot.js"></script>
-<link rel="stylesheet" href="{{rel}}assets/style.css">
+    <link rel="stylesheet" href="{{rel}}assets/style.css">
+  <!-- 文楷字体切片（unicode-range 按需加载）放在主样式之后：@font-face 不参与层叠，位置无影响 -->
+  <link rel="stylesheet" href="{{rel}}assets/fonts/lxgw-wenkai-gb-screen/font.css">
 {{head_extra}}
 </head>
 <body>
