@@ -45,7 +45,8 @@ EXPECTED_JSONLD_TYPE = {
 
 EXPECTED_REVEAL_COUNT = {
     "index.html": 11,
-    "blog/index.html": 9,
+    # 1 个区块标题 + 10 篇文章卡片
+    "blog/index.html": 11,
     "blog/post-1.html": 0,
     "blog/post-2.html": 0,
     "blog/post-3.html": 0,
@@ -54,6 +55,8 @@ EXPECTED_REVEAL_COUNT = {
     "blog/post-6.html": 0,
     "blog/post-7.html": 0,
     "blog/post-8.html": 0,
+    "blog/post-9.html": 0,
+    "blog/post-10.html": 0,
 }
 
 

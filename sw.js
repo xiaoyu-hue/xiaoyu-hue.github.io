@@ -29,7 +29,9 @@ const CACHE_PREFIX = 'xiaoyu-hue';
 // 已经被写进缓存的错误响应,只有靠换缓存名才能在 activate 时被清掉。
 // v8:双主题个性化升级（极光背景/胶片噪点/4光球系统/流光增强）
 //    纯原生 CSS 零依赖；换缓存名让已装 PWA 清缓存拿新样式。
-const CACHE_VERSION = 'v8';
+// v9:新增两篇随笔（post-9/post-10）。换缓存名是必须的 ——
+//    否则已安装 PWA 仍持有旧清单，离线时新文章会掉到 offline.html。
+const CACHE_VERSION = 'v9';
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const OFFLINE_URL = '/offline.html';
@@ -53,6 +55,8 @@ const PRECACHE = [
   '/blog/post-6.html',
   '/blog/post-7.html',
   '/blog/post-8.html',
+  '/blog/post-9.html',
+  '/blog/post-10.html',
   '/offline.html',
   '/manifest.webmanifest',
   '/assets/style.css',

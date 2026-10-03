@@ -88,5 +88,23 @@
     "og_type": "article",
     "footer": "page",
     "date": "2026-10-01"
+  },
+  "blog/post-9.html": {
+    "body": "blog-post-9.body.html",
+    "url_path": "blog/post-9.html",
+    "title": "你遮不遮雨伞 · xiaoyu-hue",
+    "description": "晚自习放学，一场砸下来的雨，和一个没带伞的人。舍友C那句“你遮不遮雨伞”，让我眼里冒起小星星。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-03"
+  },
+  "blog/post-10.html": {
+    "body": "blog-post-10.body.html",
+    "url_path": "blog/post-10.html",
+    "title": "泥坑里的那颗种子 · xiaoyu-hue",
+    "description": "暴雨过后，泥坑里有一颗外壳腐烂的种子。她冲我发火：我的外壳是腐烂的、肮脏的，但我的内心是纯粹的、干净的。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-03"
   }
 }
