@@ -227,9 +227,9 @@
   } catch (e) {
     showAll('动效脚本异常：' + (e && e.message ? e.message : e));
   }
-})();
 
-// ========== Phase 2 微交互 ==========
+  // ========== Phase 2 微交互（已纳入上方 IIFE：这样 initCustomCursor 等才能调用
+  // 同一作用域内定义的 motionEnabled，修复此前因函数定义在 IIFE 之外而静默失效的 bug） ==========
 
 // ⑪ 自定义光标 — 深海气泡跟随
 // 守 CSP：全用 setProperty，不写 style 属性。
@@ -353,3 +353,4 @@ function initMagneticButtons() {
     }, { passive: true });
   });
 }
+})();

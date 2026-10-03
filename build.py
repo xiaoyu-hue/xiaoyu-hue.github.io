@@ -282,6 +282,16 @@ def xml_escape(s):
              .replace('"', "&quot;"))
 
 
+def cdata_escape(text):
+    """CDATA 分段转义：把正文里的 ]]> 拆开，避免它提前结束 CDATA 区、弄断 RSS。
+
+    原理：把每个 ]]> 替换成 ]]]]><![CDATA[> —— 前者闭合旧 CDATA 区，
+    紧接着再开一个新 CDATA 区，解析器看到的是同一段连续文本，但 ]]> 不再成对出现。
+    正文恰含 ]]> 的概率极低（作者内容），但一旦命中就会让 feed.xml 在首个 ]]> 处断裂。
+    """
+    return text.replace("]]>", "]]]]><![CDATA[>")
+
+
 def rfc822_date(iso_date):
     """2026-09-30 → Mon, 30 Sep 2026 00:00:00 GMT（RSS 规定的 RFC 822 格式）"""
     from datetime import datetime
@@ -434,7 +444,7 @@ def render_feed(site, pages, bodies):
         out.append("      <guid isPermaLink=\"true\">%s</guid>" % xml_escape(
             canonical_url(site["base_url"], meta["url_path"])))
         out.append("      <pubDate>%s</pubDate>" % rfc822_date(meta["date"]))
-        out.append("      <description><![CDATA[%s]]></description>" % body)
+        out.append("      <description><![CDATA[%s]]></description>" % cdata_escape(body))
         out.append("    </item>")
 
     out += ["  </channel>", "</rss>"]

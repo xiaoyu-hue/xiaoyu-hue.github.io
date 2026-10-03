@@ -19,10 +19,15 @@ const SOURCE = readFileSync(
   path.join(here, '..', '..', 'assets', 'main.js'),
   'utf8',
 );
-// 只取 IIFE 部分（到 initMagneticButtons() 调用结束），Phase 2 函数在 IIFE 外部，
+// 只取 IIFE 部分（到 Phase 2 注释之前），Phase 2 函数在 IIFE 内部但位于此注释之后，
 // 不在本层测试范围内，避免引入不必要的依赖和异常路径。
-const IIFE_END = SOURCE.indexOf('// ========== Phase 2');
-const SOURCE_IIFE = IIFE_END > 0 ? SOURCE.substring(0, IIFE_END) : SOURCE;
+// 重构后 Phase 2 注释已移入 IIFE 内部，IIFE 要到文件末尾（Phase 2 函数之后）才用 })(); 闭合，
+// 所以这里以「IIFE 开头 ~ Phase 2 注释之前」截取，并补上 IIFE 闭合，保证片段是完整可执行的 IIFE。
+const IIFE_OPEN = SOURCE.indexOf('(function () {');
+const PHASE2 = SOURCE.indexOf('// ========== Phase 2');
+const SOURCE_IIFE = (IIFE_OPEN >= 0 && PHASE2 > IIFE_OPEN)
+  ? SOURCE.substring(IIFE_OPEN, PHASE2) + '})();\n'
+  : SOURCE;
 
 const KEY = 'xiaoyu-hue:prefs:v1';
 
