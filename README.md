@@ -172,7 +172,7 @@ xiaoyu-hue.github.io/
 - **组件规则不许用 `transition` 简写**：简写会把 `transition-delay` 一并重置为 `0s`，卡片同时带 `.card` 与 `.reveal` 时就会把错落延迟冲掉，表现为"动效齐刷刷一起出现"。这里全部改用 `transition-property` / `-duration` / `-timing-function` 长写。
 - **`data-motion` 必须无条件写入 `on`/`off`**：只写 `off` 会导致用户从关切回开时，残留的 `off` 属性永远清不掉。
 
-### 原生 CSS 动效增强（v6 大升级）
+### 原生 CSS 动效增强（v6 大升级，内部开发代号）
 
 v6 把视觉 / 微动效体系做了一次大升级，但**仍然零第三方库、零运行时依赖、不改 CSP**——全部用浏览器原生 CSS 能力实现，并接入上面这套降级网络。五块新增能力：
 
@@ -188,7 +188,7 @@ v6 把视觉 / 微动效体系做了一次大升级，但**仍然零第三方库
 
 > 参考实践：Andy Bell 的 [piccalil.li](https://piccalil.li) / "Build Excellent Websites" 方法论——用原生 CSS + View Transitions 做顶级静态站，与本站理念一致（CSS 优先、reduced-motion 优先、只用 `transform`/`opacity` 防布局抖动）。
 
-### 视觉冲击增强（v7 大升级）
+### 视觉冲击增强（v7 大升级，内部开发代号）
 
 v7 在 v6 的原生 CSS 引擎之上**新增七项视觉冲击效果**，仍零库、零运行时依赖、不改 CSP，并全部接入既有降级网络（reduced-motion / prefers-contrast / scripting:none / data-motion=off）。纯 CSS 四件套移动桌面通吃，跟手水波纹只需 `main.js` 加约 15 行：
 
@@ -236,12 +236,12 @@ v7 在 v6 的原生 CSS 引擎之上**新增七项视觉冲击效果**，仍零�
 `sw.js` 顶部有一个版本号：
 
 ```js
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 ```
 
-**发布新内容后，把这个数字加一**（`v6` → `v7`），用户下次访问时 Service Worker 会丢掉旧缓存、重新抓取，并弹出「有新版本可用」的提示条。
+**发布新内容后，把这个数字加一**（`v7` → `v8`），用户下次访问时 Service Worker 会丢掉旧缓存、重新抓取，并弹出「有新版本可用」的提示条。
 
-不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。本站历经模板化、机器可读层、微动效系统、原生 CSS 动效大升级（v6）、视觉冲击增强（v7）等多次大改，缓存版本已累计升到 `v7`，每次大改都靠升版本号让老用户尽快拿到新样式与脚本。
+不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。本站历经模板化、机器可读层、微动效系统、原生 CSS 动效大升级（v7）、视觉冲击增强（v8）等多次大改，缓存版本已累计升到 `v8`，每次大改都靠升版本号让老用户尽快拿到新样式与脚本。
 
 ### 为什么 Service Worker 必须在根目录
 
@@ -376,13 +376,13 @@ axe 只装在 devDependencies，**站点本身依旧零运行时依赖**。它�
 
 ## 依赖
 
-**站点本身零依赖**：不加载任何第三方 JS、CSS、字体或图片资源，`index.html` 里引用的全是本站自己的文件。字体走系统字体栈（`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …），不下载任何 web font —— 省一次请求，也不会有 FOIT（字体加载完成前的空白或闪动）。已逐文件核对：所有 HTML 的 `src`/`href` 只指向本站域名与 JSON-LD / Open Graph 的语义命名空间（schema.org、ogp.me、w3.org 等），不含任何 CDN、web font 或第三方脚本。访问和部署都不需要 Node.js。
+**站点本身零依赖**：不加载任何第三方 JS、CSS、字体或图片资源，`index.html` 里引用的全是本站自己的文件。字体默认走系统字体栈（`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …），标题、正文、代码再叠加本地托管的 Syne / Inter / JetBrains Mono（woff2 同域放在 `assets/fonts/`，不向任何外部 CDN 请求）。已逐文件核对：所有 HTML 的 `src`/`href` 只指向本站域名与 JSON-LD / Open Graph 的语义命名空间（schema.org、ogp.me、w3.org 等），不含任何 CDN、web font 或第三方脚本。访问和部署都不需要 Node.js。
 
 下面的东西只在你要改代码、跑验证时才需要：
 
 | 包 | 版本 | 许可证 | 用在哪 |
 |------|------|--------|--------|
-| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑 139 个用例（含跨浏览器降级） |
+| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | 真浏览器层：起本地服务、开真 Chromium 跑测试（源码 69 个测试用例；跨浏览器降级在 Firefox 项目下测） |
 | `playwright` / `playwright-core` | ^1.63.0 | Apache-2.0 | 上面那个的底层，不需要单独装 |
 | [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | ^4.13.0 | MPL-2.0 | 可访问性基线：把 axe 注入页面跑 WCAG 规则 |
 | `axe-core` | ^4.13.0 | MPL-2.0 | 上面那个的规则引擎，不需要单独装 |
@@ -394,9 +394,9 @@ MPL-2.0 是文件级 copyleft，但它只约束"你把这份代码的源文件�
 
 | 用途 | 需要什么 |
 |------|----------|
-| 契约层（84 例） | `python3` —— 只用标准库，一个 pip 包都不装 |
-| 逻辑层（63 例） | Node 18+ |
-| 真浏览器层（220 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
+| 契约层（120 例） | `python3` —— 只用标准库，一个 pip 包都不装 |
+| 逻辑层（67 例） | Node 18+ |
+| 真浏览器层（69 例） | Node 18+，Chromium 由 Playwright 自己下载（不进仓库） |
 | CSP/JSON-LD 实测 | Python 3 + `playwright` —— **可选**，不装也能构建和部署站点，只是没法亲自复现 [`docs/csp-jsonld.md`](docs/csp-jsonld.md) 里的结论 |
 
 CI 上跑的是 Node 20。
@@ -411,7 +411,7 @@ CI 上跑的是 Node 20。
 
 ## 更新站点
 
-成品 HTML 一律不再手改（改了也会被下次构建覆盖），正确顺序�会被下次构建覆盖），正确顺序�例如 `blog-post-9.body.html`
+1. 在 `src/pages/` 新建正文片段，例如 `blog-post-9.body.html`
 2. 在 `src/data/pages.json` 加一条元数据，`body` 指向刚才的片段，并填好 `title` / `description` / `og_type` / `date`：
 
    ```json
@@ -516,6 +516,4 @@ v7 新增效果的技术来源同样全部来自 Web 标准，另有一处交互
 ```
 代码        MIT              © 2026 xiaoyu-hue
 文章/文案   CC BY-NC-SA 4.0  © 2026 xiaoyu-hue
-```
-�   CC BY-NC-SA 4.0  © 2026 xiaoyu-hue
 ```
