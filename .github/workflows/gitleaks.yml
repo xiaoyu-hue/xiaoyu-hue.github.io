@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 拉取完整历史
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # 必须是 0，否则只扫到最近一次提交，历史里的密钥会漏掉
           fetch-depth: 0

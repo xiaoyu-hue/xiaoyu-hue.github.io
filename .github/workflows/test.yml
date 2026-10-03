@@ -14,7 +14,7 @@ jobs:
     name: 契约与逻辑测试
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 站点零依赖，用 runner 自带的 python3，不需要 setup-python
       - name: 页面契约 / 博客一致性 / 检查器自检
@@ -32,7 +32,7 @@ jobs:
     name: 真浏览器实测
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v7
         with:
@@ -41,7 +41,7 @@ jobs:
 
       - run: npm ci
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -68,7 +68,7 @@ jobs:
     name: 性能/可访问性/SEO 红线
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v7
         with:

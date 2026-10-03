@@ -68,4 +68,17 @@ test.describe('Phase-2 微交互（作用域 bug 防回归）', () => {
 
     expect(await page.locator('.custom-cursor').count(), '关闭动效后不应注入自定义光标').toBe(0);
   });
+
+  test('触屏设备（hover:none）不注入自定义光标/光晕，覆盖误启用回归', async ({ browser }) => {
+    // 反向断言：此前触屏无 (hover:none) 收口，装饰元素会静止卡在视口。
+    // 用 hasTouch 模拟触屏（Chromium 下等价于 (hover:none),(pointer:coarse)）。
+    const context = await browser.newContext({ hasTouch: true, reducedMotion: 'no-preference' });
+    const page = await context.newPage();
+    await page.goto('/');
+    await page.waitForTimeout(500);
+
+    expect(await page.locator('.custom-cursor').count(), '触屏设备不应注入自定义光标').toBe(0);
+    expect(await page.locator('.mouse-glow').count(), '触屏设备不应注入鼠标光晕').toBe(0);
+    await context.close();
+  });
 });

@@ -14,7 +14,7 @@ jobs:
     name: 链接 / CSP / PWA 资产
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 仓库零依赖,直接用 runner 自带的 python3,无需安装步骤
       - name: 运行完整性检查
@@ -29,7 +29,7 @@ jobs:
     name: CSP vs JSON-LD 实测
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v7
         with:
@@ -50,7 +50,7 @@ jobs:
     name: src 与成品一致性门禁
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 比较 src/ 与已提交成品是否一致
         run: python3 build.py

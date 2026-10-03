@@ -235,6 +235,10 @@
 // 守 CSP：全用 setProperty，不写 style 属性。
 function initCustomCursor() {
   if (!motionEnabled()) return;
+  // 触屏设备（无精确指针）不创建光标/光晕：它们永不触发 mousemove，
+  // 否则留下静止装饰元素卡在视口某处（真实 UI 缺陷）。
+  // 与 style.css 的 (hover:none),(pointer:coarse) 隐藏双保险。
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
   var cursor = document.createElement('div');
   cursor.className = 'custom-cursor';
   cursor.style.setProperty('position', 'fixed');
@@ -261,7 +265,6 @@ function initCustomCursor() {
   cursorDot.style.setProperty('transform', 'translate(-50%, -50%)');
   document.body.appendChild(cursorDot);
 
-  var isHoveringLink = false;
   document.addEventListener('mousemove', function(e) {
     cursor.style.setProperty('left', e.clientX + 'px');
     cursor.style.setProperty('top', e.clientY + 'px');
@@ -272,7 +275,6 @@ function initCustomCursor() {
   document.addEventListener('mouseover', function(e) {
     var target = e.target.closest('a, button, .card, .btn, .tag');
     if (target) {
-      isHoveringLink = true;
       cursor.style.setProperty('width', '40px');
       cursor.style.setProperty('height', '40px');
       cursor.style.setProperty('border-color', 'rgba(72,202,228,0.4)');
@@ -283,7 +285,6 @@ function initCustomCursor() {
   document.addEventListener('mouseout', function(e) {
     var target = e.target.closest('a, button, .card, .btn, .tag');
     if (target) {
-      isHoveringLink = false;
       cursor.style.setProperty('width', '20px');
       cursor.style.setProperty('height', '20px');
       cursor.style.setProperty('border-color', 'rgba(72,202,228,0.8)');
@@ -295,6 +296,8 @@ function initCustomCursor() {
 // ⑫ 鼠标跟随光晕 — 深海氛围
 function initMouseGlow() {
   if (!motionEnabled()) return;
+  // 同上：触屏设备不创建鼠标光晕
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
   var glow = document.createElement('div');
   glow.className = 'mouse-glow';
   glow.style.setProperty('position', 'fixed');
@@ -319,7 +322,6 @@ function initCardTilt() {
   var cards = document.querySelectorAll('.card, .post-card');
   cards.forEach(function(card) {
     card.style.setProperty('transform-style', 'preserve-3d');
-    card.style.setProperty('perspective', '1000px');
 
     card.addEventListener('mousemove', function(e) {
       var rect = card.getBoundingClientRect();

@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 拉取代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 对线上站点校验安全头
         run: python3 scripts/check_live_headers.py

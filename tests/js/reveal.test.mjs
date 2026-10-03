@@ -141,9 +141,9 @@ function runMain({
     sandbox.window.IntersectionObserver = sandbox.IntersectionObserver;
   }
 
-  // Phase 2 函数定义在 main.js 的 IIFE 外部，但它们调用 motionEnabled()
-  // motionEnabled 是 IIFE 内部的局部函数，沙箱需要模拟它
-  // 否则 Phase 2 函数调用时会抛 ReferenceError，触发 showAll 降级
+  // Phase 2 函数已纳入 main.js 的 IIFE 内部（首次修复后），可正常访问
+  // 同作用域的 motionEnabled()。本测试只截取 IIFE 片段（到 Phase 2 注释前），
+  // 其函数体被排除，故用 sandbox 桩函数模拟这些函数，避免引入异常路径。
   sandbox.motionEnabled = () => !reduce;
   sandbox.initCustomCursor = () => {};
   sandbox.initMouseGlow = () => {};

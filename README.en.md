@@ -176,10 +176,10 @@ Visiting a page that was **never cached** shows an offline notice listing the ar
 `sw.js` starts with a version constant:
 
 ```js
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 ```
 
-**After publishing new content, bump this number** (`v6` → `v7`). On the user's next visit the Service Worker drops the old cache, re-fetches, and shows a "new version available" bar.
+**After publishing new content, bump this number** (`v7` → `v8`). On the user's next visit the Service Worker drops the old cache, re-fetches, and shows a "new version available" bar.
 
 If you don't bump it, the HTML itself still updates (it is network-first), but styles and scripts may stay on the old version — so change it whenever you publish.
 
@@ -317,13 +317,13 @@ Every push to `main` runs all three layers in CI, plus one CSP/JSON-LD check (CI
 
 ## Dependencies
 
-**The site itself has zero dependencies.** No third-party JS, CSS, fonts or images are loaded — everything referenced from `index.html` is a local file. Typography uses a system font stack (`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …) and downloads no web font: one request fewer, and no FOIT. Every HTML file was checked line by line: all `src`/`href` point only to this site's own domain or to the semantic namespaces of JSON-LD / Open Graph (schema.org, ogp.me, w3.org …) — no CDN, no web font, no third-party script. You do not need Node.js to visit or deploy the site.
+**The site itself has zero dependencies.** No third-party JS, CSS, fonts or images are loaded — everything referenced from `index.html` is a local file. Typography defaults to a system font stack (`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …), with headings, body and code text additionally served by locally hosted Syne / Inter / JetBrains Mono (woff2, same-origin under `assets/fonts/`, no external CDN requested). Every HTML file was checked line by line: all `src`/`href` point only to this site's own domain or to the semantic namespaces of JSON-LD / Open Graph (schema.org, ogp.me, w3.org …) — no CDN, no third-party script. You do not need Node.js to visit or deploy the site.
 
 Everything below is only needed when you want to change code and verify it:
 
 | Package | Version | License | Used for |
 |---------|---------|---------|----------|
-| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | Real-browser layer: serves the site locally and drives real Chromium across 220 cases (including cross-browser fallbacks) |
+| [`@playwright/test`](https://github.com/microsoft/playwright) | ^1.63.0 | Apache-2.0 | Real-browser layer: serves the site locally and drives real Chromium across 117 cases (including cross-browser fallbacks) |
 | `playwright` / `playwright-core` | ^1.63.0 | Apache-2.0 | Underlying the above; not installed separately |
 | [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm) | ^4.13.0 | MPL-2.0 | Accessibility baseline: injects axe and runs WCAG rules |
 | `axe-core` | ^4.13.0 | MPL-2.0 | Rules engine behind the above; not installed separately |
@@ -335,16 +335,16 @@ MPL-2.0 is file-level copyleft, but it only bites if you modify and redistribute
 
 | Layer | Needs |
 |-------|-------|
-| Contract (84 cases) | `python3` — standard library only, no pip packages |
-| Logic (63 cases) | Node 18+ |
-| Real browser (220 cases) | Node 18+; Chromium is downloaded by Playwright (not committed) |
+| Contract (120 cases) | `python3` — standard library only, no pip packages |
+| Logic (67 cases) | Node 18+ |
+| Real browser (117 cases) | Node 18+; Chromium is downloaded by Playwright (not committed) |
 | CSP/JSON-LD check | Python 3 + `playwright` — **optional**. You can build and deploy the site without it; you just cannot reproduce the conclusion in [`docs/csp-jsonld.md`](docs/csp-jsonld.md) yourself |
 
 CI runs on Node 20.
 
 **GitHub Actions used**
 
-`actions/checkout@v4`, `actions/setup-node@v7` (`update-snapshots.yml` still uses `@v4`), `actions/setup-python@v7`, `actions/cache@v4`, `actions/upload-artifact@v7`, `github/codeql-action/init@v4`, `github/codeql-action/analyze@v4`, `gitleaks/gitleaks-action@v3`.
+`actions/checkout@v7`, `actions/setup-node@v7`, `actions/setup-python@v7`, `actions/cache@v6`, `actions/upload-artifact@v7`, `github/codeql-action/init@v4`, `github/codeql-action/analyze@v4`, `gitleaks/gitleaks-action@v3`.
 
 These are referenced by **version tag**, not pinned to a commit SHA. Tags are movable in principle. The repository has 6 workflows, 5 of which narrow `permissions` to `contents: read`; the one exception is `update-snapshots.yml` (a manually triggered visual-baseline rebuild), which needs `contents: write` to commit the new baseline back to `main` — required for that feature, and triggered only by the maintainer by hand. This repository holds **no secrets**. That trade-off was looked at and accepted — noted here because it is a deliberate choice, not an oversight.
 

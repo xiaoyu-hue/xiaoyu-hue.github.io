@@ -360,6 +360,9 @@
 
     function open() {
       lastFocus = document.activeElement;
+      // 背景设为 inert：focus trap 锁住 Tab 后，读屏软件的虚拟光标
+      // 也不会越到面板背后的内容（关闭时移除）。
+      document.querySelectorAll('main, footer').forEach(function (el) { el.inert = true; });
       panel.classList.add('is-open');
       toggle.setAttribute('aria-expanded', 'true');
       var first = panel.querySelector('[data-theme-option]');
@@ -368,6 +371,7 @@
     function close() {
       panel.classList.remove('is-open');
       toggle.setAttribute('aria-expanded', 'false');
+      document.querySelectorAll('main, footer').forEach(function (el) { el.inert = false; });
       if (lastFocus && lastFocus.focus) lastFocus.focus();
     }
     function isOpen() { return panel.classList.contains('is-open'); }

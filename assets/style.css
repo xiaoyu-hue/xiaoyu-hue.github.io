@@ -1173,3 +1173,9 @@ body::after {
   .mouse-glow{display:block !important}
 }
 [data-motion="off"] .custom-cursor,[data-motion="off"] .custom-cursor-dot,[data-motion="off"] .mouse-glow{display:none !important}
+/* 触屏设备（无精确指针）不显示光标/光晕：它们永不触发 mousemove，
+   否则会留下静止的装饰元素卡在视口某处（真实 UI 缺陷）。与 main.js 的
+   指针能力判断双保险。 */
+@media (hover: none), (pointer: coarse) {
+  .custom-cursor,.custom-cursor-dot,.mouse-glow{display:none !important}
+}

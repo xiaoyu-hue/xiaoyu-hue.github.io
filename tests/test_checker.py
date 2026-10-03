@@ -34,7 +34,8 @@ def _csp_from_checker():
     """
     import json
 
-    site = json.load(open(os.path.join(ROOT, "src", "data", "site.json"), encoding="utf-8"))
+    with open(os.path.join(ROOT, "src", "data", "site.json"), encoding="utf-8") as _fh:
+        site = json.load(_fh)
     csp = site.get("csp_meta")
     if not csp:
         raise AssertionError("src/data/site.json 里找不到 csp_meta")
@@ -467,8 +468,10 @@ class TestCheckerCatchesMotionProblems(unittest.TestCase):
     def test_detects_missing_token(self):
         def mutate(tmp):
             p = os.path.join(tmp, "assets", "style.css")
-            s = open(p, encoding="utf-8").read()
-            open(p, "w", encoding="utf-8").write(s.replace("--stagger-step:40ms", ""))
+            with open(p, encoding="utf-8") as f:
+                s = f.read()
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(s.replace("--stagger-step:40ms", ""))
 
         proc = self.run_case(mutate)
         self.assertEqual(proc.returncode, 1)
@@ -477,12 +480,14 @@ class TestCheckerCatchesMotionProblems(unittest.TestCase):
     def test_detects_missing_master_switch(self):
         def mutate(tmp):
             p = os.path.join(tmp, "assets", "style.css")
-            s = open(p, encoding="utf-8").read()
+            with open(p, encoding="utf-8") as f:
+                s = f.read()
             # 总开关选择器是 :root[data-motion="off"]，删掉这一行
             # 即可让检查器找不到开关。注意只删选择器前缀，
             # 不要连带删后面的令牌（那会变成另一类问题）。
-            open(p, "w", encoding="utf-8").write(
-                s.replace(':root[data-motion="off"]', ""))
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(
+                    s.replace(':root[data-motion="off"]', ""))
 
         proc = self.run_case(mutate)
         self.assertEqual(proc.returncode, 1)
@@ -492,9 +497,11 @@ class TestCheckerCatchesMotionProblems(unittest.TestCase):
         """两处 .reveal 定义会靠源顺序决定谁生效，改了 A 坏了 B。"""
         def mutate(tmp):
             p = os.path.join(tmp, "assets", "style.css")
-            s = open(p, encoding="utf-8").read()
-            open(p, "w", encoding="utf-8").write(
-                s + "\n.reveal{opacity:0;transition-delay:99ms}\n")
+            with open(p, encoding="utf-8") as f:
+                s = f.read()
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(
+                    s + "\n.reveal{opacity:0;transition-delay:99ms}\n")
 
         proc = self.run_case(mutate)
         self.assertEqual(proc.returncode, 1)
@@ -505,10 +512,12 @@ class TestCheckerCatchesMotionProblems(unittest.TestCase):
         transition-delay，把 .reveal 的错落延迟冲成 0。"""
         def mutate(tmp):
             p = os.path.join(tmp, "assets", "style.css")
-            s = open(p, encoding="utf-8").read()
-            open(p, "w", encoding="utf-8").write(
-                s.replace(
-                    ".card,.post-card{transition-property:border-color;"
+            with open(p, encoding="utf-8") as f:
+                s = f.read()
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(
+                    s.replace(
+                        ".card,.post-card{transition-property:border-color;"
                     "transition-duration:var(--dur-fast)}",
                     ".card,.post-card{transition:border-color 140ms ease}",
                 ))
@@ -520,9 +529,11 @@ class TestCheckerCatchesMotionProblems(unittest.TestCase):
     def test_detects_missing_reduced_motion_path(self):
         def mutate(tmp):
             p = os.path.join(tmp, "assets", "style.css")
-            s = open(p, encoding="utf-8").read()
-            open(p, "w", encoding="utf-8").write(
-                s.replace("@media(prefers-reduced-motion:reduce){.reveal{transition:none}}", ""))
+            with open(p, encoding="utf-8") as f:
+                s = f.read()
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(
+                    s.replace("@media(prefers-reduced-motion:reduce){.reveal{transition:none}}", ""))
 
         proc = self.run_case(mutate)
         self.assertEqual(proc.returncode, 1)
@@ -531,9 +542,11 @@ class TestCheckerCatchesMotionProblems(unittest.TestCase):
     def test_detects_missing_contrast_path(self):
         def mutate(tmp):
             p = os.path.join(tmp, "assets", "style.css")
-            s = open(p, encoding="utf-8").read()
-            open(p, "w", encoding="utf-8").write(
-                s.replace("@media(prefers-contrast:more){.reveal{opacity:1}}", ""))
+            with open(p, encoding="utf-8") as f:
+                s = f.read()
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(
+                    s.replace("@media(prefers-contrast:more){.reveal{opacity:1}}", ""))
 
         proc = self.run_case(mutate)
         self.assertEqual(proc.returncode, 1)
@@ -542,9 +555,11 @@ class TestCheckerCatchesMotionProblems(unittest.TestCase):
     def test_detects_missing_scripting_none_path(self):
         def mutate(tmp):
             p = os.path.join(tmp, "assets", "style.css")
-            s = open(p, encoding="utf-8").read()
-            open(p, "w", encoding="utf-8").write(
-                s.replace("@media(scripting:none){.reveal{opacity:1}}", ""))
+            with open(p, encoding="utf-8") as f:
+                s = f.read()
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(
+                    s.replace("@media(scripting:none){.reveal{opacity:1}}", ""))
 
         proc = self.run_case(mutate)
         self.assertEqual(proc.returncode, 1)
