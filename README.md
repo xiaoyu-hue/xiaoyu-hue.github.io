@@ -2,6 +2,9 @@
 
 **[English](./README.en.md) · 中文**
 
+> **哪一份是准线？** 两份都以代码为准、人工同步维护；万一出现分歧，**以本中文版为准**（它先写、也先更新）。
+> 文中引用的数字（缓存版本、测试数量、依赖版本）都刻意与代码严格一致；若发现任何一处对不上，那是文档的 bug，不是特性。
+
 > 个人主站 · 一个非程序员用 AI Agent 做出的四个项目,以及一份诚实的实验记录
 
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-主站-F38020?style=flat-square)](https://xiaoyu-hue-github-io.pages.dev/)
@@ -134,7 +137,8 @@ xiaoyu-hue.github.io/
 
 ## 微动效系统
 
-设置面板的「**外观**」下面还有一组「**动效**」开关（开启 / 关闭）。它不控制"有没有动画"那么简单——背后的设计目标是"动效是状态变化的说明书，不是装饰"：每一次位移、渐显、延迟，都要让用户看清"什么东西变了、从哪里来、到哪里去"。
+设置面板的「**外观**」下面还有一组「**动效**」开关（开启 / 关闭）。
+它不控制"有没有动画"那么简单——背后的设计目标是"动效是状态变化的说明书，不是装饰"：每一次位移、渐显、延迟，都要让用户看清"什么东西变了、从哪里来、到哪里去"。
 
 ### 五层结构（第 0 层到第 4 层）
 
@@ -169,7 +173,8 @@ xiaoyu-hue.github.io/
 ### 容错细节
 
 - **第 0 层必须放在 `style.css` 最末尾**：同权重靠源顺序取胜，上移会被前面的基础规则反覆盖（浅色主题块踩过同一个坑）。
-- **组件规则不许用 `transition` 简写**：简写会把 `transition-delay` 一并重置为 `0s`，卡片同时带 `.card` 与 `.reveal` 时就会把错落延迟冲掉，表现为"动效齐刷刷一起出现"。这里全部改用 `transition-property` / `-duration` / `-timing-function` 长写。
+- **组件规则不许用 `transition` 简写**：简写会把 `transition-delay` 一并重置为 `0s`，卡片同时带 `.card` 与 `.reveal` 时就会把错落延迟冲掉，表现为"动效齐刷刷一起出现"。
+  这里全部改用 `transition-property` / `-duration` / `-timing-function` 长写。
 - **`data-motion` 必须无条件写入 `on`/`off`**：只写 `off` 会导致用户从关切回开时，残留的 `off` 属性永远清不掉。
 
 ### 原生 CSS 动效增强（v6 大升级，内部开发代号）
@@ -184,13 +189,15 @@ v6 把视觉 / 微动效体系做了一次大升级，但**仍然零第三方库
 | 审美精准 | `color-mix()` 派生色 + `text-wrap: balance` | 主题色改一处、派生色全跟着变；标题换行更均衡 | 不支持退回原样 |
 | 入场 / 展开动画 | `transition-behavior: allow-discrete` | 设置面板收起时先播完淡出再消失，不"啪"地断 | 不支持退回现有 visibility 过渡 |
 
-**为什么不加动画库**：第三方库（如 cssanimation / Hover.css）会引入大量通用 CSS，稀释本站"令牌驱动、精准可控"的体系，也违背运行时零依赖的定位。这次升级证明，现代浏览器原生能力已足够撑起"系统级流畅 + 审美精准 + 移动桌面兼顾"。
+**为什么不加动画库**：第三方库（如 cssanimation / Hover.css）会引入大量通用 CSS，稀释本站"令牌驱动、精准可控"的体系，也违背运行时零依赖的定位。
+这次升级证明，现代浏览器原生能力已足够撑起"系统级流畅 + 审美精准 + 移动桌面兼顾"。
 
 > 参考实践：Andy Bell 的 [piccalil.li](https://piccalil.li) / "Build Excellent Websites" 方法论——用原生 CSS + View Transitions 做顶级静态站，与本站理念一致（CSS 优先、reduced-motion 优先、只用 `transform`/`opacity` 防布局抖动）。
 
 ### 视觉冲击增强（v7 大升级，内部开发代号）
 
-v7 在 v6 的原生 CSS 引擎之上**新增七项视觉冲击效果**，仍零库、零运行时依赖、不改 CSP，并全部接入既有降级网络（reduced-motion / prefers-contrast / scripting:none / data-motion=off）。纯 CSS 四件套移动桌面通吃，跟手水波纹只需 `main.js` 加约 15 行：
+v7 在 v6 的原生 CSS 引擎之上**新增七项视觉冲击效果**，仍零库、零运行时依赖、不改 CSP，并全部接入既有降级网络（reduced-motion / prefers-contrast / scripting:none / data-motion=off）。
+纯 CSS 四件套移动桌面通吃，跟手水波纹只需 `main.js` 加约 15 行：
 
 | 效果 | 原生技术 | 解决什么 | 降级 |
 |------|----------|----------|------|
@@ -241,7 +248,8 @@ const CACHE_VERSION = 'v8';
 
 **发布新内容后，把这个数字加一**（`v7` → `v8`），用户下次访问时 Service Worker 会丢掉旧缓存、重新抓取，并弹出「有新版本可用」的提示条。
 
-不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。本站历经模板化、机器可读层、微动效系统、原生 CSS 动效大升级（v7）、视觉冲击增强（v8）等多次大改，缓存版本已累计升到 `v8`，每次大改都靠升版本号让老用户尽快拿到新样式与脚本。
+不改这个数字的话，页面本体（HTML）仍会因为「网络优先」策略而更新，但样式和脚本可能停留在旧版本——所以发版时请一并改掉它。
+本站历经模板化、机器可读层、微动效系统、原生 CSS 动效大升级（v7）、视觉冲击增强（v8）等多次大改，缓存版本已累计升到 `v8`，每次大改都靠升版本号让老用户尽快拿到新样式与脚本。
 
 ### 为什么 Service Worker 必须在根目录
 
@@ -311,7 +319,8 @@ python3 build.py --write   # 确认无误后再写入成品 HTML 与 _headers
 
 ### 为什么留着备用站
 
-不是为了"备份"这个概念，是因为两者的**故障域不同**：Cloudflare 出问题时 GitHub Pages 仍然在线；反过来 GitHub 挂了，Cloudflare 边缘上已经部署好的静态副本也照样能服务，只是暂时无法触发新构建。互为兜底是有实际意义的，而维护成本是零。
+不是为了"备份"这个概念，是因为两者的**故障域不同**：Cloudflare 出问题时 GitHub Pages 仍然在线；反过来 GitHub 挂了，Cloudflare 边缘上已经部署好的静态副本也照样能服务，只是暂时无法触发新构建。
+互为兜底是有实际意义的，而维护成本是零。
 
 ### 两者的实际差异
 
@@ -330,11 +339,14 @@ python3 build.py --write   # 确认无误后再写入成品 HTML 与 _headers
 | 自定义域名 | 支持 | 支持，但仍加不了响应头 |
 | PWA / 离线 | 正常 | 正常 |
 
-上面这些是实测两个站的响应头得出的，不是照抄平台文档。差异里**唯一有实际影响的是 iframe 嵌套防护**：备站可能被别人嵌进 iframe（点击劫持的载体），其余几条在纯静态、无登录、无表单的站点上影响很小 —— 本站 `form-action 'none'`，也没有任何需要 `nosniff` 兜底的动态内容。
+上面这些是实测两个站的响应头得出的，不是照抄平台文档。
+差异里**唯一有实际影响的是 iframe 嵌套防护**：备站可能被别人嵌进 iframe（点击劫持的载体），其余几条在纯静态、无登录、无表单的站点上影响很小 —— 本站 `form-action
+'none'`，也没有任何需要 `nosniff` 兜底的动态内容。
 
 ### 两个容易踩的点
 
-- **规范链接统一指向主站**：所有页面的 `<link rel="canonical">` 和 `og:url` 都写主站地址，避免搜索引擎把两个站点判成重复内容、分散权重。文章里指向子项目（`/sonder520/`、`/Nymir/`、`/xy-club/`、`/xy-intro-card/`）的链接**保留在 `github.io`**——那些是独立的 GitHub Pages 项目，`pages.dev` 上没有这些路径。
+- **规范链接统一指向主站**：所有页面的 `<link rel="canonical">` 和 `og:url` 都写主站地址，避免搜索引擎把两个站点判成重复内容、分散权重。
+  文章里指向子项目（`/sonder520/`、`/Nymir/`、`/xy-club/`、`/xy-intro-card/`）的链接**保留在 `github.io`**——那些是独立的 GitHub Pages 项目，`pages.dev` 上没有这些路径。
 - **想自查两边是否同步**，对比首页内容哈希即可：
 
   ```bash
@@ -357,7 +369,9 @@ npx playwright test                          # 真浏览器层：需要 Node，�
 python3 scripts/verify_csp_jsonld.py         # CSP/JSON-LD 实测：需要 playwright（可选）
 ```
 
-真浏览器层里包含一份**可访问性基线**（`tests/e2e/a11y.spec.mjs`，用的是 axe-core）。它补的是静态审查查不到的那一类问题：CSS 里两个十六进制常量配在一起，对比度够不够，不跑浏览器、不做色彩空间计算，读代码永远看不出来 —— 本站就实测抓到过一个已经上线的问题（`--text-faint` 配 `--abyss` 只有 4.347:1，WCAG AA 要求 4.5:1）。扫描覆盖全站页面 × 浅/深两种主题，外加设置面板展开后的面板内部。
+真浏览器层里包含一份**可访问性基线**（`tests/e2e/a11y.spec.mjs`，用的是 axe-core）。
+它补的是静态审查查不到的那一类问题：CSS 里两个十六进制常量配在一起，对比度够不够，不跑浏览器、不做色彩空间计算，读代码永远看不出来 ——
+本站就实测抓到过一个已经上线的问题（`--text-faint` 配 `--abyss` 只有 4.347:1，WCAG AA 要求 4.5:1）。扫描覆盖全站页面 × 浅/深两种主题，外加设置面板展开后的面板内部。
 
 axe 只装在 devDependencies，**站点本身依旧零运行时依赖**。它对 Node 版本没有额外要求（axe-core 只要求 Node 4+），所以 CI 上现有的 Node 20 就能跑。
 
@@ -376,7 +390,10 @@ axe 只装在 devDependencies，**站点本身依旧零运行时依赖**。它�
 
 ## 依赖
 
-**站点本身零依赖**：不加载任何第三方 JS、CSS、字体或图片资源，`index.html` 里引用的全是本站自己的文件。字体默认走系统字体栈（`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …），标题、正文、代码再叠加本地托管的 Syne / Inter / JetBrains Mono（woff2 同域放在 `assets/fonts/`，不向任何外部 CDN 请求）。已逐文件核对：所有 HTML 的 `src`/`href` 只指向本站域名与 JSON-LD / Open Graph 的语义命名空间（schema.org、ogp.me、w3.org 等），不含任何 CDN、web font 或第三方脚本。访问和部署都不需要 Node.js。
+**站点本身零依赖**：不加载任何第三方 JS、CSS、字体或图片资源，`index.html` 里引用的全是本站自己的文件。
+字体默认走系统字体栈（`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …），标题、正文、代码再叠加本地托管的
+Syne / Inter / JetBrains Mono（woff2 同域放在 `assets/fonts/`，不向任何外部 CDN 请求）。已逐文件核对：
+所有 HTML 的 `src`/`href` 只指向本站域名与 JSON-LD / Open Graph 的语义命名空间（schema.org、ogp.me、w3.org 等），不含任何 CDN、web font 或第三方脚本。访问和部署都不需要 Node.js。
 
 下面的东西只在你要改代码、跑验证时才需要：
 
@@ -403,9 +420,12 @@ CI 上跑的是 Node 20。
 
 **CI 用到的 GitHub Actions**
 
-`actions/checkout@v7`、`actions/setup-node@v7`、`actions/setup-python@v7`、`actions/cache@v6`、`actions/upload-artifact@v7`、`github/codeql-action/init@v4`、`github/codeql-action/analyze@v4`、`gitleaks/gitleaks-action@v3`。
+`actions/checkout@v7`、`actions/setup-node@v7`、`actions/setup-python@v7`、`actions/cache@v6`、`actions/
+upload-artifact@v7`、`github/codeql-action/init@v4`、`github/codeql-action/analyze@v4`、`gitleaks/gitleaks-action@v3`。
 
-它们目前按**版本标签**引用，没有钉到具体的 commit SHA。理论上标签是可以被移动的。仓库共 6 个 workflow，其中 5 个把 `permissions` 收敛到了 `contents: read`；唯一例外是 `update-snapshots.yml`（手动触发的视觉基线重建），它需要 `contents: write` 才能把新基线提交回 `main`，这是该功能所必需、且只由仓库维护者手动触发的。本仓库**没有任何 secrets**，权衡后认为风险可以接受 —— 记在这里，是因为这是个主动选择，不是没注意到。
+它们目前按**版本标签**引用，没有钉到具体的 commit SHA。理论上标签是可以被移动的。仓库共 6 个 workflow，其中 5 个把 `permissions` 收敛到了 `contents: read`；
+唯一例外是 `update-snapshots.yml`（手动触发的视觉基线重建），它需要 `contents: write` 才能把新基线提交回 `main`，这是该功能所必需、且只由仓库维护者手动触发的。
+本仓库**没有任何 secrets**，权衡后认为风险可以接受 —— 记在这里，是因为这是个主动选择，不是没注意到。
 
 ---
 
@@ -429,7 +449,8 @@ CI 上跑的是 Node 20。
 3. `python3 build.py --write`
 4. 改项目卡片、关于与联系方式同理，改的是 `src/pages/index.body.html`
 
-`date` 这一项不是装饰：它决定这篇文章会不会进 `feed.xml`、在 `sitemap.xml` 里有没有 `lastmod`、JSON-LD 里有没有 `datePublished`。**没填 date 的页面会被生成逻辑当作「不是文章」跳过**——所以写完发现新文章没进 RSS，先查这里。
+`date` 这一项不是装饰：它决定这篇文章会不会进 `feed.xml`、在 `sitemap.xml` 里有没有 `lastmod`、JSON-LD 里有没有 `datePublished`。
+**没填 date 的页面会被生成逻辑当作「不是文章」跳过**——所以写完发现新文章没进 RSS，先查这里。
 
 新增文章后，**记得把新文件加进 `sw.js` 的 `PRECACHE` 清单**，否则该文章离线时打不开（完整性检查会抓到清单里的死链，但不会告诉你"少了一篇"）
 - **发版时把 `sw.js` 的 `CACHE_VERSION` 加一**
@@ -459,21 +480,29 @@ node scripts/build-icons.mjs
 
 **[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft（当前 ^1.63.0）
 
-真浏览器层全部跑在它上面。最值得说的不是"能自动化点页面"，而是它让**离线**这种场景变得可测 —— 一句 `context.setOffline(true)` 就能验证"断网后首页还能不能打开"，而这恰恰是本站最核心、也最容易悄悄坏掉的能力。没有它，这类问题只能靠人手动断网去试，试两次就不试了。
+真浏览器层全部跑在它上面。
+最值得说的不是"能自动化点页面"，而是它让**离线**这种场景变得可测 —— 一句 `context.setOffline(true)` 就能验证"断网后首页还能不能打开"，而这恰恰是本站最核心、也最容易悄悄坏掉的能力。
+没有它，这类问题只能靠人手动断网去试，试两次就不试了。
 
 **[axe-core](https://github.com/dequelabs/axe-core)** · MPL-2.0 · Deque Systems（当前 ^4.13.0）
 
-可访问性基线的规则引擎。它抓出过两个我自己永远发现不了的问题：一是 `--text-faint` 配 `--abyss` 的对比度只有 4.347:1（要求 4.5:1），而这在 CSS 里就是两个十六进制常量，读代码看不出来；二是扫描时机 —— 元素淡入动画进行中读到的对比度是假的，逼着我把"扫之前先关动效"变成测试的一部分。Deque 把它设计成**宁可漏报也不误报**，这点很关键：误报一多，人就会开始忽略它。
+可访问性基线的规则引擎。它抓出过两个我自己永远发现不了的问题：一是 `--text-faint` 配 `--abyss` 的对比度只有 4.347:1（要求 4.5:1），而这在 CSS 里就是两个十六进制常量，读代码看不出来；
+二是扫描时机 —— 元素淡入动画进行中读到的对比度是假的，逼着我把"扫之前先关动效"变成测试的一部分。Deque 把它设计成**宁可漏报也不误报**，这点很关键：误报一多，人就会开始忽略它。
 
 **托管平台**
 
-[Cloudflare Pages](https://pages.cloudflare.com/)（主站）与 [GitHub Pages](https://pages.github.com/)（备用站）都提供免费的静态托管与自动构建，两者故障域不同，互为兜底。它们不是本项目的依赖，但没有它们就没有这个站点。
+[Cloudflare Pages](https://pages.cloudflare.com/)（主站）与 [GitHub Pages](https://pages.github.com/)（备用站）都提供免费的静态托管与自动构建，两者故障域不同，互为兜底。
+它们不是本项目的依赖，但没有它们就没有这个站点。
 
 **现代 CSS 能力与规范**
 
-本站 v6 的动效升级（View Transitions、滚动驱动动画、容器查询、`:has()`、`color-mix()`、`@starting-style` 等）全部来自 W3C CSS 工作组的标准，由浏览器原生实现 —— 无需任何库。值得单独致谢的还有 Andy Bell 的 [piccalil.li](https://piccalil.li) / "Build Excellent Websites" 方法论：它把"原生 CSS 优先、reduced-motion 优先、只用 `transform`/`opacity` 防布局抖动"做成可复制的实践，本站动效系统的理念与之高度一致。
+本站 v6 的动效升级（View Transitions、滚动驱动动画、容器查询、`:has()`、`color-mix()`、`@starting-style` 等）全部来自 W3C CSS 工作组的标准，由浏览器原生实现 —— 无需任何库。
+值得单独致谢的还有 Andy Bell 的 [piccalil.li](https://piccalil.li) / "Build Excellent Websites" 方法论：它把"原生 CSS
+优先、reduced-motion 优先、只用 `transform`/`opacity` 防布局抖动"做成可复制的实践，本站动效系统的理念与之高度一致。
 
-v7 新增效果的技术来源同样全部来自 Web 标准，另有一处交互范式值得点名：跟手水波纹受 **Material Design 的 Ripple** 启发——把"在指针落点涌开"做成标准点按反馈；`@property`（CSS Houdini Properties and Values API）与 `scroll()` 滚动时间线（Scroll-driven Animations 规范）由 W3C CSS 工作组标准化、Chrome 团队的 Bramus Van Damme 等人持续推广，本站直接复用其原生实现。
+v7 新增效果的技术来源同样全部来自 Web 标准，另有一处交互范式值得点名：跟手水波纹受 **Material Design 的 Ripple** 启发——把"在指针落点涌开"做成标准点按反馈；
+`@property`（CSS Houdini Properties and Values API）与 `scroll()` 滚动时间线（Scroll-driven Animations 规范）由
+W3C CSS 工作组标准化、Chrome 团队的 Bramus Van Damme 等人持续推广，本站直接复用其原生实现。
 
 **参考借鉴案例**
 
@@ -495,7 +524,8 @@ v7 新增效果的技术来源同样全部来自 Web 标准，另有一处交互
 - **Workbox**（SW 框架）：它需要一条 Node/npm 构建链来生成 precache 清单，而本站的构建只用 Python 标准库；换来的却只是把一段已经写好、逻辑清晰可测的手写 SW 换成黑盒。
 - **StrykerJS**（变异测试）：官方 runner 里没有 `node:test`，只能用 command runner（无法做覆盖率优化，每个变异体都要跑全量测试）；而且 10.x 要求 Node ≥ 22，与 CI 的 Node 20 冲突。
 - **Valibot / Zod**（运行时校验库）：本站导入校验只有三十来行手写代码，引入它们解决不了"没有测试"这个真问题，还会打破「零运行时依赖」这条底线——它们会被打进页面 JS，成为访客实际下载的一部分。
-- **Web font**：见「[依赖](#依赖)」，用系统字体栈是有意的。
+- **Web font 服务商**（如 Google Fonts、Fontshare）：本站的字体是**自托管 woff2**（Syne / Inter / JetBrains Mono，同域放在 `assets/fonts/`），不向任何外部 CDN 请求。
+  标题与正文先走系统字体栈、再叠加这三套本地字体，是为了让首屏在字体加载前就有可读的回退，而不是为了"不下载 web font"。
 
 ---
 

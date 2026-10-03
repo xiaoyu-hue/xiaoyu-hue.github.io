@@ -4,6 +4,11 @@
 
 **English · [中文](./README.md)**
 
+> **Which one is authoritative?** Both are kept in sync with the code, and both are edited by hand.
+> Where they ever disagree, **[the Chinese README](./README.md) wins** — it is written first and updated first.
+> Numbers quoted in this file (cache version, test counts, dependency versions) are meant to match the code
+> exactly; if you spot a mismatch anywhere, that is a bug in the docs, not a feature.
+
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-Primary-F38020?style=flat-square)](https://xiaoyu-hue-github-io.pages.dev/)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Mirror-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
@@ -22,7 +27,9 @@ Someone with no programming background decided to treat AI agents as a productio
 
 This site exists to answer one question: **how far can AI push someone who has never written code?**
 
-It is not a portfolio. It is a **verifiable record of an experiment** — every project states plainly what it cannot do, which scenarios it should not be used in, and which judgment calls have not been professionally validated.
+It is not a portfolio.
+It is a **verifiable record of an experiment** — every project states plainly what it cannot do,
+which scenarios it should not be used in, and which judgment calls have not been professionally validated.
 
 > The code was written by AI. The decisions were mine.
 
@@ -115,22 +122,27 @@ The gear icon at the right of the nav bar opens a settings panel with four thing
 | **Reading log** | Articles you open are recorded automatically; the panel links back to them |
 | **Data** | Export / import JSON (to move between devices), and a reset button (requires a second click) |
 
-**Your data stays in your own browser's localStorage** and is never uploaded anywhere. The site's CSP restricts `connect-src` to `'self'`, meaning requests may only go to the site's own origin — there is no backend that could receive your data.
+**Your data stays in your own browser's localStorage** and is never uploaded anywhere.
+The site's CSP restricts `connect-src` to `'self'`, meaning requests may only go to the site's own origin — there is no backend that could receive your data.
 
 A few trade-offs, also documented in the code comments:
 
-- **Theme switching uses class toggling, never inline styles.** The `style-src 'self'` CSP has no `unsafe-inline`, so any `el.style.xxx` triggers a violation. This is how the site has always worked, not new restraint.
+- **Theme switching uses class toggling, never inline styles.** The `style-src 'self'` CSP has no `unsafe-inline`, so any `el.style.xxx` triggers a violation.
+  This is how the site has always worked, not new restraint.
 - **Export downloads a real JSON file** rather than copying to the clipboard — the clipboard may be unavailable without HTTPS; a download is more reliable.
 - **Resetting takes two clicks.** The first asks "are you sure"; if you don't confirm within 4 seconds it cancels itself. Destructive actions deserve a second door.
 - **A disabled localStorage does not throw** (private mode, some corporate policies). The feature degrades; the site keeps working.
 
 ### Motion (v6 upgrade)
 
-v6 reworked the motion system using **native CSS only** — no animation library, no new runtime dependency, CSP unchanged. It adds View Transitions for smooth same-origin page transitions, scroll-driven reveal animations (pure CSS, with automatic fallback to the existing IntersectionObserver path), container queries + `:has()` for container-aware cards, `color-mix()`-derived colors, and `text-wrap: balance`. Everything plugs into the existing `prefers-reduced-motion` / `data-motion=off` degradation network.
+v6 reworked the motion system using **native CSS only** — no animation library, no new runtime dependency, CSP unchanged.
+It adds View Transitions for smooth same-origin page transitions, scroll-driven reveal animations (pure CSS, with automatic fallback to the existing IntersectionObserver path), container queries +
+`:has()` for container-aware cards, `color-mix()`-derived colors, and `text-wrap: balance`. Everything plugs into the existing `prefers-reduced-motion` / `data-motion=off` degradation network.
 
 ### Visual impact enhancement (v7 upgrade)
 
-v7 layers **seven new visual-impact effects** on top of the v6 native-CSS engine — still no library, no new runtime dependency, CSP unchanged, all plugged into the same five-layer degradation network. The four pure-CSS effects work identically on mobile and desktop; the pointer-following ripple needs only ~15 lines in `main.js`:
+v7 layers **seven new visual-impact effects** on top of the v6 native-CSS engine — still no library, no new runtime dependency, CSP unchanged, all plugged into the same five-layer degradation network.
+The four pure-CSS effects work identically on mobile and desktop; the pointer-following ripple needs only ~15 lines in `main.js`:
 
 | Effect | Native technique | What it adds | Degradation |
 |--------|-----------------|--------------|-------------|
@@ -185,7 +197,8 @@ If you don't bump it, the HTML itself still updates (it is network-first), but s
 
 ### Why the Service Worker must be at the root
 
-A Service Worker's **scope is limited by its path**. At `assets/sw.js` its scope would be confined to `/assets/`, so it would **never see page navigations** — registration appears to succeed, yet nothing works offline, and the console stays silent.
+A Service Worker's **scope is limited by its path**.
+At `assets/sw.js` its scope would be confined to `/assets/`, so it would **never see page navigations** — registration appears to succeed, yet nothing works offline, and the console stays silent.
 
 So `sw.js` must live at the repository root. The integrity checker fails loudly if it is moved.
 
@@ -199,7 +212,8 @@ So `sw.js` must live at the repository root. The integrity checker fails loudly 
 
 - **HTML is network-first, never cache-first.** Cache-first would hide new articles forever, and it is very hard to self-diagnose.
 - **`skipWaiting()` is never called unconditionally.** Doing so would swap the page out from under someone mid-read. It only switches after the user clicks "Update now".
-- **`og-cover.png` is excluded from the precache.** It is 500KB, aimed at social crawlers, and never loaded during normal browsing — precaching it would make every visitor download half a megabyte for nothing.
+- **`og-cover.png` is excluded from the precache.** It is 500KB, aimed at social crawlers, and never
+  loaded during normal browsing — precaching it would make every visitor download half a megabyte for nothing.
 
 ---
 
@@ -253,7 +267,8 @@ One repository, two automatic deployments, always in sync:
 
 ### Why keep the mirror
 
-Not for the comfort of the word "backup", but because the two have **different failure domains**: if Cloudflare has a bad day, GitHub Pages is still up; if GitHub goes down, the already-deployed static copies keep serving from Cloudflare's edge — only new builds are blocked. The redundancy is real, and it costs nothing to maintain.
+Not for the comfort of the word "backup", but because the two have **different failure domains**: if Cloudflare has a bad day, GitHub Pages is still up; if GitHub goes down, the already-deployed
+static copies keep serving from Cloudflare's edge — only new builds are blocked. The redundancy is real, and it costs nothing to maintain.
 
 ### What actually differs
 
@@ -272,11 +287,13 @@ Not for the comfort of the word "backup", but because the two have **different f
 | Custom domain | Supported | Supported, still no custom headers |
 | PWA / offline | Works | Works |
 
-These rows come from measuring both sites, not from copying platform docs. **Only the anti-framing gap has real consequences**: the mirror could be embedded in someone else's iframe (a clickjacking vector). The rest matter little on a static site with no login and no forms — this one sets `form-action 'none'` and serves no dynamic content that would need `nosniff` as a backstop.
+These rows come from measuring both sites, not from copying platform docs. **Only the anti-framing gap has real consequences**: the mirror could be embedded in someone else's iframe (a clickjacking
+vector). The rest matter little on a static site with no login and no forms — this one sets `form-action 'none'` and serves no dynamic content that would need `nosniff` as a backstop.
 
 ### Two things that bite
 
-- **Canonical URLs point at the primary site.** Every page's `<link rel="canonical">` and `og:url` uses the primary domain, so search engines do not treat the two sites as duplicate content. Links to the sub-projects (`/sonder520/`, `/Nymir/`, `/xy-club/`, `/xy-intro-card/`) **stay on `github.io`** — those are separate GitHub Pages projects and do not exist under `pages.dev`.
+- **Canonical URLs point at the primary site.** Every page's `<link rel="canonical">` and `og:url` uses the primary domain, so search engines do not treat the two sites as duplicate content.
+  Links to the sub-projects (`/sonder520/`, `/Nymir/`, `/xy-club/`, `/xy-intro-card/`) **stay on `github.io`** — those are separate GitHub Pages projects and do not exist under `pages.dev`.
 - **To check whether both are in sync**, compare home page hashes:
 
   ```bash
@@ -299,7 +316,10 @@ npx playwright test                          # real browser: needs Node, run `np
 python3 scripts/verify_csp_jsonld.py         # CSP/JSON-LD check: needs playwright (optional)
 ```
 
-The real-browser layer includes an **accessibility baseline** (`tests/e2e/a11y.spec.mjs`, built on axe-core). It covers what static review cannot: whether two hex colours in a CSS file actually clear the contrast threshold is invisible to code reading — you need a browser and colour-space maths. This site had exactly that problem live (`--text-faint` on `--abyss` measured 4.347:1 against a 4.5:1 requirement). The scan covers every page × light/dark themes, plus the settings panel while it is open.
+The real-browser layer includes an **accessibility baseline** (`tests/e2e/a11y.spec.mjs`, built on axe-core).
+It covers what static review cannot: whether two hex colours in a CSS file actually clear the contrast threshold is invisible to code reading — you need a browser and colour-space maths.
+This site had exactly that problem live (`--text-faint` on `--abyss` measured 4.347:1 against a 4.5:1 requirement).
+The scan covers every page × light/dark themes, plus the settings panel while it is open.
 
 axe lives in devDependencies only — **the site itself still ships zero runtime dependencies**. It has no extra Node requirement (axe-core asks for Node 4+), so CI's existing Node 20 runs it fine.
 
@@ -317,7 +337,11 @@ Every push to `main` runs all three layers in CI, plus one CSP/JSON-LD check (CI
 
 ## Dependencies
 
-**The site itself has zero dependencies.** No third-party JS, CSS, fonts or images are loaded — everything referenced from `index.html` is a local file. Typography defaults to a system font stack (`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …), with headings, body and code text additionally served by locally hosted Syne / Inter / JetBrains Mono (woff2, same-origin under `assets/fonts/`, no external CDN requested). Every HTML file was checked line by line: all `src`/`href` point only to this site's own domain or to the semantic namespaces of JSON-LD / Open Graph (schema.org, ogp.me, w3.org …) — no CDN, no third-party script. You do not need Node.js to visit or deploy the site.
+**The site itself has zero dependencies.** No third-party JS, CSS, fonts or images are loaded — everything referenced from `index.html` is a local file.
+Typography defaults to a system font stack (`system-ui` / `PingFang SC` / `Microsoft YaHei` / `Noto Sans CJK SC` …), with headings, body and code text additionally served by locally hosted Syne /
+Inter / JetBrains Mono (woff2, same-origin under `assets/fonts/`, no external CDN requested).
+Every HTML file was checked line by line: all `src`/`href` point only to this site's own domain or to the semantic namespaces of JSON-LD / Open Graph (schema.org, ogp.me, w3.org …) — no CDN, no
+third-party script. You do not need Node.js to visit or deploy the site.
 
 Everything below is only needed when you want to change code and verify it:
 
@@ -329,7 +353,8 @@ Everything below is only needed when you want to change code and verify it:
 | `axe-core` | ^4.13.0 | MPL-2.0 | Rules engine behind the above; not installed separately |
 | [`@lhci/cli`](https://github.com/GoogleChrome/lighthouse-ci) | ^0.15.1 | Apache-2.0 | Lighthouse CI: performance / accessibility / best-practice baselines in CI |
 
-MPL-2.0 is file-level copyleft, but it only bites if you modify and redistribute that project's own source. Here everything is a build-time tool: it never reaches the site and is never served to visitors, so it does not affect this repository's MIT license.
+MPL-2.0 is file-level copyleft, but it only bites if you modify and redistribute that project's own source.
+Here everything is a build-time tool: it never reaches the site and is never served to visitors, so it does not affect this repository's MIT license.
 
 **System requirements**
 
@@ -344,9 +369,13 @@ CI runs on Node 20.
 
 **GitHub Actions used**
 
-`actions/checkout@v7`, `actions/setup-node@v7`, `actions/setup-python@v7`, `actions/cache@v6`, `actions/upload-artifact@v7`, `github/codeql-action/init@v4`, `github/codeql-action/analyze@v4`, `gitleaks/gitleaks-action@v3`.
+`actions/checkout@v7`, `actions/setup-node@v7`, `actions/setup-python@v7`, `actions/cache@v6`,
+`actions/upload-artifact@v7`, `github/codeql-action/init@v4`, `github/codeql-action/analyze@v4`, `gitleaks/gitleaks-action@v3`.
 
-These are referenced by **version tag**, not pinned to a commit SHA. Tags are movable in principle. The repository has 6 workflows, 5 of which narrow `permissions` to `contents: read`; the one exception is `update-snapshots.yml` (a manually triggered visual-baseline rebuild), which needs `contents: write` to commit the new baseline back to `main` — required for that feature, and triggered only by the maintainer by hand. This repository holds **no secrets**. That trade-off was looked at and accepted — noted here because it is a deliberate choice, not an oversight.
+These are referenced by **version tag**, not pinned to a commit SHA. Tags are movable in principle.
+The repository has 6 workflows, 5 of which narrow `permissions` to `contents: read`; the one exception is `update-snapshots.yml` (a manually triggered visual-baseline rebuild), which needs `contents:
+write` to commit the new baseline back to `main` — required for that feature, and triggered only by the maintainer by hand. This repository holds **no secrets**.
+That trade-off was looked at and accepted — noted here because it is a deliberate choice, not an oversight.
 
 ---
 
@@ -372,9 +401,11 @@ Finished HTML is never hand-edited any more (changes get overwritten by the next
 3. `python3 build.py --write`
 4. Project cards, the about section and contact info work the same way — edit `src/pages/index.body.html`
 
-`date` is not decoration: it decides whether the article enters `feed.xml`, whether it gets a `lastmod` in `sitemap.xml`, and whether `datePublished` appears in the JSON-LD. **A page without `date` is treated as "not an article" and skipped** — so if a new post is missing from the feed, check this first.
+`date` is not decoration: it decides whether the article enters `feed.xml`, whether it gets a `lastmod` in `sitemap.xml`, and whether `datePublished` appears in the JSON-LD. **A page without `date`
+is treated as "not an article" and skipped** — so if a new post is missing from the feed, check this first.
 
-After adding an article, **add the new file to `sw.js`'s `PRECACHE` list**, otherwise it will not open offline (the integrity check catches dead links in the list, but it cannot tell you something is *missing*)
+After adding an article, **add the new file to `sw.js`'s `PRECACHE` list**, otherwise it will not
+open offline (the integrity check catches dead links in the list, but it cannot tell you something is *missing*)
 - **Bump `CACHE_VERSION` in `sw.js` whenever you publish**
 - Pushing to `main` triggers an automatic deploy on **both the primary site and the mirror** (see [Deployment](#deployment-primary-site-and-mirror))
 
@@ -388,7 +419,8 @@ node scripts/build-icons.mjs
 
 ## About the author
 
-No programming background; all code was produced with AI agent assistance. The collaboration rules used (confirm requirements before starting, break large tasks into verifiable steps, state honestly what cannot be done) are described in the first blog post.
+No programming background; all code was produced with AI agent assistance.
+The collaboration rules used (confirm requirements before starting, break large tasks into verifiable steps, state honestly what cannot be done) are described in the first blog post.
 
 > 一半烟火以谋生，一半诗意以谋爱 *(Half for a living, half for love)*
 
@@ -396,31 +428,45 @@ No programming background; all code was produced with AI agent assistance. The c
 
 ## Credits and dependencies
 
-This site stays simple to look at and safe to change largely because of these projects. One fact up front: the live site contains **no third-party code at all**, so what is genuinely worth crediting is only build-time tooling, web standards and hosting — listed below.
+This site stays simple to look at and safe to change largely because of these projects.
+One fact up front: the live site contains **no third-party code at all**, so what is genuinely worth crediting is only build-time tooling, web standards and hosting — listed below.
 
-On licensing, this project is not covered by a single license end to end: **code is MIT, blog posts and site copy are CC BY-NC-SA 4.0, and borrowed third-party ideas belong to neither**. The full breakdown is in [`NOTICE`](NOTICE).
+On licensing, this project is not covered by a single license end to end: **code is MIT, blog posts and site copy are CC BY-NC-SA 4.0, and borrowed third-party ideas belong to neither**.
+The full breakdown is in [`NOTICE`](NOTICE).
 
 **[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft (currently ^1.63.0)
 
-The whole real-browser layer runs on it. What deserves credit is not "it can click pages" but that it makes **offline** testable — one `context.setOffline(true)` verifies that the home page still opens with no network, which is this site's most important and most quietly breakable feature. Without it, that check depends on someone manually pulling a plug, and nobody keeps doing that.
+The whole real-browser layer runs on it.
+What deserves credit is not "it can click pages" but that it makes **offline** testable — one `context.setOffline(true)` verifies that the home page still opens with no network, which is this site's
+most important and most quietly breakable feature. Without it, that check depends on someone manually pulling a plug, and nobody keeps doing that.
 
 **[axe-core](https://github.com/dequelabs/axe-core)** · MPL-2.0 · Deque Systems (currently ^4.13.0)
 
-Rules engine behind the accessibility baseline. It caught two things I could never have found by reading code: `--text-faint` on `--abyss` measuring 4.347:1 against a required 4.5:1 — in CSS that is just two hex literals — and a timing problem, where reading contrast mid fade-in produces fake numbers, which forced "disable motion before scanning" into the test itself. Deque designs it to prefer false negatives over false positives, and that matters: too many false alarms and people start ignoring the tool.
+Rules engine behind the accessibility baseline.
+It caught two things I could never have found by reading code: `--text-faint` on `--abyss` measuring 4.347:1 against a required 4.5:1 — in CSS that is just two hex literals — and a timing problem,
+where reading contrast mid fade-in produces fake numbers, which forced "disable motion before scanning" into the test itself.
+Deque designs it to prefer false negatives over false positives, and that matters: too many false alarms and people start ignoring the tool.
 
 **Hosting**
 
-[Cloudflare Pages](https://pages.cloudflare.com/) (primary) and [GitHub Pages](https://pages.github.com/) (mirror) both provide free static hosting with automatic builds. Their failure domains differ, so they cover for each other. Not dependencies of this project, but without them there would be no site.
+[Cloudflare Pages](https://pages.cloudflare.com/) (primary) and [GitHub Pages](https://pages.github.com/) (mirror) both provide free static hosting with automatic builds.
+Their failure domains differ, so they cover for each other. Not dependencies of this project, but without them there would be no site.
 
 **Modern CSS capabilities & specs**
 
-The v6 motion upgrade (View Transitions, scroll-driven animations, container queries, `:has()`, `color-mix()`, `@starting-style`) all come from W3C CSS Working Group specs, implemented natively by browsers — no library needed. Special credit also goes to Andy Bell's [piccalil.li](https://piccalil.li) / "Build Excellent Websites" methodology, which turned "native CSS first, reduced-motion first, only `transform`/`opacity` to avoid layout jank" into a repeatable practice; this site's motion philosophy aligns with it closely.
+The v6 motion upgrade (View Transitions, scroll-driven animations, container queries, `:has()`, `color-mix()`, `@starting-style`) all come from W3C CSS Working Group specs, implemented natively by
+browsers — no library needed.
+Special credit also goes to Andy Bell's [piccalil.li](https://piccalil.li) / "Build Excellent Websites" methodology, which turned "native CSS first, reduced-motion first, only `transform`/`opacity`
+to avoid layout jank" into a repeatable practice; this site's motion philosophy aligns with it closely.
 
-The v7 effects draw on the same web standards, plus one interaction pattern worth naming: the pointer-following ripple is inspired by **Material Design's Ripple** — blooming at the pointer location as standard tap feedback. `@property` (CSS Houdini Properties and Values API) and the `scroll()` timeline (Scroll-driven Animations spec) are standardized by the W3C CSS Working Group and actively championed by Chrome's Bramus Van Damme; this site reuses their native implementations directly.
+The v7 effects draw on the same web standards, plus one interaction pattern worth naming: the pointer-following ripple is inspired by **Material Design's Ripple** — blooming at the pointer location
+as standard tap feedback. `@property` (CSS Houdini Properties and Values API) and the `scroll()` timeline (Scroll-driven Animations spec) are standardized by the W3C CSS Working Group and actively
+championed by Chrome's Bramus Van Damme; this site reuses their native implementations directly.
 
 **Borrowed ideas (cases)**
 
-Above is what is *used*; here is what is *borrowed* — a different thing entirely. Tools you run; ideas you read and then rewrite yourself. This list is here to state provenance: **this project copies no source code from any of them.**
+Above is what is *used*; here is what is *borrowed* — a different thing entirely. Tools you run; ideas you read and then rewrite yourself.
+This list is here to state provenance: **this project copies no source code from any of them.**
 
 | Source | What was borrowed | How this project implements it |
 |--------|-------------------|--------------------------------|
@@ -435,10 +481,16 @@ Above is what is *used*; here is what is *borrowed* — a different thing entire
 
 Recording what research ruled out, so nobody repeats it:
 
-- **Workbox** (Service Worker framework): it wants a Node/npm build chain to generate its precache manifest, while this site builds with the Python standard library alone. In exchange it would swap a short, readable, hand-written and tested SW for a black box.
-- **StrykerJS** (mutation testing): no `node:test` runner exists, so only the generic command runner applies — no coverage optimisation, meaning every mutant reruns the whole suite. Version 10.x also requires Node ≥ 22, which conflicts with CI's Node 20.
-- **Valibot / Zod** (runtime validation): the import validator here is about thirty hand-written lines. A library would not fix the actual problem — missing tests — and it would break the zero-runtime-dependency line: these end up inside the JS that visitors download.
-- **Web fonts**: see [Dependencies](#dependencies); the system font stack is intentional.
+- **Workbox** (Service Worker framework): it wants a Node/npm build chain to generate its precache manifest, while this site builds with the Python standard library alone.
+  In exchange it would swap a short, readable, hand-written and tested SW for a black box.
+- **StrykerJS** (mutation testing): no `node:test` runner exists, so only the generic command runner applies — no coverage optimisation, meaning every mutant reruns the whole suite.
+  Version 10.x also requires Node ≥ 22, which conflicts with CI's Node 20.
+- **Valibot / Zod** (runtime validation): the import validator here is about thirty hand-written lines.
+  A library would not fix the actual problem — missing tests — and it would break the zero-runtime-dependency line: these end up inside the JS that visitors download.
+- **Web font services** (Google Fonts, Fontshare, …): the site's fonts are **self-hosted woff2**
+  (Syne / Inter / JetBrains Mono, same-origin under `assets/fonts/`), with no request to any external CDN.
+  Headings and body text fall back to the system font stack first, then layer these three local families on
+  top — so the first screen stays readable before the fonts arrive, not to "avoid web fonts".
 
 ---
 
@@ -452,7 +504,8 @@ This project is **licensed in parts**, not under a single license throughout:
 | **Blog posts, site copy, original illustrations** | [**CC BY-NC-SA 4.0**](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.en) | Redistribution allowed with attribution; no commercial use; derivatives under the same license |
 | **Borrowed third-party ideas** | N/A | Ideas, not code — see [Borrowed ideas](#borrowed-ideas-cases) |
 
-**Why split**: MIT is designed for software — it allows commercial use and does not require attribution, which suits code but not personal writing. Splitting keeps the code maximally reusable while preserving attribution and a non-commercial restriction for the writing.
+**Why split**: MIT is designed for software — it allows commercial use and does not require attribution, which suits code but not personal writing.
+Splitting keeps the code maximally reusable while preserving attribution and a non-commercial restriction for the writing.
 
 The full breakdown, third-party dependency compliance, trademark notes and disclaimer are in [`NOTICE`](NOTICE).
 
