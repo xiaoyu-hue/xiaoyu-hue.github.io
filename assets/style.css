@@ -1,31 +1,31 @@
 /* 本地字体 — SIL OFL 授权，免费商用 */
 @font-face {
-  font-family: 'Syne';
+  font-family: 'Noto Sans SC';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
-  src: url('fonts/syne/syne-latin-400-normal.woff2') format('woff2');
+  font-display: optional;
+  src: url('fonts/noto-sans-sc/noto-sans-sc-400.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Syne';
+  font-family: 'Noto Sans SC';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
-  src: url('fonts/syne/syne-latin-600-normal.woff2') format('woff2');
+  font-display: optional;
+  src: url('fonts/noto-sans-sc/noto-sans-sc-600.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Syne';
+  font-family: 'Noto Sans SC';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
-  src: url('fonts/syne/syne-latin-700-normal.woff2') format('woff2');
+  font-display: optional;
+  src: url('fonts/noto-sans-sc/noto-sans-sc-700.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Syne';
+  font-family: 'Noto Sans SC';
   font-style: normal;
   font-weight: 800;
-  font-display: swap;
-  src: url('fonts/syne/syne-latin-800-normal.woff2') format('woff2');
+  font-display: optional;
+  src: url('fonts/noto-sans-sc/noto-800.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Inter';
@@ -287,7 +287,7 @@ main:focus{outline:none}
 .hero-card{max-width:680px;text-align:center;padding:48px 40px;animation:float var(--ambient-float) var(--ease-both) infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .eyebrow{font-size:var(--fs-sm);letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:18px;font-weight:600}
-.hero h1{font-size:clamp(48px,9vw,112px);line-height:1.05;font-weight:800;margin-bottom:28px;text-wrap:balance;font-family:'Syne',sans-serif;letter-spacing:-.03em}
+.hero h1{font-size:clamp(48px,9vw,112px);line-height:1.05;font-weight:800;margin-bottom:28px;text-wrap:balance;font-family:'Noto Sans SC',sans-serif;letter-spacing:-.03em}
 .hero p.sub{color:var(--text-dim);font-size:clamp(18px,2.8vw,24px);margin-bottom:36px;line-height:1.7;font-weight:400}
 .btns{display:flex;gap:var(--space-1h);justify-content:center;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:18px 36px;border-radius:999px;font-weight:600;font-size:var(--fs-base);text-decoration:none;transition:transform var(--dur-base) var(--ease-out),background var(--dur-base) var(--ease-out),border-color var(--dur-base) var(--ease-out);border:1px solid transparent;font-family:'Inter',sans-serif}
@@ -317,7 +317,7 @@ section{padding:140px 0}
   --lh-heading:1.25;  /* 中标题（24–47px） */
   --lh-title:1.35;    /* 小标题（<24px） */
 }
-.section-title{font-size:clamp(28px,5vw,56px);line-height:var(--lh-display);text-align:center;margin-bottom:56px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:-.02em;text-wrap:balance}
+.section-title{font-size:clamp(28px,5vw,56px);line-height:var(--lh-display);text-align:center;margin-bottom:56px;font-weight:700;font-family:'Noto Sans SC',sans-serif;letter-spacing:-.02em;text-wrap:balance}
 /* 副标签是英文小字，行高要按小字走，不能跟着大标题的 1.12 ——
    否则 14px 的小字行距只有 16px，中英文混排时会显得挤。 */
 .section-title small{display:block;color:var(--text-faint);font-size:var(--fs-sm);line-height:1.6;font-weight:400;margin-top:var(--space-1);letter-spacing:.1em}
