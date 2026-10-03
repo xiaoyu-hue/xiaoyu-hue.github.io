@@ -9,7 +9,26 @@ from html.parser import HTMLParser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-PAGES = ["index.html", "blog/index.html"] + [f"blog/post-{i}.html" for i in range(1, 11)]
+def _discover_pages():
+    """扫描磁盘得出页面清单 —— 与 build.py 的「目录即清单」保持同一套约定。
+
+    此前这里写死 range(1, N)，每加一篇文章都要回来改一次，不改也不会报错，
+    只会让新文章悄悄逃过 CSP、结构化数据、无障碍这一整批契约检查。
+    """
+    import re
+    blog_dir = os.path.join(ROOT, "blog")
+    nums = []
+    if os.path.isdir(blog_dir):
+        for name in os.listdir(blog_dir):
+            m = re.match(r"^post-(\d+)\.html$", name)
+            if m:
+                nums.append(int(m.group(1)))
+    return ["index.html", "blog/index.html"] + [
+        f"blog/post-{n}.html" for n in sorted(nums)
+    ]
+
+
+PAGES = _discover_pages()
 
 SIGNATURE = "一半烟火以谋生，一半诗意以谋爱"
 

@@ -43,21 +43,28 @@ EXPECTED_JSONLD_TYPE = {
     "blog/index.html": "CollectionPage",
 }
 
+# 每页应有的滚动淡入元素数量。
+#
+# · 文章页一律 0：正文不参与滚动淡入是刻意的设计，长文逐段淡入会让人读不下去。
+# · 列表页 = 1 个区块标题 + 每篇文章一张卡片，由文章数算出来。
+#   这里如果写死「10」，每加一篇文章都要回来改一次，不改就误报成失败 ——
+#   而它本该抓的是「卡片被动了」，不是「文章变多了」。
+# · 首页不是文章列表，数量来自它自己的版式，仍然写死：这里变了说明版式被改过，
+#   正是需要人看一眼的情况。
 EXPECTED_REVEAL_COUNT = {
     "index.html": 11,
-    # 1 个区块标题 + 10 篇文章卡片
-    "blog/index.html": 11,
-    "blog/post-1.html": 0,
-    "blog/post-2.html": 0,
-    "blog/post-3.html": 0,
-    "blog/post-4.html": 0,
-    "blog/post-5.html": 0,
-    "blog/post-6.html": 0,
-    "blog/post-7.html": 0,
-    "blog/post-8.html": 0,
-    "blog/post-9.html": 0,
-    "blog/post-10.html": 0,
 }
+
+
+def expected_reveal_count(page):
+    if page.startswith("blog/post-"):
+        return 0
+    if page == "blog/index.html":
+        posts = [n for n in os.listdir("blog") if re.match(r"^post-\d+\.html$", n)]
+        return 1 + len(posts)
+    if page not in EXPECTED_REVEAL_COUNT:
+        raise AssertionError("没有为 %s 约定 .reveal 数量" % page)
+    return EXPECTED_REVEAL_COUNT[page]
 
 
 def asset_prefix(page):
@@ -339,11 +346,12 @@ class TestBodyContract(unittest.TestCase):
 
     def test_reveal_element_count(self):
         """滚动淡入元素数量写死,防止误删或误加导致动效不一致。"""
-        for page, expected in EXPECTED_REVEAL_COUNT.items():
+        for page in PAGES:
             with self.subTest(page=page):
+                expected = expected_reveal_count(page)
                 count = len(parse(page).find_all(cls="reveal"))
                 self.assertEqual(count, expected,
-                                 f"{page} 的 .reveal 数量变了（原 {expected},现 {count}）")
+                                 f"{page} 的 .reveal 数量变了（应为 {expected},现 {count}）")
 
     def test_no_inline_style_or_event_attributes(self):
         """CSP 不含 unsafe-inline,内联样式和事件属性会被浏览器直接拦掉。"""

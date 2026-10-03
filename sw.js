@@ -47,6 +47,7 @@ const PRECACHE = [
   '/',
   '/index.html',
   '/blog/index.html',
+  // posts:start
   '/blog/post-1.html',
   '/blog/post-2.html',
   '/blog/post-3.html',
@@ -57,6 +58,7 @@ const PRECACHE = [
   '/blog/post-8.html',
   '/blog/post-9.html',
   '/blog/post-10.html',
+  // posts:end
   '/offline.html',
   '/manifest.webmanifest',
   '/assets/style.css',

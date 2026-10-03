@@ -35,11 +35,32 @@ DATA = os.path.join(SRC, "data")
 SITE_JSON = os.path.join(DATA, "site.json")
 PAGES_JSON = os.path.join(DATA, "pages.json")
 LAYOUT_FILE = os.path.join(LAYOUTS, "base.html")
+# 离线页不用 base.html（它没有设置面板、只有 3 个导航项），单独一份模板
+OFFLINE_TEMPLATE = os.path.join(SRC, "templates", "offline.html")
+# Service Worker：手写逻辑 + 构建期接管的预缓存清单（仓库根，浏览器只认这个位置）
+SW_FILE = os.path.join(ROOT, "sw.js")
 
-# 站点上需要被这套流程管理的成品文件（相对仓库根）
-HTML_TARGETS = ["index.html", "blog/index.html"] + [
-    "blog/post-%d.html" % i for i in range(1, 9)
-]
+# 文章正文的命名约定：src/pages/blog-post-<编号>.body.html
+# 「目录即清单」—— 新增一篇文章只需放一个文件进来，不必再登记编号。
+POST_BODY_RE = re.compile(r"^blog-post-(\d+)\.body\.html$")
+POST_URL_RE = re.compile(r"^blog/post-(\d+)\.html$")
+
+
+def html_targets():
+    """站点上需要被这套流程管理的成品文件（相对仓库根）。
+
+    由磁盘扫描得出，不再写死「1 到 N」—— 那样每加一篇文章都得回来改一处，
+    漏改了还不会报错，只会默默少构建一个页面。
+    """
+    found = ["index.html", "blog/index.html"]
+    blog_dir = os.path.join(ROOT, "blog")
+    nums = []
+    if os.path.isdir(blog_dir):
+        for name in os.listdir(blog_dir):
+            m = re.match(r"^post-(\d+)\.html$", name)
+            if m:
+                nums.append(int(m.group(1)))
+    return found + ["blog/post-%d.html" % n for n in sorted(nums)]
 
 EXIT_OK, EXIT_DIFF, EXIT_ERR = 0, 1, 2
 
@@ -185,10 +206,184 @@ def canonical_url(base_url, url_path):
 
 # ---------------------------------------------------------------- 构建
 
+# ------------------------------------------------- 文章清单：目录即来源
+
+def discover_posts():
+    """扫描 src/pages/ 下的 blog-post-N.body.html，返回 {编号: 派生信息}。
+
+    这是「有哪些文章」的唯一事实来源。此前这件事被抄在 8 个地方
+    （登记表、列表页卡片、离线页、SW 缓存清单、构建目标、3 处测试清单），
+    每加一篇都要同步一遍，漏一处还不会报错，只会默默少一个入口。
+    现在只认目录：放一个文件进来就算一篇文章。
+    """
+    found = {}
+    for name in sorted(os.listdir(PAGES_DIR)):
+        m = POST_BODY_RE.match(name)
+        if not m:
+            continue
+        num = int(m.group(1))
+        body = read(os.path.join(PAGES_DIR, name))
+        h1 = re.search(r"<h1>(.*?)</h1>", body, re.S)
+        date_line = re.search(r'<div class="date">(.*?)</div>', body, re.S)
+        if not h1:
+            fail("src/pages/%s 里找不到 <h1>，无法推断标题" % name)
+        if not date_line:
+            fail('src/pages/%s 里找不到 <div class="date">，无法推断日期' % name)
+        found[num] = {
+            "file": name,
+            "h1": strip_tags(h1.group(1)).strip(),
+            # 卡片整体是一个 <a>，里面不能再嵌 <a>（HTML 不允许嵌套链接），
+            # 所以日期行一律取纯文本：正文里项目名可以带 GitHub 链接，卡片里只能是字。
+            "date_line": strip_tags(date_line.group(1)).strip(),
+            "date": extract_body_date(body),
+            "first_para": first_paragraph(body),
+        }
+    if not found:
+        fail("src/pages/ 下没有任何 blog-post-N.body.html，站点至少得有一篇文章")
+    return found
+
+
+def strip_tags(s):
+    return re.sub(r"<[^>]+>", "", s)
+
+
+def first_paragraph(body):
+    """正文第一个 <p> 的纯文本 —— 摘要的最后兜底。"""
+    m = re.search(r"<p>(.*?)</p>", body, re.S)
+    return strip_tags(m.group(1)).strip() if m else ""
+
+
+def derive_post_meta(site, num, info):
+    """一篇文章在没人手写登记时，能自己推出哪些字段。"""
+    return {
+        "body": info["file"],
+        "url_path": "blog/post-%d.html" % num,
+        "title": "%s · %s" % (info["h1"], site["author"]),
+        "description": info["first_para"],
+        "og_type": "article",
+        "footer": "page",
+        "date": info["date"],
+    }
+
+
+def load_pages(site):
+    """登记表（pages.json）与目录的合并结果。
+
+    · 登记表里写了的 → 以登记表为准（description / card 这类手工文案）
+    · 目录里有、登记表没写的 → 全部字段自动派生
+
+    两者分工不同：目录回答「有没有这篇」，登记表回答「这篇怎么写得更好」。
+    所以新增一篇文章可以不碰登记表——这正是要让「加一篇文章 = 加一个文件」。
+    """
+    explicit = json.loads(read(PAGES_JSON))
+    discovered = discover_posts()
+    pages = {}
+    seen = set()
+
+    for key, meta in explicit.items():
+        m = POST_URL_RE.match(key)
+        if not m:
+            pages[key] = meta
+            continue
+        num = int(m.group(1))
+        info = discovered.get(num)
+        if info is None:
+            fail("pages.json 登记了 %s，但 src/pages/ 下没有 blog-post-%d.body.html" % (key, num))
+        merged = derive_post_meta(site, num, info)
+        merged.update(meta)
+        # 下划线前缀 = 派生字段，不写回 pages.json，只在构建期使用
+        merged["_h1"] = info["h1"]
+        merged["_date_line"] = info["date_line"]
+        pages[key] = merged
+        seen.add(num)
+
+    for num in sorted(set(discovered) - seen):
+        info = discovered[num]
+        merged = derive_post_meta(site, num, info)
+        merged["_h1"] = info["h1"]
+        merged["_date_line"] = info["date_line"]
+        merged["card"] = info["first_para"]   # 没手写摘要就用首段，至少不是空的
+        pages[merged["url_path"]] = merged
+    return pages
+
+
+CARD_TEMPLATE = (
+    '  <a class="glass post-card reveal" href="%s">\n'
+    "    <h3>%s</h3>\n"
+    '    <div class="date">%s</div>\n'
+    "    <p>%s</p>\n"
+    "  </a>"
+)
+
+
+def render_post_cards(pages):
+    """按「日期倒序、同一天里编号倒序」生成博客列表页的卡片。"""
+    posts = []
+    for rel, meta in pages.items():
+        m = POST_URL_RE.match(rel)
+        if not m:
+            continue
+        posts.append((meta.get("date") or "", int(m.group(1)), rel, meta))
+    posts.sort(key=lambda t: (t[0], t[1]), reverse=True)
+    cards = []
+    for _date, _num, rel, meta in posts:
+        href = rel.rsplit("/", 1)[-1]
+        summary = meta.get("card") or meta.get("description") or ""
+        cards.append(CARD_TEMPLATE % (href, meta["_h1"], meta["_date_line"], summary))
+    return "\n\n".join(cards)
+
+
+# sw.js 里由构建接管的那一段的起止标记
+PRECACHE_START = "  // posts:start"
+PRECACHE_END = "  // posts:end"
+
+
+def render_sw(pages):
+    """sw.js 的预缓存清单：文章那一段由目录生成，其余保持手写。
+
+    此前加一篇文章要手动往这里补一行；忘了补，用户离线时就读不到这一篇，
+    而且表现得很像「网络问题」，没人会想到是清单漏了。
+    现在这段不一致会让 python3 build.py 直接报差异，藏不住。
+    """
+    text = read(SW_FILE)
+    i = text.find(PRECACHE_START)
+    j = text.find(PRECACHE_END, i)
+    if i < 0 or j < 0:
+        fail("sw.js 里找不到 posts:start / posts:end 标记，无法更新预缓存清单")
+    nums = []
+    for rel in pages:
+        m = POST_URL_RE.match(rel)
+        if m:
+            nums.append(int(m.group(1)))
+    lines = ["  '/blog/post-%d.html'," % n for n in sorted(nums)]
+    # 标记行本身保留，只替换两行标记之间的内容
+    return text[:i] + PRECACHE_START + "\n" + "\n".join(lines) + "\n" + text[j:]
+
+
+def render_offline(pages):
+    """离线页：文章入口列表由文章清单生成。
+
+    此前这里是手抄的十几行 <li>，每加一篇文章都要手动补一行。忘了补的话，
+    用户离线时就点不到那一篇，而且本地测试、线上构建都不会报任何错 ——
+    属于「只有真断网了才会发现」的那类 bug。
+    """
+    tpl = read(OFFLINE_TEMPLATE)
+    if "{{post-links}}" not in tpl:
+        fail("离线页模板里找不到 {{post-links}} 占位符")
+    items = []
+    for rel, meta in pages.items():
+        m = POST_URL_RE.match(rel)
+        if m:
+            items.append((int(m.group(1)), rel, meta))
+    items.sort()                      # 离线页按编号正序，找起来顺着
+    lines = ['      <li><a href="%s">%s</a></li>' % (rel, meta["_h1"])
+             for _num, rel, meta in items]
+    return tpl.replace("{{post-links}}", "\n".join(lines))
+
+
 def load_site():
     site = json.loads(read(SITE_JSON))
-    pages = json.loads(read(PAGES_JSON))
-    return site, pages
+    return site, load_pages(site)
 
 
 def build(site, pages):
@@ -202,6 +397,10 @@ def build(site, pages):
     for rel_path, meta in pages.items():
         body_file = os.path.join(PAGES_DIR, meta["body"])
         content = read(body_file)
+
+        # 列表页的卡片由文章清单自动生成，不再手抄。
+        if "{{post-cards}}" in content:
+            content = content.replace("{{post-cards}}", render_post_cards(pages))
 
         # 声明了 date 的页面（文章）必须与正文里写的那处一致。列表页没有 date，跳过。
         if meta.get("date") is not None:
@@ -238,6 +437,8 @@ def build(site, pages):
     outputs["robots.txt"] = render_robots(site)
     outputs["feed.xml"] = render_feed(site, pages, bodies)
     outputs["404.html"] = render_404(layout, site, pages)
+    outputs["offline.html"] = render_offline(pages)
+    outputs["sw.js"] = render_sw(pages)
     return outputs
 
 
@@ -536,7 +737,7 @@ def bootstrap():
     print("从现有 HTML 反向生成 src/ ...\n")
 
     blocks = {}
-    for rel in HTML_TARGETS:
+    for rel in html_targets():
         text = read(os.path.join(ROOT, rel))
         blocks[rel] = {
             "text": text,
@@ -734,7 +935,7 @@ def main():
     if not diffs:
         print("✓ 构建产物与现有文件逐字节一致（共 %d 个文件）" % len(outputs))
         print("  说明：目前 %d 份手抄样板已被 1 份模板替代，站点外观与行为没有任何变化。"
-              % len(HTML_TARGETS))
+              % len(html_targets()))
         return
 
     print("✗ 构建产物与现有文件存在差异（%d 处）：\n" % len(diffs))

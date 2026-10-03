@@ -23,7 +23,8 @@
     "description": "一个非程序员和 AI Agent 协作的规则:需求确认后再开工、大任务拆小步、如实标注做不到什么;以及这个博客为什么既有实验报告,也有喜欢的文章、随笔和金句收藏。",
     "og_type": "article",
     "footer": "page",
-    "date": "2026-09-30"
+    "date": "2026-09-30",
+    "card": "一个不会写代码的人,怎么和 AI Agent 一起把项目做出来?这篇先说清楚我们的协作规则,以及为什么\"如实标注做不到什么\"比\"看起来很厉害\"重要得多。"
   },
   "blog/post-2.html": {
     "body": "blog-post-2.body.html",
@@ -32,7 +33,8 @@
     "description": "12 个模块、776 项测试、零依赖的个人管理工具 Sonder520:为什么坚持数据只存本地,以及这个决定换来的是什么代价。",
     "og_type": "article",
     "footer": "page",
-    "date": "2026-10-01"
+    "date": "2026-10-01",
+    "card": "12 个模块、776 项测试、零依赖。为什么坚持数据只存在本地浏览器,以及这个决定换来的代价——换设备不同步、清数据就消失。"
   },
   "blog/post-3.html": {
     "body": "blog-post-3.body.html",
@@ -41,7 +43,8 @@
     "description": "P2P 匿名聊天 Nymir:端到端加密、安全码核对、可验证密钥轮换,以及它为什么仍然不建议用于高风险场景。",
     "og_type": "article",
     "footer": "page",
-    "date": "2026-10-01"
+    "date": "2026-10-01",
+    "card": "P2P 加密聊天、安全码核对、可验证密钥轮换。以及它为什么仍然不建议用于高风险场景——一个不会写密码学的人,能做出功能,但做不出信任。"
   },
   "blog/post-4.html": {
     "body": "blog-post-4.body.html",
@@ -50,7 +53,8 @@
     "description": "俱乐部官网模板 xy-club:官网与后台共用一份 JSON,改内容不改代码;以及它在鉴权上做了哪些妥协。",
     "og_type": "article",
     "footer": "page",
-    "date": "2026-10-01"
+    "date": "2026-10-01",
+    "card": "官网与后台共用一份 JSON,改内容不改代码。零数据库、零前端框架的取舍,以及单密码鉴权的坦白。"
   },
   "blog/post-5.html": {
     "body": "blog-post-5.body.html",
@@ -60,7 +64,8 @@
     "og_type": "article",
     "footer": "page",
     "date": "2026-10-01",
-    "og_image_alt": "xy-intro-card:一张能发走的名片,和一次&quot;克制&quot;的练习 · xiaoyu-hue"
+    "og_image_alt": "xy-intro-card:一张能发走的名片,和一次&quot;克制&quot;的练习 · xiaoyu-hue",
+    "card": "单文件、零依赖、不联网。为什么导出的是独立 HTML 而不是图片,以及这个项目刻意不做的四件事。"
   },
   "blog/post-6.html": {
     "body": "blog-post-6.body.html",
@@ -69,7 +74,8 @@
     "description": "放学路上的一场暴雨，和玻璃后那丛不肯低头的甘蔗叶。一篇随笔。",
     "og_type": "article",
     "footer": "page",
-    "date": "2026-10-01"
+    "date": "2026-10-01",
+    "card": "放学路上的一场暴雨。玻璃后面，那丛甘蔗叶被风雨拍打着，却丝毫不肯低头。"
   },
   "blog/post-7.html": {
     "body": "blog-post-7.body.html",
@@ -78,7 +84,8 @@
     "description": "关于昙花、放下，与一个人如何把自己重新信一遍。",
     "og_type": "article",
     "footer": "page",
-    "date": "2026-10-01"
+    "date": "2026-10-01",
+    "card": "昙花选在子时开，是因为那时候月光最薄。关于放下、塌方，和一个人如何把自己重新信一遍。"
   },
   "blog/post-8.html": {
     "body": "blog-post-8.body.html",
@@ -87,7 +94,8 @@
     "description": "承认复杂性，但不放弃是非判断——在具体情境里做价值取舍。",
     "og_type": "article",
     "footer": "page",
-    "date": "2026-10-01"
+    "date": "2026-10-01",
+    "card": "承认事件里错综复杂的利益与矛盾，才能跳出非黑即白的定式。但承认复杂性，并不代表放弃是非判断。"
   },
   "blog/post-9.html": {
     "body": "blog-post-9.body.html",
@@ -96,7 +104,8 @@
     "description": "晚自习放学，一场砸下来的雨，和一个没带伞的人。舍友C那句“你遮不遮雨伞”，让我眼里冒起小星星。",
     "og_type": "article",
     "footer": "page",
-    "date": "2026-10-03"
+    "date": "2026-10-03",
+    "card": "晚自习放学，一场砸下来的雨，和一个没带伞的人。舍友C那句“你遮不遮雨伞”，让我眼里冒起小星星。"
   },
   "blog/post-10.html": {
     "body": "blog-post-10.body.html",
@@ -105,6 +114,7 @@
     "description": "暴雨过后，泥坑里有一颗外壳腐烂的种子。她冲我发火：我的外壳是腐烂的、肮脏的，但我的内心是纯粹的、干净的。",
     "og_type": "article",
     "footer": "page",
-    "date": "2026-10-03"
+    "date": "2026-10-03",
+    "card": "暴雨过后，泥坑里有一颗外壳腐烂的种子。她冲我发火：我的外壳是腐烂的、肮脏的，但我的内心是纯粹的、干净的。"
   }
 }
