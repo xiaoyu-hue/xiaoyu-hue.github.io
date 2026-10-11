@@ -3,7 +3,7 @@
     "body": "index.body.html",
     "url_path": "",
     "title": "xiaoyu-hue · 不会写代码的人,和 AI 一起造东西",
-    "description": "一个非程序员用 AI Agent 做出的四个开源项目,全部如实标注自己做不到什么。",
+    "description": "一个非程序员用 AI Agent 做出的六个开源项目,全部如实标注自己做不到什么。",
     "og_type": "website",
     "footer": "home",
     "og_image_alt": "xiaoyu-hue 个人主站：不会写代码，能不能用 AI 做出真东西？"
@@ -116,5 +116,25 @@
     "footer": "page",
     "date": "2026-10-03",
     "card": "暴雨过后，泥坑里有一颗外壳腐烂的种子。她冲我发火：我的外壳是腐烂的、肮脏的，但我的内心是纯粹的、干净的。"
+  },
+  "blog/post-11.html": {
+    "body": "blog-post-11.body.html",
+    "url_path": "blog/post-11.html",
+    "title": "九溪:把一个信息流装进静态站,代价是什么 · xiaoyu-hue",
+    "description": "个人综合信息聚集地九溪(jiuxi):十个板块、纯静态输出、资讯在浏览器端实时抓取;为什么绕不开第一方同域代理,以及备站不实时这类代价。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "不会后端、只有一台手机、代码最终只发 GitHub。三条约束逼出来的方案是:纯静态站 + 让每位访客的浏览器去抓 + 一个带白名单的同域代理。"
+  },
+  "blog/post-12.html": {
+    "body": "blog-post-12.body.html",
+    "url_path": "blog/post-12.html",
+    "title": "时念:把最私密的记录,交给一把自己做的锁 · xiaoyu-hue",
+    "description": "时念 ShiNian:天空随时刻与四季流动的时间工具,从一扇窗长成了一个关于信任的问题;本地加密保险库、全免费的六项安全审计,和那些让我不敢自称安全的东西。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "倒数日里记着谁的生日,许愿池里写的是真心话。把这些装进 AES-GCM-256 保险库之后,我更在意的是另一件事:你敢不敢把真话放进来。"
   }
 }

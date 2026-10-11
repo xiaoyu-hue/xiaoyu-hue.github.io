@@ -58,6 +58,8 @@ const PRECACHE = [
   '/blog/post-8.html',
   '/blog/post-9.html',
   '/blog/post-10.html',
+  '/blog/post-11.html',
+  '/blog/post-12.html',
   // posts:end
   '/offline.html',
   '/manifest.webmanifest',
