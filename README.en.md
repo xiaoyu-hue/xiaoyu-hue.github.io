@@ -1,6 +1,6 @@
 # xiaoyu-hue.github.io
 
-> Personal site — four open-source projects built by a non-programmer with AI agents, plus an honest record of the experiment
+> Personal site — six open-source projects built by a non-programmer with AI agents, plus an honest record of the experiment
 
 **English · [中文](./README.md)**
 
@@ -23,7 +23,7 @@
 
 ## What this is
 
-Someone with no programming background decided to treat AI agents as a production tool — and shipped four open-source projects.
+Someone with no programming background decided to treat AI agents as a production tool — and shipped six open-source projects.
 
 This site exists to answer one question: **how far can AI push someone who has never written code?**
 
@@ -35,16 +35,18 @@ which scenarios it should not be used in, and which judgment calls have not been
 
 ---
 
-## The four projects
+## The six projects
 
 | Project | One-liner | Stack | License |
 |---------|-----------|-------|---------|
-| 🌊 [sonder520](https://github.com/xiaoyu-hue/sonder520) | Personal work and life manager; data never leaves your browser | Vanilla JS · PWA · zero-dependency | MIT |
-| ✦ [Nymir](https://github.com/xiaoyu-hue/Nymir) | Anonymous tree hole · P2P encrypted chat · burn after reading | React 19 · TypeScript · WebRTC | AGPL-3.0 |
-| 💎 [xy-club](https://github.com/xiaoyu-hue/xy-club) | Reusable club website template with a visual admin panel | Node.js · Express | MIT |
-| 🪪 [xy-intro-card](https://github.com/xiaoyu-hue/xy-intro-card) | Personal intro card generator — just double-click | Single-file HTML/CSS/JS | MIT |
+| 🌊 [sonder520](https://github.com/xiaoyu-hue/sonder520) | Personal work and life manager; data never leaves your browser | Vanilla JS · PWA · zero-dependency | MIT (code) / CC BY 4.0 (docs) |
+| ✦ [Nymir](https://github.com/xiaoyu-hue/Nymir) | Anonymous tree hole · P2P encrypted chat · burn after reading | React 19 · TypeScript · WebRTC | AGPL-3.0 (code) / CC BY-NC-SA 4.0 (docs) |
+| 💎 [xy-club](https://github.com/xiaoyu-hue/xy-club) | Reusable club website template with a visual admin panel | Node.js · Express | MIT (code) / CC BY 4.0 (docs) |
+| 🪪 [xy-intro-card](https://github.com/xiaoyu-hue/xy-intro-card) | Personal intro card generator — just double-click | Single-file HTML/CSS/JS | MIT (code) / CC BY 4.0 (docs) |
+| 🔥 [九溪 jiuxi](https://github.com/xiaoyu-hue/jiuxi) | Aggregated info hub: Jiuxi (AI-first, news-second) | Astro · TypeScript · local-first | Apache-2.0 (code) / CC BY-NC 4.0 (content) |
+| ⏱ [时念 shinian](https://github.com/xiaoyu-hue/shinian) | Background theme that flows with time: Shinian (live wallpaper) | TypeScript · zero-build · local-first | MIT (code) / CC BY-NC-SA 4.0 (docs) |
 
-All four are live; links are in each repository.
+All six are live; links are in each repository.
 
 ---
 
