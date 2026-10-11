@@ -136,5 +136,115 @@
     "footer": "page",
     "date": "2026-10-11",
     "card": "倒数日里记着谁的生日,许愿池里写的是真心话。把这些装进 AES-GCM-256 保险库之后,我更在意的是另一件事:你敢不敢把真话放进来。"
+  },
+  "blog/post-13.html": {
+    "body": "blog-post-13.body.html",
+    "url_path": "blog/post-13.html",
+    "title": "石头跟我吵了一架 · xiaoyu-hue",
+    "description": "去吃饭的路上被一块石头绊倒，结果它先开口骂我走路看手机。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "我一把把它扔了出去，石头在空中还在喊：不是哥们，你不讲武德啊——"
+  },
+  "blog/post-14.html": {
+    "body": "blog-post-14.body.html",
+    "url_path": "blog/post-14.html",
+    "title": "三片叶子 · xiaoyu-hue",
+    "description": "一半绿一半黄的是中年，枯褐带缺口的是老年，嫩绿的是新芽。风又过了一遍，树在跟它们告别。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "活下去的希望，是一天天的坚持，是找到你热爱的生活和追求的意义。"
+  },
+  "blog/post-15.html": {
+    "body": "blog-post-15.body.html",
+    "url_path": "blog/post-15.html",
+    "title": "书本兄弟给我讲了个故事 · xiaoyu-hue",
+    "description": "上课想立着书趴一会儿，书本气倒了，说别拿我当挡箭牌；然后它给我讲了一个关于蟋蟀的故事。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "书本兄弟：我是被你气说话的！！！"
+  },
+  "blog/post-16.html": {
+    "body": "blog-post-16.body.html",
+    "url_path": "blog/post-16.html",
+    "title": "雨伞兄弟的怒火 · xiaoyu-hue",
+    "description": "暴雨里伞破了个洞，雨伞兄弟暴怒，然后讲了一通人类与雨水的事。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "谁让你平时不爱惜我的？关键时刻还不是得靠我。"
+  },
+  "blog/post-17.html": {
+    "body": "blog-post-17.body.html",
+    "url_path": "blog/post-17.html",
+    "title": "一颗种子 · xiaoyu-hue",
+    "description": "看到一个博主为留守儿童做的事，心里埋下一颗种子。我的立志是：穷则独善其身，达则兼济天下。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "等我有钱了，我也要去帮这个社会上有困难的人。"
+  },
+  "blog/post-18.html": {
+    "body": "blog-post-18.body.html",
+    "url_path": "blog/post-18.html",
+    "title": "抽筋、烈日，和会说话的树 · xiaoyu-hue",
+    "description": "小腿抽筋之后走出宿舍，听见树抱怨天气变得太快——好像人性啊，突然的翻脸。然后我倒下了。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "原来那些满头大汗、会抱怨天气的树，全是从这场疼里长出来的梦。"
+  },
+  "blog/post-19.html": {
+    "body": "blog-post-19.body.html",
+    "url_path": "blog/post-19.html",
+    "title": "以我之诚，换彼之心 · xiaoyu-hue",
+    "description": "我从不相信人和人的联系薄如蝉翼。明知不可为而为之，极力的去挽回每一段关系。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "哪怕结果不尽人意，我也做到了——尽己。"
+  },
+  "blog/post-20.html": {
+    "body": "blog-post-20.body.html",
+    "url_path": "blog/post-20.html",
+    "title": "我在吃垃圾？ · xiaoyu-hue",
+    "description": "蹲在垃圾桶边套垃圾袋，嘴里还嚼着辣条，被舍长 A 撞见了。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "我没有在吃垃圾！我是来扔垃圾的！"
+  },
+  "blog/post-21.html": {
+    "body": "blog-post-21.body.html",
+    "url_path": "blog/post-21.html",
+    "title": "有双手，就不会饿死吗 · xiaoyu-hue",
+    "description": "我一直相信有双手就不会饿死，直到舍友问我：交完房租水电，你还能剩下多少？",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "真正重要的，是让理想能够在现实里生根发芽，而不是只停留在想象之中。"
+  },
+  "blog/post-22.html": {
+    "body": "blog-post-22.body.html",
+    "url_path": "blog/post-22.html",
+    "title": "分寸感，是对人性的一份清醒 · xiaoyu-hue",
+    "description": "关于亲密关系里的边界：三观决定内核，分寸落地行为；拦不住动心的念头，但能远离滋生暧昧的环境。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "没法阻挡心动的出现，但可以主动远离暧昧的风口。（AI 辅助整理）"
+  },
+  "blog/post-23.html": {
+    "body": "blog-post-23.body.html",
+    "url_path": "blog/post-23.html",
+    "title": "课桌下的意外心动 · xiaoyu-hue",
+    "description": "指尖忽然触到一片温热柔软的触感，不是冰凉的木头。原来课桌下的一次意外也能撞开这么甜的夏天。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-11",
+    "card": "看在奶茶的份上，这次就原谅你了。（AI 辅助整理）"
   }
 }
