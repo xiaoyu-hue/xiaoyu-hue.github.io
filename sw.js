@@ -31,7 +31,11 @@ const CACHE_PREFIX = 'xiaoyu-hue';
 //    纯原生 CSS 零依赖；换缓存名让已装 PWA 清缓存拿新样式。
 // v9:新增两篇随笔（post-9/post-10）。换缓存名是必须的 ——
 //    否则已安装 PWA 仍持有旧清单，离线时新文章会掉到 offline.html。
-const CACHE_VERSION = 'v9';
+// v10:新增三篇（post-24 金句 / post-25 AI 辅助思考 / post-26 随笔）。
+//    注意：posts:start~posts:end 这一段由 build.py 按目录自动生成，
+//    所以新增文章后这份清单一定会变，浏览器会重新 install 并把全部页面重新预缓存；
+//    版本号的主要作用，是强制已安装 PWA 在 activate 时清掉旧缓存、换上带新样式的版本。
+const CACHE_VERSION = 'v10';
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const OFFLINE_URL = '/offline.html';
@@ -71,6 +75,9 @@ const PRECACHE = [
   '/blog/post-21.html',
   '/blog/post-22.html',
   '/blog/post-23.html',
+  '/blog/post-24.html',
+  '/blog/post-25.html',
+  '/blog/post-26.html',
   // posts:end
   '/offline.html',
   '/manifest.webmanifest',

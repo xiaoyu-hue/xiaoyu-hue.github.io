@@ -246,5 +246,35 @@
     "footer": "page",
     "date": "2026-10-11",
     "card": "看在奶茶的份上，这次就原谅你了。（AI 辅助整理）"
+  },
+  "blog/post-24.html": {
+    "body": "blog-post-24.body.html",
+    "url_path": "blog/post-24.html",
+    "title": "金句收藏（一） · xiaoyu-hue",
+    "description": "开一个小栏目，把遇见的、打动我的句子攒在这里。这一辑两句，都是网上看到的，如实标注为「佚名 / 网络」。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-12",
+    "card": "人总是喜欢反季节的东西，在蝉鸣烈日的夏天，却想念冬日厚重的雪。"
+  },
+  "blog/post-25.html": {
+    "body": "blog-post-25.body.html",
+    "url_path": "blog/post-25.html",
+    "title": "从地基到人性：一套关于文明的思想框架 · xiaoyu-hue",
+    "description": "意识形态是地基，国家是家庭的管理体系，家庭在演化，选拔要靠透明，而一切制度最终受制于一个最朴素的底线：人无完人。一篇 AI 辅助整理的个人思考笔记。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-12",
+    "card": "把意识形态、国家、家庭、选拔、人性串成一条线，最后停在「人非完人」这个最朴素的底线上。（AI 辅助整理）"
+  },
+  "blog/post-26.html": {
+    "body": "blog-post-26.body.html",
+    "url_path": "blog/post-26.html",
+    "title": "雨里的一百块，和奶奶给的一枚银币 · xiaoyu-hue",
+    "description": "刷到一段视频：下雨天，一位先生摇下车窗，给拾荒的老爷爷塞了一百块。它让我想起小时候，奶奶给我一枚一块钱的银币，让我递给躺在木板上挪动的老人。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-12",
+    "card": "出于本心的做法，是问心无愧的；不做，会更后悔。如果被骗，那也是自己这个选择对应的代价。"
   }
 }
