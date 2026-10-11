@@ -5,7 +5,7 @@
 > **哪一份是准线？** 两份都以代码为准、人工同步维护；万一出现分歧，**以本中文版为准**（它先写、也先更新）。
 > 文中引用的数字（缓存版本、测试数量、依赖版本）都刻意与代码严格一致；若发现任何一处对不上，那是文档的 bug，不是特性。
 
-> 个人主站 · 一个非程序员用 AI Agent 做出的四个项目,以及一份诚实的实验记录
+> 个人主站 · 一个非程序员用 AI Agent 做出的六个项目,以及一份诚实的实验记录
 
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-主站-F38020?style=flat-square)](https://xiaoyu-hue-github-io.pages.dev/)
 [![备用站](https://img.shields.io/badge/GitHub%20Pages-备用站-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
@@ -21,7 +21,7 @@
 
 ## 这是什么
 
-一个不会写代码的人，把 AI Agent 当成生产工具，做出了四个开源项目。
+一个不会写代码的人，把 AI Agent 当成生产工具，做出了六个开源项目。
 
 这个站点用来回答一个问题：**一个没有编程背景的人，能被 AI 推到哪一步？**
 
@@ -31,16 +31,18 @@
 
 ---
 
-## 四个项目
+## 六个项目
 
 | 项目 | 一句话 | 技术栈 | 协议 |
 |------|--------|--------|------|
-| 🌊 [sonder520](https://github.com/xiaoyu-hue/sonder520) | 本地个人工作与生活管理工具，数据只存浏览器 | 原生 JS · PWA · 零依赖 | MIT |
-| ✦ [Nymir](https://github.com/xiaoyu-hue/Nymir) | 匿名树洞 · P2P 加密聊天 · 阅读即焚 | React 19 · TypeScript · WebRTC | AGPL-3.0 |
-| 💎 [xy-club](https://github.com/xiaoyu-hue/xy-club) | 可复用的俱乐部官网模板 + 可视化后台 | Node.js · Express | MIT |
-| 🪪 [xy-intro-card](https://github.com/xiaoyu-hue/xy-intro-card) | 个人介绍名片生成器，双击即用 | 原生 HTML/CSS/JS 单文件 | MIT |
+| 🌊 [sonder520](https://github.com/xiaoyu-hue/sonder520) | 本地个人工作与生活管理工具，数据只存浏览器 | 原生 JS · PWA · 零依赖 | MIT（代码）/ CC BY 4.0（文档） |
+| ✦ [Nymir](https://github.com/xiaoyu-hue/Nymir) | 匿名树洞 · P2P 加密聊天 · 阅读即焚 | React 19 · TypeScript · WebRTC | AGPL-3.0（代码）/ CC BY-NC-SA 4.0（文档） |
+| 💎 [xy-club](https://github.com/xiaoyu-hue/xy-club) | 可复用的俱乐部官网模板 + 可视化后台 | Node.js · Express | MIT（代码）/ CC BY 4.0（文档） |
+| 🪪 [xy-intro-card](https://github.com/xiaoyu-hue/xy-intro-card) | 个人介绍名片生成器，双击即用 | 原生 HTML/CSS/JS 单文件 | MIT（代码）/ CC BY 4.0（文档） |
+| 🔥 [九溪 jiuxi](https://github.com/xiaoyu-hue/jiuxi) | 综合信息聚集地：九溪（AI 为主、热点为辅） | Astro · TypeScript · 本地优先 | Apache-2.0（代码）/ CC BY-NC 4.0（内容） |
+| ⏱ [时念 shinian](https://github.com/xiaoyu-hue/shinian) | 随时刻流动的背景主题：时念（动态壁纸） | TypeScript · 零构建 · 本地优先 | MIT（代码）/ CC BY-NC-SA 4.0（文档） |
 
-四个项目都可以直接在线体验，链接在各项目的仓库里。
+六个项目都可以直接在线体验，链接在各项目的仓库里。
 
 ---
 
