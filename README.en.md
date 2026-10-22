@@ -1,6 +1,6 @@
 # xiaoyu-hue.github.io
 
-> Personal site — six open-source projects built by a non-programmer with AI agents, plus an honest record of the experiment
+> Personal site — seven open-source projects built by a non-programmer with AI agents, plus an honest record of the experiment
 
 **English · [中文](./README.md)**
 
@@ -23,7 +23,7 @@
 
 ## What this is
 
-Someone with no programming background decided to treat AI agents as a production tool — and shipped six open-source projects.
+Someone with no programming background decided to treat AI agents as a production tool — and shipped seven open-source projects.
 
 This site exists to answer one question: **how far can AI push someone who has never written code?**
 
@@ -35,7 +35,7 @@ which scenarios it should not be used in, and which judgment calls have not been
 
 ---
 
-## The six projects
+## The seven projects
 
 | Project | One-liner | Stack | License |
 |---------|-----------|-------|---------|
@@ -45,8 +45,9 @@ which scenarios it should not be used in, and which judgment calls have not been
 | 🪪 [xy-intro-card](https://github.com/xiaoyu-hue/xy-intro-card) | Personal intro card generator — just double-click | Single-file HTML/CSS/JS | MIT (code) / CC BY 4.0 (docs) |
 | 🔥 [九溪 jiuxi](https://github.com/xiaoyu-hue/jiuxi) | Aggregated info hub: Jiuxi (AI-first, news-second) | Astro · TypeScript · local-first | Apache-2.0 (code) / CC BY-NC 4.0 (content) |
 | ⏱ [时念 shinian](https://github.com/xiaoyu-hue/shinian) | Background theme that flows with time: Shinian (live wallpaper) | TypeScript · zero-build · local-first | MIT (code) / CC BY-NC-SA 4.0 (docs) |
+| 📚 [书时 TailTale](https://github.com/xiaoyu-hue/tailtale) | Gamified reader: read to earn coins, raise a pet with coins | React 18 · TypeScript · Vite · PWA | Apache-2.0 (code) / CC BY-NC 4.0 (docs) |
 
-All six are live; links are in each repository.
+All seven are live; links are in each repository.
 
 ---
 

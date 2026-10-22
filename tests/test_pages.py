@@ -52,7 +52,7 @@ EXPECTED_JSONLD_TYPE = {
 # · 首页不是文章列表，数量来自它自己的版式，仍然写死：这里变了说明版式被改过，
 #   正是需要人看一眼的情况。
 EXPECTED_REVEAL_COUNT = {
-    "index.html": 13,
+    "index.html": 14,
 }
 
 
