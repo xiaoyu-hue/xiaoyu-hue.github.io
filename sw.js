@@ -76,6 +76,7 @@ const PRECACHE = [
   '/blog/post-23.html',
   '/blog/post-24.html',
   '/blog/post-26.html',
+  '/blog/post-27.html',
   // posts:end
   '/offline.html',
   '/manifest.webmanifest',

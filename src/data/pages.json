@@ -266,5 +266,15 @@
     "footer": "page",
     "date": "2026-10-12",
     "card": "出于本心的做法，是问心无愧的；不做，会更后悔。如果被骗，那也是自己这个选择对应的代价。"
+  },
+  "blog/post-27.html": {
+    "body": "blog-post-27.body.html",
+    "url_path": "blog/post-27.html",
+    "title": "书时:让读书变成一件有牵挂的事 · xiaoyu-hue",
+    "description": "第七个作品书时 TailTale:读书记时长金币、金币养宠物的游戏化阅读器。金币为什么不可购买、宠物为什么不会饿死,以及它现在还做不到什么。",
+    "og_type": "article",
+    "footer": "page",
+    "date": "2026-10-22",
+    "card": "读书记时长金币,金币养猫。第七个作品书时 TailTale:一个无支付、无账号、无服务器的游戏化阅读器,和它刻意不做的事。"
   }
 }
