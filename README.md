@@ -10,7 +10,7 @@
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-主站-F38020?style=flat-square)](https://xiaoyu-hue-github-io.pages.dev/)
 [![备用站](https://img.shields.io/badge/GitHub%20Pages-备用站-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
-[![Docs License](https://img.shields.io/badge/docs-CC%20BY--NC--SA%204.0-8B5CF6?style=flat-square)](LICENSE-DOCS)
+[![Docs License](https://img.shields.io/badge/docs-CC%20BY--NC%204.0-8B5CF6?style=flat-square)](LICENSE-DOCS)
 [![零依赖](https://img.shields.io/badge/运行时依赖-无-2F855A?style=flat-square)](https://github.com/xiaoyu-hue/xiaoyu-hue.github.io)
 [![构建可选](https://img.shields.io/badge/构建-可选%20Python-3776AB?style=flat-square)](https://github.com/xiaoyu-hue/xiaoyu-hue.github.io)
 
@@ -41,7 +41,7 @@
 | 💎 [xy-club](https://github.com/xiaoyu-hue/xy-club) | 可复用的俱乐部官网模板 + 可视化后台 | Node.js · Express | MIT（代码）/ CC BY 4.0（文档） |
 | 🪪 [xy-intro-card](https://github.com/xiaoyu-hue/xy-intro-card) | 个人介绍名片生成器，双击即用 | 原生 HTML/CSS/JS 单文件 | MIT（代码）/ CC BY 4.0（文档） |
 | 🔥 [九溪 jiuxi](https://github.com/xiaoyu-hue/jiuxi) | 综合信息聚集地：九溪（AI 为主、热点为辅） | Astro · TypeScript · 本地优先 | Apache-2.0（代码）/ CC BY-NC 4.0（内容） |
-| ⏱ [时念 shinian](https://github.com/xiaoyu-hue/shinian) | 随时刻流动的背景主题：时念（动态壁纸） | TypeScript · 零构建 · 本地优先 | MIT（代码）/ CC BY-NC-SA 4.0（文档） |
+| ⏱ [时念 shinian](https://github.com/xiaoyu-hue/shinian) | 随时刻流动的背景主题：时念（动态壁纸） | TypeScript · 零构建 · 本地优先 | Apache-2.0（代码）/ CC BY 4.0（文档） |
 | 📚 [书时 TailTale](https://github.com/xiaoyu-hue/tailtale) | 游戏化阅读器：读书记时长金币，金币养宠物 | React 18 · TypeScript · Vite · PWA | Apache-2.0（代码）/ CC BY-NC 4.0（文档） |
 
 七个项目都可以直接在线体验，链接在各项目的仓库里。
@@ -502,7 +502,7 @@ node scripts/build-icons.mjs
 
 这个站点能长期保持"看起来简单、改起来放心"，靠的是下面这些项目。先说清一个事实：线上站点**不含任何第三方代码**，所以真正值得致谢的只有开发期工具、Web 标准与托管平台——下面这些。
 
-许可范围上，本项目并非"整体一个许可证"：**代码用 MIT，博客文章与站点文案用 CC BY-NC-SA 4.0，参考借鉴的第三方思路不属于任何一方**。完整划分见 [`NOTICE`](NOTICE)。
+许可范围上，本项目并非"整体一个许可证"：**代码用 MIT，博客文章与站点文案用 CC BY-NC 4.0，参考借鉴的第三方思路不属于任何一方**。完整划分见 [`NOTICE`](NOTICE)。
 
 **[Playwright](https://github.com/microsoft/playwright)** · Apache-2.0 · Microsoft（当前 ^1.63.0）
 
@@ -562,7 +562,7 @@ W3C CSS 工作组标准化、Chrome 团队的 Bramus Van Damme 等人持续推�
 | 部分 | 许可证 | 说明 |
 |------|--------|------|
 | **源代码**（`build.py`、`sw.js`、`assets/`、`scripts/`、`tests/`、模板与配置） | [**MIT**](LICENSE) | 可自由使用、修改、商用，只需保留版权声明 |
-| **博客文章正文、站点文案、原创插图** | [**CC BY-NC-SA 4.0**](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.zh-Hans) | 可转载，但须署名、禁止商用、衍生作品须同许可 |
+| **博客文章正文、站点文案、原创插图** | [**CC BY-NC 4.0**](https://creativecommons.org/licenses/by-nc/4.0/legalcode.zh-Hans) | 可转载，须署名、禁止商用；演绎作品无相同方式共享要求 |
 | **参考借鉴的第三方思路** | 不适用 | 属思想借鉴，见「[参考借鉴案例](#参考借鉴案例)」 |
 
 **为什么分开**：MIT 是为软件设计的协议，它默认允许他人自由商用、且不要求署名——这对代码是合适的，对个人撰写的文章则不符合作者意愿。分开许可后，代码保持最大可复用性，文章则保留署名与禁止商用的保护。
@@ -571,5 +571,5 @@ W3C CSS 工作组标准化、Chrome 团队的 Bramus Van Damme 等人持续推�
 
 ```
 代码        MIT              © 2026 xiaoyu-hue
-文章/文案   CC BY-NC-SA 4.0  © 2026 xiaoyu-hue
+文章/文案   CC BY-NC 4.0     © 2026 xiaoyu-hue
 ```
