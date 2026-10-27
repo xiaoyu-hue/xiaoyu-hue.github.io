@@ -7,7 +7,7 @@ SPDX-License-Identifier: CC-BY-NC-4.0
 
 本许可适用于下列文件（以下合称「本作品」）：
 
-- `README.md`、`README.en.md`、`ARCHITECTURE.md`、`NOTICE`
+- `README.md`、`README.en.md`、`ARCHITECTURE.md`
 - `blog/` 目录下的文章正文
 - `docs/` 目录下的全部文件
 - 本文件（`LICENSE-DOCS`）本身
