@@ -10,6 +10,7 @@
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-主站-F38020?style=flat-square)](https://xiaoyu-hue-github-io.pages.dev/)
 [![备用站](https://img.shields.io/badge/GitHub%20Pages-备用站-48cae4?style=flat-square)](https://xiaoyu-hue.github.io/)
 [![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
+[![Docs License](https://img.shields.io/badge/docs-CC%20BY--NC--SA%204.0-8B5CF6?style=flat-square)](LICENSE-DOCS)
 [![零依赖](https://img.shields.io/badge/运行时依赖-无-2F855A?style=flat-square)](https://github.com/xiaoyu-hue/xiaoyu-hue.github.io)
 [![构建可选](https://img.shields.io/badge/构建-可选%20Python-3776AB?style=flat-square)](https://github.com/xiaoyu-hue/xiaoyu-hue.github.io)
 

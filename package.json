@@ -2,6 +2,7 @@
   "name": "xiaoyu-hue-site",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "个人主站 —— 站点本身零构建零依赖；这里的依赖只用于跑测试，访问和部署站点都不需要 Node.js",
   "type": "module",
   "scripts": {
